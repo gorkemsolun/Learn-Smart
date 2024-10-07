@@ -21,6 +21,7 @@
 /frontend/*.tsbuildinfo
 
 /backend/include/
+/backend/lib
 /backend/lib64
 /backend/Include
 /backend/Lib
