@@ -8,7 +8,7 @@ export default function PageHandler() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/sign-in");
+      router.push("/login");
     }, 100);
 
     // Clean up the timer on component unmount
@@ -16,7 +16,7 @@ export default function PageHandler() {
   }, [router]);
 
   return (
-    <div className="bg-transparent min-h-screen font-sans">
+    <div className="bg-transparent min-h-screen">
       <h1>Redirecting to login...</h1>
     </div>
   );

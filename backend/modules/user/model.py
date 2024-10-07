@@ -22,8 +22,8 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(50), nullable=False)
     nickname = Column(String(50), unique=True, index=True, nullable=False)
+    role = Column(String(20), nullable=True)
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -41,7 +41,7 @@ class User(Base):
         
         return {
             "user_id": self.user_id,
-            "name": self.name,
+            "role": self.role,
             "nickname": self.nickname,
             "email": self.email,
             "created_at": self.created_at,

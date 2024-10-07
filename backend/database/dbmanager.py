@@ -92,12 +92,11 @@ class UserDB(DatabaseInterface):
     """
 
     @staticmethod
-    def create(name: str, nickname: str, email: str, password: str):
+    def create(nickname: str, email: str, password: str):
         """
         Create a new user with the provided credentials and save it in the database.
 
         Args:
-        - name (str): The name of the user.
         - nickname (str): The nickname of the user.
         - email (str): The email of the user.
         - password (str): The password of the user.
@@ -116,7 +115,6 @@ class UserDB(DatabaseInterface):
 
         # Create a new user object
         user = User(
-            name=name,
             nickname=nickname,
             email=email,
             hashed_password=auth.hash_password(password),
@@ -151,7 +149,6 @@ class UserDB(DatabaseInterface):
         Raises:
             ValueError: If no query parameters are provided.
         """
-        name = kwargs.get("name", None)
         nickname = kwargs.get("nickname", None)
         email = kwargs.get("email", None)
         user_id = kwargs.get("user_id", None)
@@ -162,8 +159,7 @@ class UserDB(DatabaseInterface):
 
         # Create a list of filters based on the provided query parameters
         filters = []
-        if name:
-            filters.append(User.name == name)
+
         if nickname:
             filters.append(User.nickname == nickname)
         if email:
@@ -205,21 +201,20 @@ class UserDB(DatabaseInterface):
         Raises:
         - ValueError: If the user with the specified ID is not found in the database.
         """
-        name = kwargs.get("name", None)
+        role = kwargs.get("role", None)
         nickname = kwargs.get("nickname", None)
         email = kwargs.get("email", None)
         password = kwargs.get("password", None)
         
-        if not any([name, nickname, email, password]):
+        if not any([role, nickname, email, password]):
             raise ValueError("No fields to update provided")
 
         with db_connection as db:
             user = db.query(User).filter(User.user_id == user_id).first()
             if not user:
                 raise ValueError(f"User with ID {user_id} not found")
-
-            if name:
-                user.name = name
+            if role:
+                user.role = role
             if nickname:
                 user.nickname = nickname
             if email:
