@@ -20,6 +20,8 @@
 /frontend/.vercel
 /frontend/*.tsbuildinfo
 
+/backend/include/
+/backend/lib64
 /backend/Include
 /backend/Lib
 /backend/Scripts
