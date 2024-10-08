@@ -136,7 +136,7 @@ class UserDB(DatabaseInterface):
         Args:
             **kwargs: Keyword arguments representing the query parameters.
                 Possible query parameters include:
-                - name (str): The name of the user.
+                - role (str): The role of the user.
                 - nickname (str): The nickname of the user.
                 - email (str): The email of the user.
                 - user_id (int): The ID of the user.
@@ -149,17 +149,20 @@ class UserDB(DatabaseInterface):
         Raises:
             ValueError: If no query parameters are provided.
         """
+        role = kwargs.get("role", None)
         nickname = kwargs.get("nickname", None)
         email = kwargs.get("email", None)
         user_id = kwargs.get("user_id", None)
         all = kwargs.get("all", False)
 
-        if not any([nickname, email, user_id]):
+        if not any([role, nickname, email, user_id]):
             raise ValueError("No query parameters provided")
 
         # Create a list of filters based on the provided query parameters
         filters = []
 
+        if role:
+            filters.append(User.role == role)
         if nickname:
             filters.append(User.nickname == nickname)
         if email:

@@ -23,7 +23,7 @@ export default function SignIn() {
 
   const [email, setEmail] = useState<string>(Cookies.get("emailCookie") || "");
   const [password, setPassword] = useState<string>("");
-
+  const [role, setRole] = useState<string>("" || null);
   const router = useRouter();
   const {toast} = useToast();
 
@@ -33,12 +33,31 @@ export default function SignIn() {
       setEmail(emailCookie);
     }
 
-    // Redirect to homepage if already logged in
     const authToken = Cookies.get("authToken");
     if (authToken) {
-      router.push("/learnsmart-homepage");
+      fetchUserRole();
+      if (role == null) {
+        router.push("/role-card");
+      } else if (role === "User") {
+        router.push("/learnsmart-homepage");
+      } else if (role === "Instructor") {
+        router.push("/learnsmart-homepage-instructor");
+      }
     }
-  }, [router]);
+  }, [router, role]);
+
+  async function fetchUserRole() {
+    await backendAPI
+      .get("/users/me", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Cookies.get("authToken")}`,
+        },
+      })
+      .then((response) => {
+        setRole(response.data.role);
+      });
+  }
 
   const handleSignIn = async () => {
     await backendAPI
@@ -56,20 +75,23 @@ export default function SignIn() {
             }
         )
         .then((response) => {
-          if (response.status === 200) {
-
-            toast({
+          toast({
               title: "Sign in successful",
               variant: "default",
             });
-            const data = response.data;
 
-            // Store the token in a cookie
-            Cookies.set("authToken", data["access_token"], {expires: 3});
+          const data = response.data;
+          // Store the token in a cookie
+          Cookies.set("authToken", data["access_token"], {expires: 3});
 
-            setTimeout(() => {
-              router.push("/learnsmart-homepage");
-            }, 1500);
+          fetchUserRole();
+
+          if (role == null) {
+            router.push("/role-card");
+          } else if (role === "User") {
+            router.push("/learnsmart-homepage");
+          } else if (role === "Instructor") {
+            router.push("/learnsmart-homepage-instructor");
           }
         })
         .catch((error) => {
@@ -89,7 +111,7 @@ export default function SignIn() {
 
   return (
       <div className="flex items-center justify-center min-h-screen">
-        <Card className="relative w-3/5 h-[500px] flex font-sans font-light overflow-auto">
+        <Card className="relative w-3/5 h-[72vh] flex overflow-auto">
           <Button
               onClick={() => router.push('/sign-up')}
               className="absolute top-4 right-4 bg-transparent text-foreground shadow-none hover:bg-foreground/10"
@@ -100,7 +122,7 @@ export default function SignIn() {
           <div className="w-1/2 bg-foreground/5 p-4 rounded-l-lg flex items-center justify-center border-1 relative">
             <div className="absolute top-4 left-4 flex items-center space-x-2">
               <Icons.logo className="h-6 w-6"/>
-              <p className="font-sans font-bold">learnsmart</p>
+              <p className="font-bold">learnsmart</p>
             </div>
           </div>
 

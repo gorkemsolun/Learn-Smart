@@ -103,7 +103,7 @@ export default function SignUp() {
 
   return (
     <main className="flex items-center justify-center min-h-screen">
-      <Card className="relative w-3/5 h-[500px] flex font-sans font-light overflow-auto">
+      <Card className="relative w-3/5 h-[72vh] flex overflow-auto">
         <Button
           onClick={() => router.push('/sign-in')}
           className="absolute top-4 right-4 bg-transparent text-foreground shadow-none hover:bg-foreground/10"
@@ -114,7 +114,7 @@ export default function SignUp() {
         <div className="w-1/2 bg-foreground/5 p-4 rounded-l-lg flex items-center justify-center border-1 relative">
           <div className="absolute top-4 left-4 flex items-center space-x-2">
             <Icons.logo className="h-6 w-6" />
-            <p className="font-sans font-bold">learnsmart</p>
+            <p className="font-bold">learnsmart</p>
           </div>
         </div>
 

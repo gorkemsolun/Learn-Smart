@@ -10,7 +10,7 @@ import {
 import {Button} from "@/components/ui/button";
 import {PlusCircledIcon, TrashIcon} from "@radix-ui/react-icons";
 
-export default function Dashboard() {
+export default function UserDashboard() {
   const cardData = [
     {
       title: "Card 1",
@@ -44,7 +44,7 @@ export default function Dashboard() {
   ];
 
   return (
-      <div className="p-6 space-y-6 font-sans">
+      <div className="p-6 space-y-6">
         <div className="grid grid-cols-4 gap-4">
           {cardData.map((card, index) => (
               <Card key={index}>

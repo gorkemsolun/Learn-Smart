@@ -7,7 +7,6 @@ class UserCreationRequest(BaseModel):
     Represents a request to create a new user.
 
     Attributes:
-        role (str): The role of the user.
         nickname (str): The nickname of the user.
         email (EmailStr): The email address of the user.
         password (str): The password of the user.
@@ -28,6 +27,7 @@ class UserResponse(BaseModel):
         email (Optional[EmailStr]): The user's email.
     """
     user_id: Optional[int] = None
+    role: Optional[str] = None
     nickname: Optional[str] = None
     email: Optional[EmailStr] = None  # EmailStr is a Pydantic email validator
 

@@ -39,7 +39,7 @@ export function SearchDialogModal({ isOpen, onClose }) {
             <Input
                 className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none
             placeholder:text-muted-foreground border-0 focus-visible:ring-0 shadow-none
-            font-sans font-light"
+            "
                 placeholder="Type a command or search..."
                 autoComplete="off"
                 autoCorrect="off"
@@ -54,12 +54,12 @@ export function SearchDialogModal({ isOpen, onClose }) {
                 onChange={handleInputChange}
             />
           </div>
-          <div className="font-sans font-light text-[14px] text-foreground/60">Links</div>
+          <div className="text-[14px] text-foreground/60">Links</div>
           <div
               className="relative flex cursor-default select-none items-center
               rounded-sm py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none
               data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground
-              data-[disabled=true]:opacity-50 font-sans font-light"
+              data-[disabled=true]:opacity-50"
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"
                  className="mr-2 h-4 w-4">
@@ -73,7 +73,7 @@ export function SearchDialogModal({ isOpen, onClose }) {
               className="relative flex cursor-default select-none items-center
               rounded-sm py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none
               data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground
-              data-[disabled=true]:opacity-50 font-sans font-light"
+              data-[disabled=true]:opacity-50"
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"
                  className="mr-2 h-4 w-4">

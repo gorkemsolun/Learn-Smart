@@ -52,19 +52,19 @@ export function Navbar({onSearchButtonClick}) {
     <header className="sticky top-0 z-50 w-full border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <NavigationMenu>
         <NavigationMenuList>
-          <Button type="button" onClick={handleHomePageClick} className="bg-transparent hover:bg-transparent focus:ring-0 text-foreground shadow-none">
+          <Button type="button" onClick={handleHomePageClick} className="bg-transparent hover:bg-transparent focus:ring-0 text-foreground shadow-none space-x-1">
             <NavigationMenuItem>
               <Icons.logo className="h-6 w-6" />
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <p className="font-sans font-bold">learnsmart</p>
+              <p className="font-bold">learnsmart</p>
             </NavigationMenuItem>
           </Button>
           <NavigationMenuItem>
             <NavigationMenuTrigger className="focus:bg-transparent group-hover:bg-transparent bg-transparent hover:text-foreground/80
-            text-foreground/60 font-sans font-light">About</NavigationMenuTrigger>
+            text-foreground/60 font-light">About</NavigationMenuTrigger>
             <NavigationMenuContent>
-              <ul className="font-sans font-light grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+              <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
                 <li className="row-span-3">
                   <NavigationMenuLink asChild>
                     <a
@@ -91,7 +91,7 @@ export function Navbar({onSearchButtonClick}) {
             </NavigationMenuContent>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuTrigger className="focus:bg-transparent group-hover:bg-transparent hover:text-foreground/80 text-foreground/60 font-sans font-light bg-transparent">Services</NavigationMenuTrigger>
+            <NavigationMenuTrigger className="focus:bg-transparent group-hover:bg-transparent hover:text-foreground/80 text-foreground/60 bg-transparent font-light">Services</NavigationMenuTrigger>
             <NavigationMenuContent>
               <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
                 {components.map((component) => (
@@ -141,8 +141,8 @@ const ListItem = React.forwardRef<
           )}
           {...props}
         >
-          <div className="text-sm font-sans font-normal leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm font-sans font-light leading-snug text-muted-foreground">
+          <div className="text-sm font-normal leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
             {children}
           </p>
         </a>

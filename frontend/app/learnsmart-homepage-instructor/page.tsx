@@ -3,7 +3,7 @@
 import { Navbar } from "@/components/navbar";
 import {SearchDialogModal} from "@/components/search-dialog";
 import {useState} from "react";
-import UserDashboard from "@/components/user-dashboard";
+import InstructorDashboard from "@/components/instructor-dashboard";
 
 export default function Home() {
     const [isDialogOpen, setDialogOpen] = useState(false);
@@ -14,7 +14,7 @@ export default function Home() {
         <main>
            <Navbar onSearchButtonClick={handleSearchButtonClick} />
            <SearchDialogModal isOpen={isDialogOpen} onClose={setDialogOpen} />
-           <UserDashboard />
+           <InstructorDashboard />
         </main>
     );
 }
