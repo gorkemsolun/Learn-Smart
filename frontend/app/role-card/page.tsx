@@ -18,7 +18,7 @@ const userRoles = [
   },
   {
     role: "Instructor",
-    description: "Inspire, guide, and benefit from LearnSmart.",
+    description: "Inspire, guide, and benefit from learnsmart.",
   },
 ];
 
@@ -128,7 +128,7 @@ export default function RoleSelectorCard() {
 
             <div className="flex justify-end px-6">
               <Button
-                  onClick={handleRoleSelection}
+                  onClick={handleRoleSelection} className="w-1/5"
               >
                 Submit
               </Button>
