@@ -102,26 +102,28 @@ export default function RoleSelectorCard() {
       <main>
         <Navbar/>
         <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <Card className="p-4 relative w-2/5 h-[52vh] flex flex-col justify-between overflow-auto">
-            <div className="flex flex-col space-y-4">
+          <Card className="p-4 relative w-2/5 h-[42vh] flex flex-col justify-between overflow-auto">
+            <div className="flex flex-col">
               <CardHeader>
                 <CardTitle>Choose Your Role</CardTitle>
               </CardHeader>
             </div>
 
-            <CardContent className="flex flex-col space-y-4">
+            <CardContent className="flex flex-col-2 space-x-4">
               {userRoles.map((userRole) => (
                   <Card
                       key={userRole.role}
-                      className={`cursor-pointer transition-transform transform ${
+                      className={`cursor-pointer transition-transform transform shadow ${
                           selectedUserRole === userRole.role ? "ring-2 ring-blue-500" : ""
                       } rounded-xl`}
                       onClick={() => handleUserRoleSelection(userRole.role)}
                   >
-                    <CardHeader className="bg-foreground/10 rounded-xl">
+                    <CardHeader className="bg-foreground/10 rounded-t-xl mb-4">
                       <CardTitle>{userRole.role}</CardTitle>
-                      <CardDescription>{userRole.description}</CardDescription>
                     </CardHeader>
+                    <CardContent>
+                      <CardDescription>{userRole.description}</CardDescription>
+                    </CardContent>
                   </Card>
               ))}
             </CardContent>
