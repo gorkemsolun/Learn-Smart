@@ -19,7 +19,7 @@ export default function HomePage() {
   }, []);
 
   if (token == null) {
-    router.replace("/login");
+     router.replace("/login");
   }
 
   return (

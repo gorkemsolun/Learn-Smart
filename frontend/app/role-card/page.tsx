@@ -32,7 +32,9 @@ export default function RoleSelectorCard() {
   const router = useRouter();
 
   useEffect(() => {
-    if (token) {
+    if (!token) {
+      router.replace("/sign-in");
+    } else {
       fetchUserData();
     }
   }, [token, userID]);

@@ -2,14 +2,29 @@
 
 import { Navbar } from "@/components/navbar";
 import {SearchDialogModal} from "@/components/search-dialog";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import InstructorDashboard from "@/components/instructor-dashboard";
+import Cookies from "js-cookie";
+import {useRouter} from "next/navigation";
 
 export default function Home() {
     const [isDialogOpen, setDialogOpen] = useState(false);
+    const [token] = useState<string>(
+        Cookies.get("authToken") as string
+    );
+
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!token) {
+            router.replace("/sign-in");
+        }
+    }, [router]);
+
     const handleSearchButtonClick = () => {
       setDialogOpen(!isDialogOpen);
     };
+
     return (
         <main>
            <Navbar onSearchButtonClick={handleSearchButtonClick} />
