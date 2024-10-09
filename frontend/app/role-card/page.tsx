@@ -37,7 +37,7 @@ export default function RoleSelectorCard() {
     } else {
       fetchUserData();
     }
-  }, [token, userID]);
+  }, [router, userID]);
 
   async function fetchUserData() {
     await backendAPI
