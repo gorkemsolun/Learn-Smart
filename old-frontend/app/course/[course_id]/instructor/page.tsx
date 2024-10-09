@@ -3,8 +3,6 @@
 import ChatFieldMenu from "@/app/components/chat-field-menu";
 import ChatsList from "@/app/components/chats-list";
 import LoadingMessage from "@/app/components/loading-message";
-import CreateChatModal from "@/app/components/modals/create-chat-modal";
-import { printDebugMessage } from "@/app/debugger";
 import "@/app/style/logo-font.css";
 import { Chat, Course, Message } from "@/app/types";
 import logo from "@/assets/chatbot-logo.png";
@@ -19,8 +17,11 @@ import { BsFileEarmarkPdf } from "react-icons/bs";
 import { ImSpinner8 } from "react-icons/im";
 import ReactMarkdown from "react-markdown";
 
+import { LogoButton, ActionButton } from "./instructor-components";
+import { CreateChatSheet } from "./create-chat-sheet";
+
 export default function InstructorPage() {
-  const [open, setOpen] = useState<boolean>(true);
+  const [isSidebarOpen, setOpen] = useState<boolean>(true);
   const [token, setToken] = useState<string>("");
   const [course, setCourse] = useState<Course>({} as Course);
   const [chats, setChats] = useState<Chat[]>([]);
@@ -80,8 +81,6 @@ export default function InstructorPage() {
       })
       .then((response) => {
         setChats(response.data);
-
-        printDebugMessage("Chats: " + JSON.stringify(response.data));
       })
       .catch((error) => {
         console.error("Error fetching chats:", error);
@@ -102,8 +101,6 @@ export default function InstructorPage() {
       })
       .then((response) => {
         setCourse(response.data);
-
-        printDebugMessage("Course: " + JSON.stringify(response.data));
       })
       .catch((error) => {
         console.error("Error fetching course:", error);
@@ -134,9 +131,6 @@ export default function InstructorPage() {
       .then((response) => {
         let text,
           media_url = null;
-
-        printDebugMessage("Response: " + JSON.stringify(response.data));
-
         if (response.data.details == "no slides") {
           setSlidesMode(false);
         } else if (response.data.details == "success") {
@@ -156,10 +150,8 @@ export default function InstructorPage() {
             modelResponse,
           ]);
           setLastMessageID(lastMessageID + 1);
-
-          printDebugMessage("Model Response: " + JSON.stringify(modelResponse));
         } else {
-          printDebugMessage("Received null not fetching new slide.");
+          console.error("Received null not fetching new slide.");
         }
       })
       .catch((error) => {
@@ -184,8 +176,6 @@ export default function InstructorPage() {
           },
         })
         .then((response) => {
-          printDebugMessage("Chat Data: " + JSON.stringify(response.data));
-
           const chatMessages = response.data.history.map((msg: Message) => ({
             text: msg.text,
             role: msg.role,
@@ -201,14 +191,7 @@ export default function InstructorPage() {
               response.data.history[response.data.history.length - 1].message_id
             );
           }
-
           setSlidesMode(response.data.slides_mode);
-
-          printDebugMessage("Messages: " + JSON.stringify(chatMessages));
-          printDebugMessage("Last Message ID: " + lastMessageID);
-          printDebugMessage("Chat Data: " + JSON.stringify(response.data));
-          printDebugMessage("Slides Mode: " + response.data.slides_mode);
-
           setSelectedChat(response.data);
         })
         .catch((error) => {
@@ -253,16 +236,18 @@ export default function InstructorPage() {
     <main>
       {Object.keys(course).length ? (
         <div className="flex h-screen">
+
+          {/* Sidebar <div> */}
           <div
             className={`text-gray-400 h-full p-2 pt-8 ${
-              open ? "w-60 bg-[#181414]" : "w-20 bg-transparent"
+              isSidebarOpen ? "w-60 bg-[#181414]" : "w-20 bg-transparent"
             } duration-200 relative`}
           >
             <div className="flex justify-between items-center mb-5 text-gray-400">
               <button
                   className="h-10 rounded-lg px-2 text-token-text-secondary focus-visible:outline-0
                             hover:bg-token-sidebar-surface-secondary focus-visible:bg-token-sidebar-surface-secondary"
-                  onClick={() => setOpen(!open)}
+                  onClick={() => setOpen(!isSidebarOpen)}
                   title="Toggle Sidebar"
                   type="button"
               >
@@ -302,7 +287,7 @@ export default function InstructorPage() {
               </button>
             </div>
 
-            {open && (
+            {isSidebarOpen && (
                 <div className="flex-grow flex flex-col relative h-5/6">
                   <div className="inline-flex items-center mb-12">
                     <Image
@@ -424,92 +409,37 @@ export default function InstructorPage() {
                 />
               </div>
             ) : (
-              // TO-DO WRITE LINKS HERE IT WON'T HAVE THE SAME LINKS AS BEFORE WE NEED TO PASS ARGUMENTS
               <div className="text-center mt-40">
-                <button
-                    onClick={() => {
-                      router.replace(`/home-page`);
-                    }}>
-                  <div className="inline-flex gap-0">
-                    <h1
-                        className="text-6xl font-bold"
-                        style={{
-                          fontFamily: "logo-font, serif",
-                          color: "rgb(23,144, 288)",
-                          letterSpacing: "0.025em",
-                        }}
-                    >
-                      learn
-                    </h1>
-                    <h1
-                        className="text-6xl font-bold"
-                        style={{
-                          fontFamily: "logo-font, serif",
-                          color: "black",
-                          letterSpacing: "0.025em",
-                        }}
-                    >
-                      smart
-                    </h1>
-                  </div>
-                </button>
-                <div className="mx-3 mt-12 flex flex-col items-center justify-center gap-4">
-                  <div className="flex flex-wrap items-center justify-center gap-4">
-                    <button
-                        className="relative flex w-40 flex-col gap-2 rounded-2xl border border-token-border-light
-                    px-3 pb-4 pt-3 text-start align-top text-[15px] shadow-xxs transition enabled:hover:bg-token-main-surface-secondary
-                    disabled:cursor-not-allowed bg-gray-300 hover:bg-gray-400"
-                        type="button"
-                        onClick={() => {
-                          router.replace(`/course/${course_id}/quizzes`);
-                        }}
-                    >
-                      <GiSpellBook
-                        className="text-2xl"
-                        style={{ color: "rgb(44, 84, 102)" }}
-                      />
-                      <div className="line-clamp-3 max-w-full text-balance text-gray-600 dark:text-gray-500 break-word">
-                        Go to Quiz for {course?.course_name || "the Course"}
-                      </div>
-                    </button>
-                    <button
-                      className="relative flex w-40 flex-col gap-2 rounded-2xl border border-token-border-light
-                    px-3 pb-4 pt-3 text-start align-top text-[15px] shadow-xxs transition enabled:hover:bg-token-main-surface-secondary
-                    disabled:cursor-not-allowed bg-gray-300 hover:bg-gray-400"
-                      type="button"
-                      onClick={()=>{
-                        router.replace(`/course/${course_id}/flashcards`);
-                      }}
-                    >
-                      <GiBookmarklet
-                        className="text-2xl"
-                        style={{ color: "rgb(118, 208, 235)" }}
-                      />
-                      <div className="line-clamp-3 max-w-full text-balance text-gray-600 dark:text-gray-500 break-word">
-                        Flashcard for {course?.course_name || "the Course"}
-                      </div>
-                    </button>
-                    <button
-                      className="relative flex w-40 flex-col gap-2 rounded-2xl border border-token-border-light
-                    px-3 pb-4 pt-3 text-start align-top text-[15px] shadow-xxs transition enabled:hover:bg-token-main-surface-secondary
-                    disabled:cursor-not-allowed bg-gray-300 hover:bg-gray-400"
-                      type="button"
-                      onClick={()=>{
-                        router.replace(`/course/${course_id}/weekly-study-plan`);
-                      }}
-                    >
-                      <FaCalendarAlt
-                        className="text-2xl"
-                        style={{ color: "rgb(203, 139, 208)" }}
-                      />
-                      <div className="line-clamp-3 max-w-full text-balance text-gray-600 dark:text-gray-500 break-word">
-                        Weekly Study Plan of{" "}
-                        {course?.course_name || "the Course"}
-                      </div>
-                    </button>
-                  </div>
+              <LogoButton />
+              <div className="mx-3 mt-12 flex flex-col items-center justify-center gap-4">
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <ActionButton
+                    course_id={course_id}
+                    course_name={course?.course_name}
+                    path="quizzes"
+                    icon={GiSpellBook}
+                    color="rgb(44, 84, 102)"
+                    label="Go to Quiz"
+                  />
+                  <ActionButton
+                    course_id={course_id}
+                    course_name={course?.course_name}
+                    path="flashcards"
+                    icon={GiBookmarklet}
+                    color="rgb(118, 208, 235)"
+                    label="Flashcard"
+                  />
+                  <ActionButton
+                    course_id={course_id}
+                    course_name={course?.course_name}
+                    path="weekly-study-plan"
+                    icon={FaCalendarAlt}
+                    color="rgb(203, 139, 208)"
+                    label="Weekly Study Plan"
+                  />
                 </div>
-              </div>
+              </div>    
+            </div>
             )}
           </div>
         </div>
@@ -518,12 +448,12 @@ export default function InstructorPage() {
           <p>Loading...</p>
         </div>
       )}
-      <CreateChatModal
-        isOpen={isModalOpen}
-        closeModal={() => setIsModalOpen(false)}
-        authToken={token}
-        onChatCreated={handleChatCreated}
-      />
+        <CreateChatSheet
+          isOpen={isModalOpen}
+          closeModal={() => setIsModalOpen(false)}
+          authToken={token}
+          onChatCreated={handleChatCreated}
+        />
     </main>
   );
 }

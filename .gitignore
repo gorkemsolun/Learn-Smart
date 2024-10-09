@@ -1,6 +1,26 @@
 /chat_histories
 /files
 
+/old-frontend/node_modules
+/old-frontend/.pnp
+/old-frontend/.pnp.js
+/old-frontend/.yarn/install-state.gz
+/old-frontend/package-lock.json
+/old-frontend/yarn.lock
+/old-frontend/coverage
+/old-frontend/.next/
+/old-frontend/out/
+/old-frontend/build
+/old-frontend/.DS_Store
+/old-frontend/*.pem
+/old-frontend/npm-debug.log*
+/old-frontend/yarn-debug.log*
+/old-frontend/yarn-error.log*
+/old-frontend/*.local
+/old-frontend/.vercel
+/old-frontend/*.tsbuildinfo
+/old-frontend/next-env.d.ts
+
 /frontend/node_modules
 /frontend/.pnp
 /frontend/.pnp.js
