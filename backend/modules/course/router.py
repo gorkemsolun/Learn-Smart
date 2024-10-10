@@ -177,7 +177,6 @@ async def get_quiz(course_id: int, quiz_name: str, current_user: dict = Depends(
         raise HTTPException(status_code=403, detail="Forbidden. You are not authorized to rename this quiz.")
 
     quiz_name = quiz_name.strip()
-    print(quiz_name)
     chats = ChatDB.fetch(course_id=course_id, all=True)
     for chat in chats:
         quizzes_path = get_quizzes_folder_path(chat["chat_id"])
@@ -324,17 +323,17 @@ async def delete_course(course_id: int, current_user: dict = Depends(auth.get_cu
     CourseDB.delete(course_id=course_id)  # delete the course
     
     for chat in chats:
-        history_url, slides_furl = chat["history_url"], chat["slides_furl"]
+        history_url, slides_file_url = chat["history_url"], chat["slides_file_url"]
         metadata_url = get_chat_metadata_path(history_url) if history_url else None
-        generator_url = get_generator_path(slides_furl) if slides_furl else None
+        generator_url = get_generator_path(slides_file_url) if slides_file_url else None
         items_folder = get_chat_folder_path(chat["chat_id"])
 
         if os.path.exists(history_url):
             os.remove(history_url)
         if items_folder and os.path.exists(items_folder):
             shutil.rmtree(items_folder)
-        if slides_furl and os.path.exists(slides_furl):
-            os.remove(slides_furl)
+        if slides_file_url and os.path.exists(slides_file_url):
+            os.remove(slides_file_url)
         if metadata_url and os.path.exists(metadata_url):
             os.remove(metadata_url)
         if generator_url and os.path.exists(generator_url):

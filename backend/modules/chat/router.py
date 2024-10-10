@@ -5,8 +5,7 @@ import json, jsonpickle
 from logger import logger
 from middleware.filemanager import FileFactory
 from middleware import authentication as auth
-from modules.user.model import User
-from database.dbmanager import ChatDB, CourseDB
+from database.dbmanager import ChatDB, CourseDB, SlideDB
 from tools import generate_hash, splitext
 from modules.chat.util import *
 from modules.chat import CHATS_DIR
@@ -44,30 +43,38 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
         raise HTTPException(status_code=403, detail="Forbidden.")
     
     chat = ChatDB.create(course_id=course_id, chat_title=chat_title, slides_mode=bool(slides))
-    history_fname, _ = prepare_chat_file_names(current_user["user_id"], course_id, chat["chat_id"])
-    history_url = os.path.join(CHATS_DIR, history_fname) # chat history file path
+    # history_file_name, _ = prepare_chat_file_names(current_user["user_id"], course_id, chat["chat_id"])
+    # history_url = os.path.join(CHATS_DIR, history_file_name) # chat history file path
 
-    slides_furl, slides_fname = None, None # initialize the slides name and URL
-    if slides: # then it means we're creating a chat in slides mode
-        slides_fname = slides.filename
-        name, extension = splitext(slides_fname) # split name and extension, e.g. myfile.pdf -> (myfile, pdf)
-        if extension not in ["pptx", "pdf"]:
-            ChatDB.delete(chat["chat_id"])
+    slides_file_url, slides_file_name = None, None # initialize the slides name and URL
+    if slides: # meaning we're creating a chat in slides mode
+        slides_file_name = slides.filename
+        name, extension = splitext(slides_file_name) # split name and extension, e.g. myfile.pdf -> (myfile, pdf)
+        if extension not in ["pptx", "pdf"]: 
+            ChatDB.delete(chat["chat_id"]) # rolling back
             raise HTTPException(status_code=400, detail=f"Invalid file extension: {extension}")
         
         storage_dir = get_chat_folder_path(chat["chat_id"]) # construct the storage directory
         os.makedirs(storage_dir, exist_ok=True) # create a directory to store the chat's files
-        slides_furl = os.path.join(storage_dir, f"{generate_hash(name, strategy="uuid")}.{extension}") # construct the file path
+        slides_file_url = os.path.join(storage_dir, f"{generate_hash(name, strategy="uuid")}.{extension}") # construct the file path
         
         try:
             file = FileFactory()(file=slides)
-            file.save(slides_furl) # save the file in file system
-            generator = slide_generator(slides_furl) # create a generator object to yield slides one by one
+            file.save(slides_file_url) # save the file in file system
+            slides_file_url = file.path # get the file path
+
+            pages_count = 0 # initialize the number of pages in the slides file
+            with file.get() as pdf:
+                pages_count = pdf.page_count
+
+            SlideDB.create(chat_id=chat["chat_id"], slides_file_name=slides_file_name, slides_file_url=slides_file_url,
+                           pages_count=pages_count, last_slide_number=0)
+            """ generator = slide_generator(slides_file_url) # create a generator object to yield slides one by one
             dumped_generator = jsonpickle.encode(generator) # dump the generator object into a string
 
-            dumped_generator_path = get_generator_path(slides_furl) # path of the jsonpickle dumped generator object
+            dumped_generator_path = get_generator_path(slides_file_url) # path of the jsonpickle dumped generator object
             with open(dumped_generator_path, "w") as file:
-                file.write(dumped_generator)
+                file.write(dumped_generator) """
 
         # Rollback changes
         except ValueError as e: # If the file extension is invalid (file manager can't handle it)
@@ -77,12 +84,7 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
             ChatDB.delete(chat_id=chat["chat_id"])
             shutil.rmtree(storage_dir) # "rm -rf chat_<chat_id>", remove the directory and its contents
             raise HTTPException(status_code=500, detail=str(e))
-
-    ChatDB.update(chat["chat_id"], history_url=history_url, slides_fname=slides_fname,
-                  slides_furl=slides_furl) # Update the chat in the database
     
-    chat["slides_furl"] = slides_furl
-    chat["slides_fname"] = slides_fname
     return {"chat": chat, "message": "Chat created successfully."}
 
 
@@ -102,21 +104,15 @@ async def get_chat(chat_id: int, current_user: dict = Depends(auth.get_current_u
         HTTPException: If the chat is not found or the user is not authorized to access the chat.
     """
     
-    logger.info(f"Fetching chat with ID: {chat_id}")
-    
     # Fetch the chat by its ID
     chat = ChatDB.fetch(chat_id=chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found.")
     
-    logger.info(f"Chat found: {chat}")
-    
     # Fetch the course associated with the chat and check if the user is authorized to access it
     course = CourseDB.fetch(course_id=chat["course_id"])
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
-    
-    logger.info(f"Course found: {course}")
     
     # Get the chat history file name and metadata file name for the current user, course, and chat
     hist_file_name, metadata_file_name = prepare_chat_file_names(current_user["user_id"], 
@@ -191,18 +187,18 @@ async def delete_chat(chat_id: int, current_user: dict = Depends(auth.get_curren
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
     
-    history_fname, metadata_fname = prepare_chat_file_names(current_user["user_id"], course["course_id"], chat_id)
-    history_path = os.path.join(CHATS_DIR, history_fname)
-    metadata_path = os.path.join(CHATS_DIR, metadata_fname)
+    history_file_name, metadata_file_name = prepare_chat_file_names(current_user["user_id"], course["course_id"], chat_id)
+    history_path = os.path.join(CHATS_DIR, history_file_name)
+    metadata_path = os.path.join(CHATS_DIR, metadata_file_name)
 
     if os.path.exists(history_path):
         os.remove(history_path)
     if os.path.exists(metadata_path):
         os.remove(metadata_path)
-    if chat["slides_furl"] and os.path.exists(chat["slides_furl"]):
+    if chat["slides_file_url"] and os.path.exists(chat["slides_file_url"]):
         shutil.rmtree(get_chat_folder_path(chat_id))
-    if chat["slides_mode"] and chat["slides_furl"] and os.path.exists(get_generator_path(chat["slides_furl"])):
-        os.remove(get_generator_path(chat["slides_furl"]))
+    if chat["slides_mode"] and chat["slides_file_url"] and os.path.exists(get_generator_path(chat["slides_file_url"])):
+        os.remove(get_generator_path(chat["slides_file_url"]))
 
     ChatDB.delete(chat_id=chat_id)
     return {"message": "Chat deleted successfully."}    
@@ -261,11 +257,11 @@ def get_next_slide(chat_id: int, current_user: dict = Depends(auth.get_current_u
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
 
-    slides_furl = chat["slides_furl"] # get the slides file URL
-    if not slides_furl:
+    slides_file_url = chat["slides_file_url"] # get the slides file URL
+    if not slides_file_url:
         raise HTTPException(status_code=404, detail="This chat has no slides uploaded.")
 
-    dumped_generator_path = get_generator_path(slides_furl) # path of the jsonpickle dumped generator object
+    dumped_generator_path = get_generator_path(slides_file_url) # path of the jsonpickle dumped generator object
 
     with open(dumped_generator_path, "r") as file:
         generator = jsonpickle.decode(file.read()) # read the dumped generator object from the file
@@ -348,9 +344,9 @@ async def send_message(chat_id: int, text: str = Form(...), file: UploadFile = F
         try:
             file = FileFactory()(file=file)
             
-            hashed_fname = f"{generate_hash(name, strategy="timestamp")}.{extension}" # e.g. <hashed_name>_<actual_name>.pdf
+            hashed_file_name = f"{generate_hash(name, strategy="timestamp")}.{extension}" # e.g. <hashed_name>_<actual_name>.pdf
             os.makedirs(f"{FILES_DIR}/chat_{chat_id}", exist_ok=True) # create a directory for the chat's files
-            path = os.path.join(FILES_DIR, f"chat_{chat_id}", hashed_fname) # construct the file path
+            path = os.path.join(FILES_DIR, f"chat_{chat_id}", hashed_file_name) # construct the file path
 
             file.save(path) # save the file in file system
             file_content = file.content() # get the file from the file system
@@ -430,37 +426,37 @@ async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
         raise HTTPException(status_code=403, detail="Forbidden.")
 
     # Validate the file extension
-    slides_fname = slides.filename
-    name, extension = splitext(slides_fname)
+    slides_file_name = slides.filename
+    name, extension = splitext(slides_file_name)
     if extension not in ["pptx", "pdf"]:
         raise HTTPException(status_code=400, detail=f"Invalid file extension: {extension}")
 
     # Construct the storage directory and slides file URL
     storage_dir = get_chat_folder_path(chat_id)
     os.makedirs(storage_dir, exist_ok=True)
-    slides_furl = os.path.join(storage_dir, f"{generate_hash(name, strategy='uuid')}.{extension}")
+    slides_file_url = os.path.join(storage_dir, f"{generate_hash(name, strategy='uuid')}.{extension}")
 
     try:
         # Save the new slides file to the server
-        with open(slides_furl, "wb") as buffer:
+        with open(slides_file_url, "wb") as buffer:
             shutil.copyfileobj(slides.file, buffer)
 
         # Update the chat record with the new slides file information
         chat_update_data = {
-            "slides_fname": slides_fname,
-            "slides_furl": slides_furl,
+            "slides_file_name": slides_file_name,
+            "slides_file_url": slides_file_url,
             "slides_mode": True,
         }
         ChatDB.update(chat_id, **chat_update_data)
 
         # Regenerate the slides generator and save it
-        generator = slide_generator(slides_furl)
+        generator = slide_generator(slides_file_url)
         dumped_generator = jsonpickle.encode(generator)
-        dumped_generator_path = get_generator_path(slides_furl)
+        dumped_generator_path = get_generator_path(slides_file_url)
         with open(dumped_generator_path, "w") as file:
             file.write(dumped_generator)
 
-        return {"chat_id": chat_id, "slides_fname": slides_fname, "slides_furl": slides_furl,
+        return {"chat_id": chat_id, "slides_file_name": slides_file_name, "slides_file_url": slides_file_url,
                 "slides_mode": True, "message": "Slides updated successfully."}
 
     except Exception as e:

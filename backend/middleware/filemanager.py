@@ -12,7 +12,7 @@ from docx import Document
 from fastapi import UploadFile
 from abc import ABC, abstractmethod
 from PIL import Image
-from tools import splitext
+from tools import splitext, convert_pptx_to_pdf
 
 
 class BaseFile(ABC):
@@ -250,6 +250,7 @@ class PresentationFile(BaseFile):
         if file and file.content_type != "application/vnd.openxmlformats-officedocument.presentationml.presentation":
             raise ValueError("Unsupported content type: " + file.content_type)
         super().__init__(file, path)
+        self.converted_to_pdf = False
 
     def content(self):
         """
@@ -262,21 +263,13 @@ class PresentationFile(BaseFile):
             ValueError: If no file is provided.
 
         """
+
         if not self.path and not self.file:
             raise ValueError("No file provided.")
-        
-        text = ""
 
-        if self.path:
-            presentation = Presentation(self.path)
-        else:
-            presentation = Presentation(BytesIO(self.file.file.read()))
-        for slide in presentation.slides:
-            for shape in slide.shapes:
-                if not shape.has_text_frame:
-                    continue
-                text += shape.text_frame.text
-        return text
+        assert self.converted_to_pdf, "The presentation file must be converted to PDF with .save() first."
+        with pymupdf.open(self.path) as doc:
+            return chr(12).join([page.get_text() for page in doc])
     
     def get(self):
         """
@@ -286,8 +279,27 @@ class PresentationFile(BaseFile):
             ResourceWrapper: The presentation resource.
 
         """
-        presentation = Presentation(self.path)
-        return self.ResourceWrapper(presentation)
+        assert self.converted_to_pdf, "The presentation file must be converted to PDF with .save() first."
+        doc = pymupdf.open(self.path)
+        return self.ResourceWrapper(doc)
+    
+    def save(self, path: str):
+        """
+        Saves the presentation file as a PDF file.
+
+        Args:
+            path (str): The path to save the presentation file.
+
+        """
+        super().save(path)
+        new_path = convert_pptx_to_pdf(path)
+        self.file.filename = os.path.basename(new_path)
+        self.path = new_path
+
+        with open(new_path, "rb") as file:
+            self.file.file = file 
+        
+        self.converted_to_pdf = True
     
 
 class PDFFile(BaseFile):

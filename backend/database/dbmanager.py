@@ -5,7 +5,7 @@ from database.connection import db_connection
 from middleware import authentication as auth
 
 from modules.user.model import User
-from modules.chat.model import Chat
+from modules.chat.model import Chat, Slide
 from modules.course.model import Course
 from modules.notification.model import Notification
 
@@ -99,7 +99,7 @@ class UserDB(DatabaseInterface):
         Args:
         - nickname (str): The nickname of the user.
         - email (str): The email of the user.
-        - password (str): The password of the user.
+        - password (str): The password of the user. 
 
         Returns:
         - dict: A dictionary representation of the created user object.
@@ -254,8 +254,6 @@ class ChatDB(DatabaseInterface):
         chat_title: str,
         history_url: str = None,
         slides_mode: bool = False,
-        slides_fname: str = None,
-        slides_furl: str = None,
     ):
         """
         Create a new chat object and save it in the database.
@@ -265,8 +263,6 @@ class ChatDB(DatabaseInterface):
         - chat_title (str): The title of the chat.
         - history_url (str, optional): The URL of the chat's history.
         - slides_mode (bool, optional): Indicates whether the chat has slides.
-        - slides_fname (str, optional): The filename of the chat's slides.
-        - slides_furl (str, optional): The URL of the chat's slides.
 
         Returns:
         - dict: A dictionary representation of the created chat object.
@@ -276,8 +272,6 @@ class ChatDB(DatabaseInterface):
             chat_title=chat_title,
             history_url=history_url,
             slides_mode=slides_mode,
-            slides_fname=slides_fname,
-            slides_furl=slides_furl,
         )
 
         # save the chat object in the database
@@ -352,8 +346,6 @@ class ChatDB(DatabaseInterface):
             **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
                 - chat_title (str): The new title for the chat.
                 - history_url (str): The new history URL for the chat.
-                - slides_fname (str): The new slides filename for the chat.
-                - slides_furl (str): The new slides file URL for the chat.
 
         Returns:
             dict: A dictionary representing the updated chat details.
@@ -364,8 +356,6 @@ class ChatDB(DatabaseInterface):
         chat_title = kwargs.get("chat_title", None)
         history_url = kwargs.get("history_url", None)
         slides_mode = kwargs.get("slides_mode", None)
-        slides_fname = kwargs.get("slides_fname", None)  # get the new slides filename
-        slides_furl = kwargs.get("slides_furl", None)  # get the new slides file URL
 
         with db_connection as db:
             chat = db.query(Chat).filter(Chat.chat_id == chat_id).first()
@@ -376,10 +366,6 @@ class ChatDB(DatabaseInterface):
                 chat.chat_title = chat_title
             if history_url:
                 chat.history_url = history_url
-            if slides_fname is not None:
-                chat.slides_fname = slides_fname
-            if slides_furl is not None:
-                chat.slides_furl = slides_furl
             if slides_mode is not None:
                 chat.slides_mode = slides_mode
 
@@ -885,6 +871,178 @@ class NotificationDB(DatabaseInterface):
             for notification in result:
                 ret.append(notification.to_dict())
                 db.delete(notification)
+            db.commit()
+
+        return ret
+
+
+class SlideDB(DatabaseInterface):
+    """
+    Database interface for the Slide model.
+    """
+
+    @staticmethod
+    def create(
+        chat_id: int,
+        slides_file_name: str,
+        slides_file_url: str,
+        pages_count: int,
+        last_slide_number: int,
+    ):
+        """
+        Create a new slide object and save it in the database.
+
+        Parameters:
+        - chat_id (int): The ID of the chat associated with the slides.
+        - slides_file_name (str): The filename of the slides.
+        - slides_file_url (str): The URL of the slides.
+        - pages_count (int): The total number of pages in the slides file.
+        - last_slide_number (int): The last fetched slide number.
+
+        Returns:
+        - dict: A dictionary representation of the created slide object.
+        """
+        slide = Slide(
+            chat_id=chat_id,
+            slides_file_name=slides_file_name,
+            slides_file_url=slides_file_url,
+            pages_count=pages_count,
+            last_slide_number=last_slide_number,
+        )
+
+        # save the slide object in the database
+        with db_connection as db:
+            db.add(slide)
+            db.commit()
+            db.refresh(slide)
+
+            return slide.to_dict()
+
+    @staticmethod
+    def fetch(**kwargs):
+        """
+        Fetches slide data from the database based on the provided query parameters.
+
+        Args:
+            - chat_id (int): The ID of the chat associated with the slide.
+            - slides_file_name (str): The filename of the slides.
+            - slides_file_url (str): The URL of the slides.
+            - pages_count (int): The total number of pages in the slides file.
+            - last_slide_number (int): The last fetched slide number.
+            - all (bool): Flag indicating whether to fetch all matching slide records. Default is False.
+
+        Returns:
+            - dict or list: A dictionary representing the fetched slide record if `all` is False and a matching record is found.
+                            A list of dictionaries representing all fetched slide records if `all` is True and matching records are found.
+                            None if no matching record is found and `all` is False.
+                            An empty list if no matching records are found and `all` is True.
+
+        Raises:
+            - ValueError: If no query parameters are provided.
+        """
+        chat_id = kwargs.get("chat_id", None)
+        slides_file_name = kwargs.get("slides_file_name", None)
+        slides_file_url = kwargs.get("slides_file_url", None)
+        pages_count = kwargs.get("pages_count", None)
+        last_slide_number = kwargs.get("last_slide_number", None)
+        all = kwargs.get("all", False)
+
+        if not any(
+            [chat_id, slides_file_name,
+             slides_file_url, pages_count, last_slide_number]
+        ):
+            raise ValueError("No query parameters provided")
+
+        # Create a list of filters based on the provided query parameters
+        filters = []
+        if chat_id:
+            filters.append(Slide.chat_id == chat_id)
+        if slides_file_name:
+            filters.append(Slide.slides_file_name == slides_file_name)
+        if slides_file_url:
+            filters.append(Slide.slides_file_url == slides_file_url)
+        if pages_count:
+            filters.append(Slide.pages_count == pages_count)
+        if last_slide_number:
+            filters.append(Slide.last_slide_number == last_slide_number)
+        
+        with db_connection as db:
+            query = db.query(Slide).filter(and_(*filters))
+            result = query.all() if all else query.first()
+
+            if all:
+                return [slide.to_dict() for slide in result] if result else []
+            return result.to_dict() if result else None
+
+    @staticmethod
+    def update(chat_id: int, **kwargs):
+        """
+        Update the slide details in the database.
+
+        Args:
+            - chat_id (int): The ID of the chat of the slide to update.
+            - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
+                - slides_file_name (str): The new filename for the slide.
+                - slides_file_url (str): The new URL for the slide.
+                - pages_count (int): The new total number of pages in the slides file.
+                - last_slide_number (int): The new last fetched slide number.
+
+        Returns:
+            - dict: A dictionary representing the updated slide details.
+
+        Raises:
+            - ValueError: If the slide with the specified ID is not found in the database.
+        """
+        slides_file_name = kwargs.get("slides_file_name", None)
+        slides_file_url = kwargs.get("slides_file_url", None)
+        last_slide_number = kwargs.get("last_slide_number", None)
+
+        with db_connection as db:
+            slide = db.query(Slide).filter(Slide.chat_id == chat_id).first()
+            if not slide:
+                raise ValueError(f"No slide in chat with ID {chat_id} found")
+
+            if slides_file_name:
+                slide.slides_file_name = slides_file_name
+            if slides_file_url:
+                slide.slides_file_url = slides_file_url
+            if last_slide_number:
+                slide.last_slide_number = last_slide_number
+
+            db.commit()
+            db.refresh(slide)
+
+            return slide.to_dict()
+        
+    @staticmethod
+    def delete(**kwargs):
+        """
+        Deletes a slide from the database.
+
+        Args:
+        - **kwargs: Additional keyword arguments for specifying query parameters.
+            - chat_id (int): The ID of the chat associated with the slide to be deleted.
+            - all (bool): Flag indicating whether to delete all matching slides or just the first one. Default is False.
+
+        Returns:
+        - list: A list of dictionaries representing the deleted slides.
+        """
+        chat_id = kwargs.get("chat_id", None)
+        all = kwargs.get("all", False)
+
+        if not chat_id:
+            raise ValueError("No query parameters provided")
+
+        with db_connection as db:
+            query = db.query(Slide).filter(Slide.chat_id == chat_id)
+            result = query.all() if all else [query.first()]
+            if not result:
+                return []
+
+            ret = []
+            for slide in result:
+                ret.append(slide.to_dict())
+                db.delete(slide)
             db.commit()
 
         return ret

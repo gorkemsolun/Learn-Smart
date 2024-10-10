@@ -33,10 +33,10 @@ def upload_file(file: UploadFile = File(...), current_user: User = Depends(auth.
         file = FileFactory()(file=file)
 
         # Generate a unique filename, while preserving the original filename for retrieval
-        hashed_fname = f"{generate_hash(name, strategy="uuid")}_{name}.{extension}" # e.g. <hashed_name>_<actual_name>.pdf
+        hashed_file_name = f"{generate_hash(name, strategy="uuid")}_{name}.{extension}" # e.g. <hashed_name>_<actual_name>.pdf
 
         os.makedirs(f"{FILES_DIR}/user_{current_user['user_id']}", exist_ok=True) # create a directory for the user's files, e.g. syllabus
-        path = os.path.join(FILES_DIR, f"user_{current_user['user_id']}", hashed_fname) # construct the file path
+        path = os.path.join(FILES_DIR, f"user_{current_user['user_id']}", hashed_file_name) # construct the file path
 
         file.save(path) # save the file in file system
 

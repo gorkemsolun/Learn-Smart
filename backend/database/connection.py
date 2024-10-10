@@ -45,6 +45,7 @@ class DatabaseConnection:
         Drops the database tables based on the defined models.
         """
         with self as connection:
+            connection.execute(text("DROP TABLE IF EXISTS slides;"))
             connection.execute(text("DROP TABLE IF EXISTS chats;"))
             connection.execute(text("DROP TABLE IF EXISTS courses;"))
             connection.execute(text("DROP TABLE IF EXISTS users;"))
