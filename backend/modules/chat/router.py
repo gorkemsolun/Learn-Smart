@@ -43,8 +43,6 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
         raise HTTPException(status_code=403, detail="Forbidden.")
     
     chat = ChatDB.create(course_id=course_id, chat_title=chat_title, slides_mode=bool(slides))
-    # history_file_name, _ = prepare_chat_file_names(current_user["user_id"], course_id, chat["chat_id"])
-    # history_url = os.path.join(CHATS_DIR, history_file_name) # chat history file path
 
     slides_file_url, slides_file_name = None, None # initialize the slides name and URL
     if slides: # meaning we're creating a chat in slides mode
@@ -69,12 +67,6 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
 
             SlideDB.create(chat_id=chat["chat_id"], slides_file_name=slides_file_name, slides_file_url=slides_file_url,
                            pages_count=pages_count, last_slide_number=0)
-            """ generator = slide_generator(slides_file_url) # create a generator object to yield slides one by one
-            dumped_generator = jsonpickle.encode(generator) # dump the generator object into a string
-
-            dumped_generator_path = get_generator_path(slides_file_url) # path of the jsonpickle dumped generator object
-            with open(dumped_generator_path, "w") as file:
-                file.write(dumped_generator) """
 
         # Rollback changes
         except ValueError as e: # If the file extension is invalid (file manager can't handle it)
@@ -315,7 +307,8 @@ def get_next_slide(chat_id: int, current_user: dict = Depends(auth.get_current_u
 
 
 @router.post("/{chat_id}/send_message")
-async def send_message(chat_id: int, text: str = Form(...), file: UploadFile = File(None),
+async def send_message(chat_id: int, slides_number: int = None, 
+                       text: str = Form(...), file: UploadFile = File(None),
                        current_user: dict = Depends(auth.get_current_user)):
     """
     Send a message in a chat and generate a response.
@@ -327,6 +320,8 @@ async def send_message(chat_id: int, text: str = Form(...), file: UploadFile = F
     Returns:
         dict: The generated response in dictionary format.
     """
+    # TODO: streaming response
+
     chat = ChatDB.fetch(chat_id=chat_id) # Fetch the chat by its ID
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found.")
@@ -334,12 +329,28 @@ async def send_message(chat_id: int, text: str = Form(...), file: UploadFile = F
     course = CourseDB.fetch(course_id=chat["course_id"]) # Fetch the course associated with the chat
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
+    
+    if slides_number is None and chat["slides_mode"]:
+        raise HTTPException(status_code=400, detail="Slides number is required for this chat.")
+    
+    if slides_number is not None and chat["slides_mode"]:
+        return {"status": "NOT IMPLEMENTED YET"}
+    
+    if slides_number is not None and not chat["slides_mode"]:
+        raise HTTPException(status_code=400, detail="Slides mode is not enabled for this chat.")
 
-    file_content, prompt = None, text
-    if file: # if file is uploaded to be sent to the LLM
-        print("file uploaded: ", file.filename)
+    history_url = chat["history_url"] 
+    chat_content = None
+    if history_url is not None:
+        with open(history_url, "r") as history_file:
+            chat_content = history_file.read()
+
+    history = jsonpickle.decode(chat_content) if chat_content else [] # Decode the chat content 
+    chat = genai.GenerativeModel(MODEL_VERSION, system_instruction=SYSTEM_PROMPT).start_chat(history=history) # Initialize the chat model with the chat history so far
+
+    if file:
         filename = file.filename
-        name, extension = splitext(filename) # split name and extension, e.g. myfile.pdf -> (myfile, pdf)
+        name, extension = splitext(filename)
 
         try:
             file = FileFactory()(file=file)
@@ -350,49 +361,42 @@ async def send_message(chat_id: int, text: str = Form(...), file: UploadFile = F
 
             file.save(path) # save the file in file system
             file_content = file.content() # get the file from the file system
-
-            # TODO: assuming the file is an image for now
-            # o/w, we'll get TypeError: Could not create `Blob`, expected `Blob`, `dict` or an `Image` type(`PIL.Image.Image` or `IPython.display.Image`)
-    
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    history_url = chat["history_url"] # Get the chat history file path
-    chat_content = None # If the file doesn't exist (i.e. it's the very first message), set chat_content to None
-    if os.path.exists(history_url): # if the history file exists
-        with open(history_url, "r") as file:
-            chat_content = file.read() # Read the chat history from the file
-
-    history = jsonpickle.decode(chat_content) if chat_content else [] # Decode the chat content from JSON
-    chat = genai.GenerativeModel(MODEL_VERSION, system_instruction=SYSTEM_PROMPT).start_chat(history=history) # Initialize the chat model with the chat history so far
-
-    # TODO: streaming response
-    if file_content:
-        metadata = get_chat_metadata_path(history_url) # chat metadata file path
-        new_data = {"message_id": len(history), "media_url": path}
-    
-        if os.path.exists(metadata):
-            with open(metadata, "r") as file:
+        metadata_path = get_chat_metadata_path(history_url) if history_url else None    
+        new_metadata = {"message_id": len(history), "media_url": path}
+        if metadata_path is not None and os.path.exists(metadata_path):
+            with open(metadata_path, "r") as metadata_file:
                 try:
-                    data = json.load(file)
-                    data.append(new_data)
+                    data = json.load(metadata_file)
+                    data.append(new_metadata)
                 except Exception as e:
                     file.delete() # delete the file from the file system
                     raise HTTPException(status_code=500, detail=f"Internal server error occured: {str(e)}")
         else:
-            data = [new_data]
+            data = [new_metadata]
 
+        if metadata_path is None:
+            _, metadata_filename = prepare_chat_file_names(current_user["user_id"], course["course_id"], chat_id)
+            metadata_path = os.path.join(CHATS_DIR, metadata_filename)
         # Write the updated content back to the file
-        with open(metadata, "w") as file:
-            json.dump(data, file, indent=4)
+        with open(metadata_path, "w") as metadata_file:
+            json.dump(data, metadata_file, indent=4)
 
-        response = chat.send_message([prompt, file_content])
+        print(file_content)
+        response = chat.send_message([text, file_content])
     else:
-        response = chat.send_message(prompt)
+        response = chat.send_message(text)
 
-    history = jsonpickle.encode(chat.history, True) # Encode back the updated chat history to JSON
-    with open(history_url, "w") as file: # Save the updated chat history to the chat file
-        file.write(history)
+    history = jsonpickle.encode(chat.history, True) # Encode back the updated chat history
+
+    if history_url is None:
+        history_filename, _ = prepare_chat_file_names(current_user["user_id"], course["course_id"], chat_id)
+        history_url = os.path.join(CHATS_DIR, f"chat_{chat_id}_{history_filename}")
+        ChatDB.update(chat_id=chat_id, history_url=history_url)
+    with open(history_url, "w") as history_file: # Save the updated chat history to the chat file
+        history_file.write(history)
 
     return {"text": response.text, "role": "model"}
 

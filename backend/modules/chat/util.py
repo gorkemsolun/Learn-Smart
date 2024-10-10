@@ -53,6 +53,10 @@ def slide_generator(path: str):
 
 
 def prepare_chat_file_names(user_id: int, course_id: int, chat_id: int):
+    """
+    Prepare the chat history file names.
+    input: 1, 1, 1 | output: ("<hashed_history_filename>.txt", "<hashed_history_filename>_metadata.json")
+    """
     # generate unique file name for chat history
     file_name_prefix = f"user_{user_id}_course_{course_id}_chat_{chat_id}"
     file_name = generate_hash(file_name_prefix)

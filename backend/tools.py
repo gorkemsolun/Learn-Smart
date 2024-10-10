@@ -62,6 +62,10 @@ def init(restart: bool = False, debug_mode: bool = False):
 
 # Split filename and extension
 def splitext(filename: str):
+    """
+    Splits the filename and extension of a file.
+    input: "file.pdf" | output: ("file", "pdf")
+    """
     base_name = os.path.splitext(filename)[0]
     extension = os.path.splitext(filename)[-1][1:]
     return base_name, extension

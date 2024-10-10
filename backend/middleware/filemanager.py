@@ -175,7 +175,7 @@ class ImageFile(BaseFile):
 
     def __init__(self, file: UploadFile = None, path: str = None):
         ext = splitext(file.filename if file else path if path else "")[1] # extension of the file
-        if ext not in ["png", "jpeg", "jpg"]:
+        if ext.lower() not in ["png", "jpeg", "jpg"]:
             raise ValueError("Unsupported extension: " + ext)
         if file and file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
             raise ValueError("Unsupported content type: " + file.content_type)
@@ -245,7 +245,7 @@ class PresentationFile(BaseFile):
 
     def __init__(self, file: UploadFile = None, path: str = None):
         ext = splitext(file.filename if file else path if path else "")[1]
-        if ext != "pptx":
+        if ext.lower() != "pptx":
             raise ValueError("Unsupported extension: " + ext)
         if file and file.content_type != "application/vnd.openxmlformats-officedocument.presentationml.presentation":
             raise ValueError("Unsupported content type: " + file.content_type)
@@ -325,7 +325,7 @@ class PDFFile(BaseFile):
 
     def __init__(self, file: UploadFile = None, path: str = None):
         ext = splitext(file.filename if file else path if path else "")[1]
-        if ext != "pdf":
+        if ext.lower() != "pdf":
             raise ValueError("Unsupported extension: " + ext)
         if file and file.content_type != "application/pdf":
             raise ValueError("Unsupported content type: " + file.content_type)
@@ -390,7 +390,7 @@ class WordFile(BaseFile):
 
     def __init__(self, file: UploadFile = None, path: str = None):
         ext = splitext(file.filename if file else path if path else "")[1]
-        if ext != "docx":
+        if ext.lower() != "docx":
             raise ValueError("Unsupported extension: " + ext)
         if file and file.content_type != "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
             raise ValueError("Unsupported content type: " + file.content_type)
@@ -443,7 +443,7 @@ class FileFactory:
         }
 
     def __call__(self, file: UploadFile = None, path: str = None):
-        extension = splitext(path if path else file.filename if file else "")[1]
+        extension = splitext(path if path else file.filename if file else "")[1].lower()
         if extension not in self.file_types:
             return GenericFile(file=file, path=path)
         return self.file_types[extension](file=file, path=path) # delegate the creation of the file to the corresponding class
