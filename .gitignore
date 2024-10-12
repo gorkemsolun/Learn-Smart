@@ -1,6 +1,6 @@
 /chat_histories
 /files
-
+.env
 /old-frontend/node_modules
 /old-frontend/.pnp
 /old-frontend/.pnp.js
