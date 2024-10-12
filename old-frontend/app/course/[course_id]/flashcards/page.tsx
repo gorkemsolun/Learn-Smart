@@ -6,6 +6,7 @@ import Cookies from "js-cookie";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import "../../../style/bg-animation.css";
+import FlashcardModal from "@/app/components/modals/flashcard-modal";
 
 interface Chat {
   chat_id: number;
@@ -30,9 +31,10 @@ export default function Flashcards() {
   const [flashcardsList, setFlashcardsList] = useState<{
     [key: number]: Flashcard[];
   }>({});
+  const [isFlashcardModalOpen, setIsFlashcardModalOpen] = useState<boolean>(false);
+  const [selectedFlashcard, setSelectedFlashcard] = useState<{ filename: string; chat_id: number } | null>(null);
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
-  const router = useRouter();
 
   useEffect(() => {
     setToken(Cookies.get("authToken") || "");
@@ -151,27 +153,16 @@ export default function Flashcards() {
     }
   };
 
-  const handleFilenameClick = async (chat_id: number, filename: string) => {
-    try {
-      const currentFilenameWithoutExtension = filename.replace(".json", "");
-      const response = await backendAPI.get(
-        `/chat/${chat_id}/flashcards/${currentFilenameWithoutExtension}`,
-        {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = JSON.stringify(response.data.content);
-      const url = `/flashcards?data=${encodeURIComponent(data)}`;
-      router.push(url);
-    } catch (error) {
-      console.log(error);
-    }
+  const closeFlashcardModal = () => {
+    setSelectedFlashcard(null);
+    setIsFlashcardModalOpen(false);
   };
+
+  const handleFilenameClick = async (chat_id: number, filename: string) => {
+    setSelectedFlashcard({filename, chat_id});
+    setIsFlashcardModalOpen(true);
+  };
+
 
   if (loading) {
     return <div>Loading...</div>;
@@ -208,7 +199,7 @@ export default function Flashcards() {
                           onClick={() =>
                             handleFilenameClick(
                               chat.chat_id,
-                              flashcard.filename
+                              flashcard.filename.replace(".json", "")
                             )
                           }
                           className="text-lg font-semibold text-blue-500 hover:underline"
@@ -240,6 +231,15 @@ export default function Flashcards() {
           ))}
         </div>
       </div>
+      {selectedFlashcard && (
+        <FlashcardModal
+          isOpen={isFlashcardModalOpen}
+          onClose={closeFlashcardModal}
+          chat_id={selectedFlashcard.chat_id}
+          flashcardName={selectedFlashcard.filename}
+          token={token}
+        />
+      )}
     </main>
   );
 }

@@ -26,6 +26,22 @@ export interface QuizParameters {
   onNextQuestion: (isCorrect: boolean) => void;
 }
 
+export interface GenerateFlashcardModalParameters {
+  isOpen: boolean;
+  token: string;
+  chatID: string;
+  onClose: (error: any) => void;
+  setFlashcardName: (flashcardName: string) => void;
+}
+
+export interface FlashcardModalParameters {
+  isOpen: boolean;
+  token: string;
+  flashcardName: string;
+  chat_id: number;
+  onClose: () => void;
+}
+
 export interface Flashcard {
   flashcard_topic: string;
   flashcard_explanation: string;

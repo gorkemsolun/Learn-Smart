@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import ReactCardFlip from "react-card-flip";
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type FlashCardProps = {
   question: string;
   answer: string;
-  isTransitioning: boolean;
 };
 
 export default function FlashCard({
   question,
   answer,
-  isTransitioning,
 }: FlashCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -20,44 +23,39 @@ export default function FlashCard({
     setIsFlipped(!isFlipped);
   };
 
-  useEffect(() => {
-    if (isTransitioning) {
-      setIsFlipped(false);
-    }
-  }, [isTransitioning]);
-
   return (
     <div className="flex justify-center items-center min-h-screen">
-      <ReactCardFlip isFlipped={isFlipped} flipDirection="horizontal">
-        {/* Adjust flipDirection later. Horizontal seems good for now but vertical is also a good choice*/}
+      <div
+        className="w-[400px] h-[600px] [perspective:1000px] cursor-pointer" 
+        onClick={handleCardFlip}
+      >
+        {/* Card Flipping Logic */}
         <div
-          className={`overflow-auto bg-white shadow-md rounded-lg flex flex-col justify-start items-center p-6 transition-opacity duration-300 cursor-pointer hover:shadow-2xl ${
-            isTransitioning ? "opacity-0" : "opacity-100"
+          className={`relative w-full h-full transition-all duration-500 [transform-style:preserve-3d] ${
+            isFlipped ? "[transform:rotateY(180deg)]" : ""
           }`}
-          style={{ width: "400px", height: "600px" }}
-          onClick={handleCardFlip}
         >
-          <h2 className="text-center mb-4 text-2xl font-bold">Question</h2>
-          <hr className="w-full border-t-2 border-gray-300 mb-4" />
-          <div className="flex-grow flex flex-col justify-center items-center">
-            <p className="text-center mb-4 whitespace-normal">{question}</p>
-          </div>
-        </div>
+          {/* Front of the Card (Question) */}
+          <Card className="absolute w-full h-full [backface-visibility:hidden] flex flex-col">
+            <CardHeader className="flex-shrink-0 p-4">
+              <CardTitle className="text-xl">Question</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-grow overflow-auto p-4">
+              <p className="text-xl break-words">{question}</p>
+            </CardContent>
+          </Card>
 
-        <div
-          className={`overflow-auto bg-white shadow-md rounded-lg flex flex-col justify-start items-center p-6 transition-opacity duration-300 cursor-pointer hover:shadow-2xl ${
-            isTransitioning ? "opacity-0" : "opacity-100"
-          }`}
-          style={{ width: "400px", height: "600px" }}
-          onClick={handleCardFlip}
-        >
-          <h2 className="text-center mb-4 text-2xl font-bold">Answer</h2>
-          <hr className="w-full border-t-2 border-gray-300 mb-4" />
-          <div className="flex-grow flex flex-col justify-center items-center">
-            <p className="text-center mb-4 whitespace-normal">{answer}</p>
-          </div>
+          {/* Back of the Card (Answer) */}
+          <Card className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col">
+            <CardHeader className="flex-shrink-0 p-4">
+              <CardTitle className="text-xl">Answer</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-grow overflow-auto p-4">
+              <p className="text-xl break-words">{answer}</p>
+            </CardContent>
+          </Card>
         </div>
-      </ReactCardFlip>
+      </div>
     </div>
   );
 }
