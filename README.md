@@ -22,7 +22,7 @@ In summary, LearnSmart provides essential tools and resources through a web appl
 
 3. You'll see a prepopulated .env file inside the root folder of the project. Adjust the ```DATABASE_URL``` field accordingly after setting up MySQL database. Leave everything else as is.
 
-    * `DATABASE_URL=` (your MySQL DB URI, example: `mysql://\<username>:\<password>@localhost/<database_name>`)
+    * `DATABASE_URL=` (your MySQL DB URI, example: `mysql://<username>:<password>@localhost/<database_name>`)
 
 ## Frontend
 
