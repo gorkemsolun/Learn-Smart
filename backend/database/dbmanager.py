@@ -289,6 +289,7 @@ class ChatDB(DatabaseInterface):
 
         Args:
             chat_id (int): The ID of the chat.
+            chat_title (str): The title of the chat.
             course_id (int): The ID of the course.
             created_at (datetime, optional): The date and time the chat
             all (bool, optional): If True, fetches all matching chat records. If False (default), fetches only the first matching record.
@@ -303,12 +304,13 @@ class ChatDB(DatabaseInterface):
             ValueError: If no query parameters are provided.
         """
         chat_id = kwargs.get("chat_id", None)
+        chat_title = kwargs.get("chat_title", None)
         course_id = kwargs.get("course_id", None)
         created_at = kwargs.get("created_at", None)
         all = kwargs.get("all", False)
 
         if not any(
-            [chat_id, course_id, created_at]
+            [chat_id, chat_title, course_id, created_at]
         ):  # check if any query parameters are provided
             raise ValueError("No query parameters provided")
 
@@ -316,6 +318,8 @@ class ChatDB(DatabaseInterface):
         filters = []
         if chat_id:
             filters.append(Chat.chat_id == chat_id)
+        if chat_title:
+            filters.append(Chat.chat_title == chat_title)
         if course_id:
             filters.append(Chat.course_id == course_id)
         if created_at:
@@ -979,12 +983,12 @@ class SlideDB(DatabaseInterface):
             return result.to_dict() if result else None
 
     @staticmethod
-    def update(chat_id: int, **kwargs):
+    def update(slide_id: int, **kwargs):
         """
         Update the slide details in the database.
 
         Args:
-            - chat_id (int): The ID of the chat of the slide to update.
+            - slide_id (int): The ID of the slide to update.
             - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
                 - slides_file_name (str): The new filename for the slide.
                 - slides_file_url (str): The new URL for the slide.
@@ -1002,9 +1006,9 @@ class SlideDB(DatabaseInterface):
         last_slide_number = kwargs.get("last_slide_number", None)
 
         with db_connection as db:
-            slide = db.query(Slide).filter(Slide.chat_id == chat_id).first()
+            slide = db.query(Slide).filter(Slide.slide_id == slide_id).first()
             if not slide:
-                raise ValueError(f"No slide in chat with ID {chat_id} found")
+                raise ValueError(f"No slide with ID {slide_id} found")
 
             if slides_file_name:
                 slide.slides_file_name = slides_file_name

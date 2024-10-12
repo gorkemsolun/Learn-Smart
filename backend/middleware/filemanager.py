@@ -292,6 +292,7 @@ class PresentationFile(BaseFile):
 
         """
         super().save(path)
+        print("passing " + path + " to convert_pptx_to_pdf")
         new_path = convert_pptx_to_pdf(path)
         self.file.filename = os.path.basename(new_path)
         self.path = new_path

@@ -69,6 +69,7 @@ class Slide(Base):
 
         return {
             "chat_id": self.chat_id,
+            "slide_id": self.slide_id,
             "slides_file_name": self.slides_file_name,
             "slides_file_url": self.slides_file_url,
             "pages_count": self.pages_count,

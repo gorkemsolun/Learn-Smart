@@ -5,7 +5,7 @@ from fastapi import HTTPException, UploadFile
 from PIL import Image
 
 from tools import generate_hash, splitext
-from database.dbmanager import SlideDB
+from database.dbmanager import SlideDB, ChatDB, CourseDB
 from middleware import FILES_DIR, CHATS_DIR
 from middleware.filemanager import FileFactory
 
@@ -47,7 +47,7 @@ def get_chat_files_path(chat_id: int):
     return os.path.join(FILES_DIR, f"chat_{chat_id}")
 
 
-def get_slides_files_path(slide_id: int, page_number: int):
+def get_slides_files_path(slide_id, page_number):
     """
     Returns the path to the directory containing the uploaded files for the given slide ID and page number.
     """
@@ -62,12 +62,37 @@ def get_flashcards_folder_path(chat_id: int):
     return os.path.join(get_chat_files_path(chat_id), "flashcards")
 
 
+def fetch_chat_and_course(chat_id: int, user_id: int):
+    """
+    Fetches the chat and course information for the given chat ID and course ID, and verifies the user ID.
+
+    Args:
+        chat_id (int): The ID of the chat to fetch.
+        user_id (int): The ID of the user to verify.
+
+    Raises:
+        HTTPException: If the chat is not found (404) or if the user is not authorized to access the course (403).
+
+    Returns:
+        tuple: A tuple containing dictionaries of chat and course information.
+    """
+    chat = ChatDB.fetch(chat_id=chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found.")
+    
+    course = CourseDB.fetch(course_id=chat["course_id"])
+    if course["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    
+    return chat, course
+
+
 def init_chat(history_content=None):
     """
     Initializes a chat session with a generative AI model.
 
     Args:
-        history_content (str, optional): A JSON-encoded string representing the chat history. 
+        history_content (str, optional): A jsonpickle-encoded string representing the chat history. 
                                          If None, an empty history is used.
 
     Returns:
@@ -205,3 +230,46 @@ def update_metadata(metadata_path, new_metadata):
     with open(metadata_path, "w") as metadata_file:
         json.dump(data, metadata_file, indent=4)
 
+
+def get_formatted_history(history_path, history_metadata_path):
+    """
+    Retrieves and formats chat history from specified file paths.
+    Args:
+        history_path (str): The file path to the chat history file.
+        history_metadata_path (str): The file path to the chat metadata file.
+    Returns:
+        list: A list of dictionaries, each containing the following keys:
+            - 'text' (str): The text of the chat message.
+            - 'role' (str): The role of the message sender (model | user).
+            - 'message_id' (int): The ID of the chat message.
+            - 'media_url' (str, optional): The URL of any media attached to the message.
+    """
+    metadata = {} # initialize metadata to an empty dictionary
+    if os.path.exists(history_metadata_path):
+        with open(history_metadata_path, "r") as file:
+            metadata = {item['message_id']: item for item in json.load(file)}
+
+    chat_content = None # set chat_content to None if no chat history yet
+    if os.path.exists(history_path):
+        with open(history_path, "r") as file:
+            chat_content = file.read() # Read the chat history from the file
+    
+    history = jsonpickle.decode(chat_content) if chat_content else [] # Decode the chat content from JSON
+
+    # parse the chat history and create a new dictionary with 'message' and 'role' keys
+    messages = []
+    for idx, content in enumerate(history):
+        if idx in metadata and metadata[idx].get('skip', False): # metadata says skip this message
+            continue
+
+        for part in content._pb.parts: # Google's protobuf message parts
+            # Create a dictionary with the message, role, and ID of the chat
+            chat_dict = {"text": part.text, "role": content._pb.role, "message_id": idx}
+
+            if idx in metadata and 'media_url' in metadata[idx]: # a file is attached to this message
+                chat_dict['media_url'] = metadata[idx]['media_url']
+
+            if not messages or chat_dict["message_id"] != messages[-1]["message_id"]: # to remove duplicates, if any
+                messages.append(chat_dict)
+
+    return messages

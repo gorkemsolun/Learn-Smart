@@ -76,7 +76,7 @@ def validate_file_extension(filename, valid_extensions: list[str]):
     return (ext in [extension.lower() for extension in valid_extensions]) # whether the extension is in the list
 
 
-def convert_pptx_to_pdf(self, path_to_pptx: str, output_path: str = None) -> str:
+def convert_pptx_to_pdf(path_to_pptx: str, output_path: str = None) -> str:
     """
     Receives a path to the pptx file and converts it to a pdf file.
     input: "path/to/file.pptx" | output: "path/to/file.pdf"
