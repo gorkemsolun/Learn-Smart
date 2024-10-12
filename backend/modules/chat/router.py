@@ -44,7 +44,7 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
     
     chat = ChatDB.create(course_id=course_id, chat_title=chat_title, slides_mode=bool(slides))
 
-    slides_file_url, slides_file_name = None, None # initialize the slides name and URL
+    slides_file_path, slides_file_name = None, None # initialize the slides name and URL
     if slides: # meaning we're creating a chat in slides mode
         slides_file_name = slides.filename
         name, extension = splitext(slides_file_name) # split name and extension, e.g. myfile.pdf -> (myfile, pdf)
@@ -52,20 +52,20 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
             ChatDB.delete(chat["chat_id"]) # rolling back
             raise HTTPException(status_code=400, detail=f"Invalid file extension: {extension}")
         
-        storage_dir = get_chat_folder_path(chat["chat_id"]) # construct the storage directory
-        os.makedirs(storage_dir, exist_ok=True) # create a directory to store the chat's files
-        slides_file_url = os.path.join(storage_dir, f"{generate_hash(name, strategy="uuid")}.{extension}") # construct the file path
+        storage_dir = get_chat_files_path(chat["chat_id"])
+        os.makedirs(storage_dir, exist_ok=True)
+        slides_file_path = os.path.join(storage_dir, f"{generate_hash(name, strategy="uuid")}.{extension}")
         
         try:
             file = FileFactory()(file=slides)
-            file.save(slides_file_url) # save the file in file system
-            slides_file_url = file.path # get the file path
+            file.save(slides_file_path)
+            slides_file_path = file.path
 
-            pages_count = 0 # initialize the number of pages in the slides file
+            pages_count = 0
             with file.get() as pdf:
                 pages_count = pdf.page_count
 
-            SlideDB.create(chat_id=chat["chat_id"], slides_file_name=slides_file_name, slides_file_url=slides_file_url,
+            SlideDB.create(chat_id=chat["chat_id"], slides_file_name=slides_file_name, slides_file_url=slides_file_path,
                            pages_count=pages_count, last_slide_number=0)
 
         # Rollback changes
@@ -106,18 +106,7 @@ async def get_chat(chat_id: int, current_user: dict = Depends(auth.get_current_u
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
     
-    # Get the chat history file name and metadata file name for the current user, course, and chat
-    hist_file_name, metadata_file_name = prepare_chat_file_names(current_user["user_id"], 
-                                                  course["course_id"], chat["chat_id"])
-
-    # Construct the chat history file path and metadata file path
-    # chat history file path
-    chat_history_path = os.path.join(CHATS_DIR, hist_file_name) 
-    # chat metadata file path
-    metadata_path = os.path.join(CHATS_DIR, metadata_file_name)
-    
-    logger.info(f"Chat history file path: {chat_history_path}")
-    logger.info(f"Chat metadata file path: {metadata_path}")
+    chat_history_path, metadata_path = get_chat_history_path(chat_id), get_chat_history_metadata_path(chat_id)
 
     metadata = {} # initialize metadata to an empty dictionary
     if os.path.exists(metadata_path):
@@ -146,8 +135,6 @@ async def get_chat(chat_id: int, current_user: dict = Depends(auth.get_current_u
 
             if not messages or chat_dict["message_id"] != messages[-1]["message_id"]: # to remove duplicates, if any
                 messages.append(chat_dict)
-
-    logger.info(f"Chat history: {messages}")
 
     chat["course_name"] = course["course_name"] # Add the course name to response
     chat["history"] = messages # Add the chat history to response
@@ -179,16 +166,14 @@ async def delete_chat(chat_id: int, current_user: dict = Depends(auth.get_curren
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
     
-    history_file_name, metadata_file_name = prepare_chat_file_names(current_user["user_id"], course["course_id"], chat_id)
-    history_path = os.path.join(CHATS_DIR, history_file_name)
-    metadata_path = os.path.join(CHATS_DIR, metadata_file_name)
+    history_path, metadata_path = get_chat_history_path(chat_id), get_chat_history_metadata_path(chat_id)
 
     if os.path.exists(history_path):
         os.remove(history_path)
     if os.path.exists(metadata_path):
         os.remove(metadata_path)
     if chat["slides_file_url"] and os.path.exists(chat["slides_file_url"]):
-        shutil.rmtree(get_chat_folder_path(chat_id))
+        shutil.rmtree(get_chat_files_path(chat_id))
     if chat["slides_mode"] and chat["slides_file_url"] and os.path.exists(get_generator_path(chat["slides_file_url"])):
         os.remove(get_generator_path(chat["slides_file_url"]))
 
@@ -260,8 +245,7 @@ def get_next_slide(chat_id: int, current_user: dict = Depends(auth.get_current_u
 
     try:
         content_url, content = next(generator) # get the next slide content
-        history_url = chat["history_url"] # Get the chat history file path
-        metadata_path = get_chat_metadata_path(history_url) # chat metadata file path
+        history_url, metadata_path = get_chat_history_path(chat_id), get_chat_history_metadata_path(chat_id)
 
         chat_content = None # If the file doesn't exist (i.e. it's the very first message), set chat_content to None
         if os.path.exists(history_url):
@@ -307,21 +291,25 @@ def get_next_slide(chat_id: int, current_user: dict = Depends(auth.get_current_u
 
 
 @router.post("/{chat_id}/send_message")
-async def send_message(chat_id: int, slides_number: int = None, 
+async def send_message(chat_id: int, slide_id: int = None, page_number: int = None,
                        text: str = Form(...), file: UploadFile = File(None),
                        current_user: dict = Depends(auth.get_current_user)):
     """
     Send a message in a chat and generate a response.
 
     Args:
-        message (MessageCreationRequest): The message to be sent.
-        current_user (dict): The current user's information.
+        chat_id (int): The ID of the chat to send the message.
+        slide_id (int, optional): The ID of the slide. Defaults to None.
+        page_number (int, optional): The page number of the slide. Defaults to None.
+        text (str): The user message to send.
+        file (UploadFile, optional): The file to send. Defaults to None.
+        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
 
     Returns:
         dict: The generated response in dictionary format.
     """
     # TODO: streaming response
-
+    # TODO: prompt engineering in slides mode
     chat = ChatDB.fetch(chat_id=chat_id) # Fetch the chat by its ID
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found.")
@@ -330,76 +318,134 @@ async def send_message(chat_id: int, slides_number: int = None,
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
     
-    if slides_number is None and chat["slides_mode"]:
-        raise HTTPException(status_code=400, detail="Slides number is required for this chat.")
+    if slide_id is None and chat["slides_mode"]:
+        raise HTTPException(status_code=400, detail="Slide ID is required for this chat.")
     
-    if slides_number is not None and chat["slides_mode"]:
-        return {"status": "NOT IMPLEMENTED YET"}
-    
-    if slides_number is not None and not chat["slides_mode"]:
+    if slide_id is not None and not chat["slides_mode"]:
         raise HTTPException(status_code=400, detail="Slides mode is not enabled for this chat.")
 
-    history_url = chat["history_url"] 
-    chat_content = None
-    if history_url is not None:
-        with open(history_url, "r") as history_file:
-            chat_content = history_file.read()
+    if slide_id is not None and chat["slides_mode"]: # Slide specific chat
+        if page_number is None:
+            raise HTTPException(status_code=400, detail="Slide page number is required.")
+        
+        slide = SlideDB.fetch(slide_id=slide_id)
+        if not slide:
+            raise HTTPException(status_code=404, detail="Slides not found.")
+        
+        if page_number < 0 or page_number >= slide["pages_count"]:
+            raise HTTPException(status_code=400, detail="Invalid slide number.")
+        
+        slide_history_path, slide_metadata_path = get_slide_history_path(slide_id, page_number), get_slide_history_metadata_path(slide_id, page_number)
 
-    history = jsonpickle.decode(chat_content) if chat_content else [] # Decode the chat content 
-    chat = genai.GenerativeModel(MODEL_VERSION, system_instruction=SYSTEM_PROMPT).start_chat(history=history) # Initialize the chat model with the chat history so far
+        raw_history_content = None # decoded content
+        if os.path.exists(slide_history_path):
+            with open(slide_history_path, "r") as slide_history_file:
+                raw_history_content = slide_history_file.read()
+    
+        model = init_chat(raw_history_content)
+        slide_content = get_slide_content(slide_id, page_number)
+
+        if file:
+            path, file_content = handle_file_upload_for_message(file, chat_id, slide_id, page_number)
+            new_metadata = {"message_id": len(model.history), "media_url": path}
+            update_metadata(slide_metadata_path, new_metadata)
+            response = model.send_message([text, file_content, slide_content])
+
+        else:
+            response = model.send_message([text, slide_content])
+
+        history = jsonpickle.encode(model.history, True) 
+        save_history(slide_history_path, history)
+
+        return {"text": response.text, "role": "model"}
+    
+    history_path, metadata_path = get_chat_history_path(chat_id), get_chat_history_metadata_path(chat_id) 
+    raw_history_content = None
+    if os.path.exists(history_path):
+        with open(history_path, "r") as history_file:
+            raw_history_content = history_file.read()
+
+    model = init_chat(raw_history_content)
 
     if file:
-        filename = file.filename
-        name, extension = splitext(filename)
-
-        try:
-            file = FileFactory()(file=file)
-            
-            hashed_file_name = f"{generate_hash(name, strategy="timestamp")}.{extension}" # e.g. <hashed_name>_<actual_name>.pdf
-            os.makedirs(f"{FILES_DIR}/chat_{chat_id}", exist_ok=True) # create a directory for the chat's files
-            path = os.path.join(FILES_DIR, f"chat_{chat_id}", hashed_file_name) # construct the file path
-
-            file.save(path) # save the file in file system
-            file_content = file.content() # get the file from the file system
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
-        metadata_path = get_chat_metadata_path(history_url) if history_url else None    
-        new_metadata = {"message_id": len(history), "media_url": path}
-        if metadata_path is not None and os.path.exists(metadata_path):
-            with open(metadata_path, "r") as metadata_file:
-                try:
-                    data = json.load(metadata_file)
-                    data.append(new_metadata)
-                except Exception as e:
-                    file.delete() # delete the file from the file system
-                    raise HTTPException(status_code=500, detail=f"Internal server error occured: {str(e)}")
-        else:
-            data = [new_metadata]
-
-        if metadata_path is None:
-            _, metadata_filename = prepare_chat_file_names(current_user["user_id"], course["course_id"], chat_id)
-            metadata_path = os.path.join(CHATS_DIR, metadata_filename)
-        # Write the updated content back to the file
-        with open(metadata_path, "w") as metadata_file:
-            json.dump(data, metadata_file, indent=4)
-
-        print(file_content)
-        response = chat.send_message([text, file_content])
+        path, file_content = handle_file_upload_for_message(file, chat_id)
+        new_metadata = {"message_id": len(model.history), "media_url": path}
+        update_metadata(metadata_path, new_metadata)
+        response = model.send_message([text, file_content])
     else:
-        response = chat.send_message(text)
+        response = model.send_message(text)
 
-    history = jsonpickle.encode(chat.history, True) # Encode back the updated chat history
+    history = jsonpickle.encode(model.history, True) # Encode back the updated chat history
+    save_history(history_path, history) 
 
-    if history_url is None:
-        history_filename, _ = prepare_chat_file_names(current_user["user_id"], course["course_id"], chat_id)
-        history_url = os.path.join(CHATS_DIR, f"chat_{chat_id}_{history_filename}")
-        ChatDB.update(chat_id=chat_id, history_url=history_url)
-    with open(history_url, "w") as history_file: # Save the updated chat history to the chat file
-        history_file.write(history)
+    if not os.path.exists(history_path):
+        ChatDB.update(chat_id=chat_id, history_url=history_path)
 
     return {"text": response.text, "role": "model"}
 
+
+@router.get("/{chat_id}/slide/{slide_id}/page/{page_number}")
+async def get_slide(chat_id: int, slide_id: int, page_number: int, current_user: dict = Depends(auth.get_current_user)):
+    """
+    Get a specific slide and its explanation by its ID and page number.
+    """
+    chat = ChatDB.fetch(chat_id=chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found.")
+
+    course = CourseDB.fetch(course_id=chat["course_id"])
+    if course["user_id"] != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+
+    slide = SlideDB.fetch(slide_id=slide_id)
+    if not slide:
+        raise HTTPException(status_code=404, detail="Slide not found.")
+
+    if page_number < 0 or page_number >= slide["pages_count"]:
+        raise HTTPException(status_code=400, detail="Invalid slide number.")
+
+    slide_history_path, slide_metadata_path = get_slide_history_path(slide_id, page_number), get_slide_history_metadata_path(slide_id, page_number)
+
+    # if slide history path doesn't exists, it means an explanation is not generated yet
+    if not os.path.exists(slide_history_path):
+        model = init_chat()
+        slide_content = get_slide_content(slide_id, page_number)
+        response = model.send_message([EXPLAIN_SLIDE_PROMPT, slide_content]).text
+        
+        metadata_path = get_slide_history_metadata_path(slide_id, page_number)
+        new_metadata = {"message_id": 0, "skip": True} # skip the EXPLAIN_SLIDE_PROMPT
+        update_metadata(metadata_path, new_metadata)
+        
+        history = jsonpickle.encode(model.history, True)
+        save_history(slide_history_path, history)
+
+        return {"history": [{"text": response, "role": "model", "message_id": 1}]}
+
+    with open(slide_history_path, "r") as slide_history_file:
+        history = jsonpickle.decode(slide_history_file.read())
+        metadata_path = get_slide_history_metadata_path(slide_id, page_number)
+        
+        metadata = {} # initialize metadata to an empty dictionary
+        with open(metadata_path, "r") as metadata_file:
+            metadata = {item['message_id']: item for item in json.load(metadata_file)}
+
+        messages = []
+
+        for idx, content in enumerate(history):
+            if idx in metadata and metadata[idx].get('skip', False): # metadata says skip this message
+                continue
+
+            for part in content._pb.parts: # Google's protobuf message parts
+                # Create a dictionary with the message, role, and ID of the chat
+                chat_dict = {"text": part.text, "role": content._pb.role, "message_id": idx}
+
+                if idx in metadata and 'media_url' in metadata[idx]: # a file is attached to this message
+                    chat_dict['media_url'] = metadata[idx]['media_url']
+
+                if not messages or chat_dict["message_id"] != messages[-1]["message_id"]: # to remove duplicates, if any
+                    messages.append(chat_dict)
+
+        return {"history": messages}
 
 @router.put("/{chat_id}/update_slides")
 async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
@@ -436,7 +482,7 @@ async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
         raise HTTPException(status_code=400, detail=f"Invalid file extension: {extension}")
 
     # Construct the storage directory and slides file URL
-    storage_dir = get_chat_folder_path(chat_id)
+    storage_dir = get_chat_files_path(chat_id)
     os.makedirs(storage_dir, exist_ok=True)
     slides_file_url = os.path.join(storage_dir, f"{generate_hash(name, strategy='uuid')}.{extension}")
 
@@ -490,7 +536,7 @@ async def create_quiz(chat_id: int, current_user: dict = Depends(auth.get_curren
     ).start_chat(history=history)
 
     response = chat_model.send_message(QUIZZES_PROMPT)
-    response_dict = json.loads(response.text)
+    response_dict = json.load(response.text)
     if not response_dict["success"]:
         raise HTTPException(status_code=500, detail="Failed to generate quiz.")
     

@@ -323,19 +323,19 @@ async def delete_course(course_id: int, current_user: dict = Depends(auth.get_cu
     CourseDB.delete(course_id=course_id)  # delete the course
     
     for chat in chats:
-        history_url, slides_file_url = chat["history_url"], chat["slides_file_url"]
-        metadata_url = get_chat_metadata_path(history_url) if history_url else None
+        slides_file_url = chat["slides_file_url"]
+        history_path, metadata_path = get_chat_history_path(chat["chat_id"]), get_chat_history_metadata_path(chat["chat_id"])
         generator_url = get_generator_path(slides_file_url) if slides_file_url else None
-        items_folder = get_chat_folder_path(chat["chat_id"])
+        items_folder = get_chat_files_path(chat["chat_id"])
 
-        if os.path.exists(history_url):
-            os.remove(history_url)
+        if os.path.exists(history_path):
+            os.remove(history_path)
         if items_folder and os.path.exists(items_folder):
             shutil.rmtree(items_folder)
         if slides_file_url and os.path.exists(slides_file_url):
             os.remove(slides_file_url)
-        if metadata_url and os.path.exists(metadata_url):
-            os.remove(metadata_url)
+        if os.path.exists(metadata_path):
+            os.remove(metadata_path)
         if generator_url and os.path.exists(generator_url):
             os.remove(generator_url)
 

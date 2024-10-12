@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, String, func,  Boolean
+from sqlalchemy import Column, Integer, ForeignKey, UniqueConstraint, DateTime, String, func,  Boolean
 from sqlalchemy.orm import relationship
 
 from database.connection import db_connection
@@ -46,13 +46,18 @@ class Slide(Base):
     """
 
     __tablename__ = 'slides'
-    chat_id = Column(Integer, ForeignKey('chats.chat_id')) # the chat ID to which the slides belong
-    slides_file_name = Column(String(255), nullable=True) # slides' original file name, e.g. Lecture_1.pptx
-    slides_file_url = Column(String(255), nullable=False, primary_key=True) # # slides file URL, e.g. ./.../<ffb1e29cc1...>.pptx
-    pages_count = Column(Integer, nullable=False) # the total number of pages in the slides file
-    last_slide_number = Column(Integer, nullable=False) # the last fetched slide number (e.g. page 3 of a slides file)
 
-    chat = relationship("Chat", back_populates="slide") # one-to-one relationship with Chat
+    # ensure the combination of chat_id and slides_file_name is unique
+    __table_args__ = (UniqueConstraint('chat_id', 'slides_file_name', name='_chat_slides_file_name_uc'),)
+
+    slide_id = Column(Integer, primary_key=True, index=True)
+    chat_id = Column(Integer, ForeignKey('chats.chat_id'))  # the chat ID to which the slides belong
+    slides_file_name = Column(String(255), nullable=True)  # slides' original file name, e.g. Lecture_1.pptx
+    slides_file_url = Column(String(255), nullable=False, unique=True)  # slides file URL, e.g. ./.../<ffb1e29cc1...>.pptx
+    pages_count = Column(Integer, nullable=False)  # the total number of pages in the slides file
+    last_slide_number = Column(Integer, nullable=False)  # the last fetched slide number (e.g. page 3 of a slides file)
+
+    chat = relationship("Chat", back_populates="slide")  # one-to-one relationship with Chat
 
     def to_dict(self):
         """
@@ -61,7 +66,7 @@ class Slide(Base):
         Returns:
             dict: A dictionary representation of the Slide object.
         """
-        
+
         return {
             "chat_id": self.chat_id,
             "slides_file_name": self.slides_file_name,

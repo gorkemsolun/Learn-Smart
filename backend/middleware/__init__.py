@@ -7,6 +7,7 @@ load_dotenv()
 
 # file uploads path
 FILES_DIR = os.getenv("FILES_DIR")
+CHATS_DIR = os.getenv("CHATS_DIR")
 
 # authentication
 SECRET_KEY = os.getenv("SECRET_KEY")

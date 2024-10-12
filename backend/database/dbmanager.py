@@ -924,6 +924,7 @@ class SlideDB(DatabaseInterface):
         Fetches slide data from the database based on the provided query parameters.
 
         Args:
+            - slide_id (int): The ID of the slide.
             - chat_id (int): The ID of the chat associated with the slide.
             - slides_file_name (str): The filename of the slides.
             - slides_file_url (str): The URL of the slides.
@@ -940,6 +941,7 @@ class SlideDB(DatabaseInterface):
         Raises:
             - ValueError: If no query parameters are provided.
         """
+        slide_id = kwargs.get("slide_id", None)
         chat_id = kwargs.get("chat_id", None)
         slides_file_name = kwargs.get("slides_file_name", None)
         slides_file_url = kwargs.get("slides_file_url", None)
@@ -948,13 +950,15 @@ class SlideDB(DatabaseInterface):
         all = kwargs.get("all", False)
 
         if not any(
-            [chat_id, slides_file_name,
+            [slide_id, chat_id, slides_file_name,
              slides_file_url, pages_count, last_slide_number]
         ):
             raise ValueError("No query parameters provided")
 
         # Create a list of filters based on the provided query parameters
         filters = []
+        if slide_id:
+            filters.append(Slide.slide_id == slide_id)
         if chat_id:
             filters.append(Slide.chat_id == chat_id)
         if slides_file_name:
