@@ -104,7 +104,7 @@ export default function RoleSelectorCard() {
       <main>
         <Navbar/>
         <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <Card className="p-4 relative w-2/5 h-[42vh] flex flex-col justify-between overflow-auto">
+          <Card className="p-4 relative w-2/5 h-[48vh] flex flex-col justify-between overflow-auto">
             <div className="flex flex-col">
               <CardHeader>
                 <CardTitle>Choose Your Role</CardTitle>
@@ -130,7 +130,7 @@ export default function RoleSelectorCard() {
               ))}
             </CardContent>
 
-            <div className="flex justify-end px-6">
+            <div className="flex justify-end mb-6 mr-6">
               <Button
                   onClick={handleRoleSelection} className="w-1/5"
               >

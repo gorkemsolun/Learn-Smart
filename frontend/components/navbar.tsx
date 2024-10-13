@@ -13,7 +13,6 @@ import * as React from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Searchbar } from "@/components/searchbar"
 import {Button} from "@/components/ui/button";
-import {router} from "next/client";
 import {useRouter} from "next/navigation";
 import Cookies from "js-cookie";
 
