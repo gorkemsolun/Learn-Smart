@@ -220,7 +220,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
       <Dialog open={modalParameters.isOpen} onOpenChange={handleOpenChange} className="w-3/5">
         <DialogContent className="sm:max-w-[80vh] border-b-neutral-800">
           <div className="space-y-1">
-            <DialogTitle className="mb-2">Create Individual Study</DialogTitle>
+            <DialogTitle className="mb-2">Edit Individual Study</DialogTitle>
             <DialogDescription></DialogDescription>
             <label className="text-xs font-semibold text-foreground/70">
               Name

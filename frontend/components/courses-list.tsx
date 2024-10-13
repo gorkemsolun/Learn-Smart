@@ -4,7 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircledIcon } from "@radix-ui/react-icons";
 import {CoursesListProps} from "@/app/types";
-import {Card, CardContent, CardTitle} from "@/components/ui/card";
+import {Card, CardTitle} from "@/components/ui/card";
 import {CourseCard} from "@/components/course-card";
 export function CoursesList (modalParameters: CoursesListProps) {
   return (
@@ -18,7 +18,7 @@ export function CoursesList (modalParameters: CoursesListProps) {
           </Button>
         </div>
 
-        <div className="items-center h-[45lvh] overflow-auto p-6">
+        <div className="items-center h-[45lvh] overflow-auto px-6">
           <div className="space-y-4">
             {modalParameters.courses.map((Course, index) => (
                 <div
