@@ -56,10 +56,8 @@ export function CourseCard(modalParameters: CourseCardProps) {
       </div>
 
       <div className="flex-shrink-0 flex space-x-2">
-          <Button variant="outline">
-              <Pencil2Icon
-                onClick={() => setEditDialogOpen(true)}
-              />
+          <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
+              <Pencil2Icon/>
           </Button>
         <ConfirmationDialog
           title="Confirm Deleting Study"

@@ -18,8 +18,8 @@ export function CoursesList (modalParameters: CoursesListProps) {
           </Button>
         </div>
 
-        <CardContent className="h-[45lvh] overflow-auto">
-          <div className="mt-4 space-y-4">
+        <div className="items-center h-[45lvh] overflow-auto p-6">
+          <div className="space-y-4">
             {modalParameters.courses.map((Course, index) => (
                 <div
                     key={index}
@@ -30,7 +30,7 @@ export function CoursesList (modalParameters: CoursesListProps) {
                 </div>
             ))}
           </div>
-        </CardContent>
+        </div>
       </Card>
   );
 }
