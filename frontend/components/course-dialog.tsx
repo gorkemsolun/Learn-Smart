@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button"
 import Cookies from "js-cookie";
 import {backendAPI} from "@/environment/backend_api";
 import { CourseDialogParameters } from "@/app/types";
-import { FileIcon, ImageIcon, FileTextIcon, FilePlusIcon } from "@radix-ui/react-icons";
+import { LuUploadCloud } from "react-icons/lu";
+import { FileIcon, ImageIcon, FileTextIcon } from "@radix-ui/react-icons";
 import { Textarea } from "@/components/ui/textarea"
 import {useToast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
@@ -41,7 +42,7 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
 
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<any>>,
+    setter: React.Dispatch<React.SetStateAction<File | null>>,
     fileType: string
   ) {
     const file = event.target.files && event.target.files[0];
@@ -50,21 +51,12 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
 
   function handleFile(
     file: File | null,
-    setter: React.Dispatch<React.SetStateAction<any>>,
+    setter: React.Dispatch<React.SetStateAction<File | null>>,
     fileType: string
   ) {
-    // Check if file is of correct type for document
-    if (
-      file &&
-      fileType === "document" &&
-      documentMimeTypes.includes(file.type)
-    ) {
+    if (file && fileType === "document" && documentMimeTypes.includes(file.type)) {
       setter(file);
-    } else if (
-      file &&
-      fileType === "image" &&
-      imageMimeTypes.includes(file.type)
-    ) {
+    } else if (file && fileType === "image" && imageMimeTypes.includes(file.type)) {
       setter(file);
     } else {
       setter(null);
@@ -85,7 +77,6 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
       }
     }
   }
-
   async function handleSubmit(
     event:
       | React.FormEvent<HTMLFormElement>
@@ -116,7 +107,8 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-      }).then(() => {
+      })
+      .then(() => {
         // Call the onCourseCreation callback to update the course list
         modalParameters.onCourseCreation();
       })
@@ -183,7 +175,7 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
             >
               <label
                   htmlFor="syllabus"
-                  className="flex flex-col items-center justify-center w-full h-[25vh] border-2 border-dashed rounded-lg cursor-pointer"
+                  className="flex flex-col items-center justify-center w-full h-[24vh] border-2 border-dashed rounded-lg cursor-pointer"
               >
                 <div className="flex flex-col items-center justify-center">
                   {syllabus ? (
@@ -198,7 +190,7 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
                       </div>
                   ) : (
                       <div>
-                        <FilePlusIcon className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
+                        <LuUploadCloud className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
                         <p className="text-sm text-foreground/70">
                           <span className="font-semibold">Click to upload</span>{" "}
                           or drag and drop
@@ -233,7 +225,7 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
             >
               <label
                   htmlFor="image"
-                  className="flex flex-col items-center justify-center w-full h-[25vh] border-2 border-dashed rounded-lg cursor-pointer"
+                  className="flex flex-col items-center justify-center w-full h-[24vh] border-2 border-dashed rounded-lg cursor-pointer"
               >
                 <div className="flex flex-col items-center justify-center">
                   {icon ? (
@@ -243,7 +235,7 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
                       </div>
                   ) : (
                       <div>
-                        <FilePlusIcon className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
+                        <LuUploadCloud className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
                         <p className="text-sm text-foreground/70">
                           <span className="font-semibold">Click to upload</span>{" "}
                           or drag and drop

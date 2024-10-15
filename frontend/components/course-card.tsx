@@ -22,34 +22,38 @@ export function CourseCard(modalParameters: CourseCardProps) {
   return (
     <Card className="flex items-center justify-between p-4 w-full space-x-4 overflow-auto">
       <div className="flex items-center space-x-4">
-        <div
-          className="rounded-md cursor-pointer"
-          onClick={() => router.push(`/course/${modalParameters.course.course_id}`)}
-        >
-          {modalParameters.course.course_icon_url ? (
-            <Image
-              src={`${backend.getUri()}/${modalParameters.course.course_icon_url}`}
-              alt={modalParameters.course.course_name}
-              className="object-cover object-fit rounded-md"
-              width={1000}
-              height={1000}
-              style={{ width: '12lvh', height: '12lvh' }}
-            />
-          ) : (
-            <Image
-              src={default_study_logo}
-              alt={modalParameters.course.course_name}
-              className="object-cover object-fit rounded-md bg-foreground/20"
-              width={1000}
-              height={1000}
-              style={{ width: '12lvh', height: '12lvh' }}
-            />
-          )}
-        </div>
+          <div
+              className="rounded-md cursor-pointer"
+              onClick={() => router.push(`/course/${modalParameters.course.course_id}`)}
+          >
+              {modalParameters.course.course_icon_url ? (
+                  <Image
+                      src={`${backend.getUri()}/${modalParameters.course.course_icon_url}`}
+                      alt={modalParameters.course.course_name}
+                      className="object-cover object-fit rounded-md"
+                      width={250}
+                      height={250}
+                      style={{width: '12lvh', height: '12lvh'}}
+                  />
+              ) : (
 
-        <CardContent className="flex flex-col">
-          <CardTitle>{modalParameters.course.course_name}</CardTitle>
-          <CardDescription className="line-clamp-3 max-w-[28lvh] overflow-x-hidden">
+                  <Image
+                      src={default_study_logo}
+                      alt={modalParameters.course.course_name}
+                      className="object-cover object-fit rounded-md bg-foreground/20"
+                      width={250}
+                      height={250}
+                      style={{width: '12lvh', height: '12lvh'}}
+                  />
+              )}
+              <div className="text-center text-sm font-medium">
+                  {modalParameters.course.course_code}
+              </div>
+          </div>
+
+          <CardContent className="flex flex-col">
+              <CardTitle>{modalParameters.course.course_name}</CardTitle>
+              <CardDescription className="flex line-clamp-3 max-w-[28lvh] overflow-x-hidden">
             {modalParameters.course.course_description}
           </CardDescription>
         </CardContent>
@@ -57,7 +61,7 @@ export function CourseCard(modalParameters: CourseCardProps) {
 
       <div className="flex-shrink-0 flex space-x-2">
           <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
-              <Pencil2Icon/>
+              <Pencil2Icon />
           </Button>
         <ConfirmationDialog
           title="Confirm Deleting Study"

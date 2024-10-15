@@ -27,5 +27,3 @@ class CourseUpdateRequest(BaseModel):
     course_name: Optional[str] = None
     course_code: Optional[str] = None
     course_description: Optional[str] = None
-
-    #TODO => sets my inputs to None :(

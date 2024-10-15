@@ -254,7 +254,7 @@ async def create_course(course_name: str = Form(...), course_code: str = Form(..
         if course_icon_file and not validate_file_extension(course_icon_file.filename, valid_image_formats):
             raise ValueError(f"Invalid image format. Available formats: {', '.join(valid_image_formats)}")
         if course_syllabus_file and not validate_file_extension(course_syllabus_file.filename, valid_syllabus_formats):
-            raise ValueError(f"Invalid syllabus format. Avaiable formats: {', '.join(valid_syllabus_formats)}")
+            raise ValueError(f"Invalid syllabus format. Available formats: {', '.join(valid_syllabus_formats)}")
 
         course = CourseDB.create(course_name=course_name, course_description=course_description,
                                  course_code=course_code, user_id=current_user["user_id"])

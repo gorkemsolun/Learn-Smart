@@ -49,7 +49,9 @@ export default function UserDashboard() {
       });
     }
   };
-
+  const handleCourseUpdate = () => {
+    fetchCourses();
+  }
   const handleDeleteCourse = async (courseId: string) => {
     try {
       await backendAPI.delete(`/course/${courseId}`, {
@@ -131,13 +133,13 @@ export default function UserDashboard() {
           <CoursesList courses={courses}
                        onCourseDelete={handleDeleteCourse}
                        setCourseDialog={setCourseDialog}
-                       onCourseUpdate={fetchCourses}
+                       onCourseUpdate={handleCourseUpdate}
           />
         </div>
         <CourseDialogModal
             isOpen={courseDialog}
             onClose={setCourseDialog}
-            onCourseCreation={fetchCourses} />
+            onCourseCreation={handleCourseUpdate} />
       </div>
   );
 }

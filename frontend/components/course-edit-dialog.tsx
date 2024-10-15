@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button"
 import Cookies from "js-cookie";
 import {backend, backendAPI} from "@/environment/backend_api";
 import { CourseEditDialogProps } from "@/app/types";
-import { FileIcon, ImageIcon, FileTextIcon, FilePlusIcon } from "@radix-ui/react-icons";
+import { FileIcon, ImageIcon, FileTextIcon } from "@radix-ui/react-icons";
+import { LuUploadCloud } from "react-icons/lu";
 import { Textarea } from "@/components/ui/textarea"
 import {useToast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
@@ -44,6 +45,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
       fetchCourseDetails();
     }
   }, [token]);
+
   const resetFields = () => {
     setCourseName(originalCourseName);
     setCourseCode(originalCourseCode);
@@ -110,9 +112,13 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
       setOriginalCourseName(course_name);
       setOriginalCourseCode(course_code);
       setOriginalCourseDescription(course_description);
-    } catch (error) {
-      console.error("Error fetching course details:", error);
-      alert("Error fetching course details.");
+    } catch ({}) {
+      toast({
+            title: "Error",
+            description: "Error fetching course details",
+            variant: "destructive",
+            action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
     }
   };
 
@@ -191,30 +197,29 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
     setDisableSaveButton(true);
 
     // Send the form data to the backend
-    await backendAPI
-      .put(`/course/${modalParameters.courseId}`, formData, {
+    setDisableSaveButton(true);
+    try {
+      await backendAPI.put(`/course/${modalParameters.courseId}`, formData, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-      }).then(() => {
-        // Call the onCourseCreation callback to update the course list
-        modalParameters.onCourseUpdate();
-      })
-      .catch((error) => {
+      });
+      modalParameters.onCourseUpdate();
+
+    }
+    catch {
         toast({
             title: "Error",
-            description: "Error creating course" + error,
+            description: "Error editing course",
             variant: "destructive",
             action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
-      })
-      .finally(() => {
-        // Reset form fields and close the modal
+    } finally {
         setDisableSaveButton(false);
-        handleOpenChange();
-      });
+        modalParameters.onClose(false);
+    }
   }
   return (
       <Dialog open={modalParameters.isOpen} onOpenChange={handleOpenChange} className="w-3/5">
@@ -263,7 +268,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
             >
               <label
                   htmlFor="syllabus"
-                  className="flex flex-col items-center justify-center w-full h-[25vh] border-2 border-dashed rounded-lg cursor-pointer"
+                  className="flex flex-col items-center justify-center w-full h-[24vh] border-2 border-dashed rounded-lg cursor-pointer"
               >
                 <div className="flex flex-col items-center justify-center">
                   {syllabus ? (
@@ -278,7 +283,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
                       </div>
                   ) : (
                       <div>
-                        <FilePlusIcon className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
+                        <LuUploadCloud className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
                         <p className="text-sm text-foreground/70">
                           <span className="font-semibold">Click to upload</span>{" "}
                           or drag and drop
@@ -313,7 +318,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
             >
               <label
                   htmlFor="image"
-                  className="flex flex-col items-center justify-center w-full h-[25vh] border-2 border-dashed rounded-lg cursor-pointer"
+                  className="flex flex-col items-center justify-center w-full h-[24vh] border-2 border-dashed rounded-lg cursor-pointer"
               >
                 <div className="flex flex-col items-center justify-center">
                   {icon ? (
@@ -323,7 +328,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
                       </div>
                   ) : (
                       <div>
-                        <FilePlusIcon className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
+                        <LuUploadCloud className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
                         <p className="text-sm text-foreground/70">
                           <span className="font-semibold">Click to upload</span>{" "}
                           or drag and drop
