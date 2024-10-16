@@ -9,17 +9,18 @@ import Cookies from "js-cookie";
 
 export default function Home() {
     const [isDialogOpen, setDialogOpen] = useState(false);
-    const [token] = useState<string>(
-        Cookies.get("authToken") as string
-    );
+    const [token, setToken] = useState<string | null>(null);
 
     const router = useRouter();
 
     useEffect(() => {
-        if (!token) {
+        const authToken = Cookies.get("authToken");
+        setToken(authToken || null);
+
+        if (!authToken) {
             router.replace("/sign-in");
         }
-    }, [router]);
+    }, [router, token]);
 
     const handleSearchButtonClick = () => {
       setDialogOpen(!isDialogOpen);
