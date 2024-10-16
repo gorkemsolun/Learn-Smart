@@ -21,7 +21,7 @@ export function ConfirmationDialog({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="outline">{triggerButtonLabel}</Button>
+        <Button variant="outline" size="icon">{triggerButtonLabel}</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

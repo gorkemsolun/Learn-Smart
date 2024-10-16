@@ -35,9 +35,9 @@ export default function UserDashboard() {
         },
       });
 
-      setCourses(response.data?.courses || []); // Optional chaining
+      setCourses(response.data?.courses || []);
     } catch (error) {
-      console.error(error.response); // Log full error response for debugging
+      console.error(error.response);
       toast({
         title: "Error",
         description: `Error fetching course data: ${error.message}`,
@@ -97,8 +97,8 @@ export default function UserDashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-5 gap-4 h-[55lvh]">
-          <Card className="col-span-3">
+        <div className="grid grid-cols-7 gap-4 h-[55lvh]">
+          <Card className="col-span-4">
             <CardHeader>
               <CardTitle>Big Card</CardTitle>
               <CardDescription>This is the big card on the left.</CardDescription>

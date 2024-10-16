@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
 import {
   Dialog,

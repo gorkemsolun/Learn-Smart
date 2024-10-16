@@ -15,60 +15,76 @@ import {backend} from "@/environment/backend_api";
 import default_study_logo from "@/assets/default_study_logo.png";
 import Image from "next/image";
 import {CourseEditDialogModal} from "@/components/course-edit-dialog";
+import { Badge } from "@/components/ui/badge"
 import {Button} from "@/components/ui/button";
 export function CourseCard(modalParameters: CourseCardProps) {
   const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
   const courseIconUrl = modalParameters.course.course_icon_url || "";
-    const imageUrl: string = courseIconUrl
-        ? `${backend.getUri()}/${courseIconUrl}?t=${Date.now()}`
-        : (default_study_logo as string);
+  const image_url: string = courseIconUrl
+    ? `${backend.getUri()}/${courseIconUrl}?t=${Date.now()}`
+    : (default_study_logo as string);
   return (
-    <Card className="flex items-center justify-between p-4 w-full space-x-4 overflow-hidden h-[20vh]">
-      <div className="flex items-center space-x-4">
-          <div
-              className="rounded-md cursor-pointer"
-              onClick={() => router.push(`/course/${modalParameters.course.course_id}`)}
-          >
-
-               <Image
-                    src={imageUrl}
-                    alt={modalParameters.course.course_name}
-                    className="object-cover object-fit rounded-md w-[12vh] h-[12vh] bg-foreground/20"
-                    width={250}
-                    height={250}
-                    priority={true}
-               />
-              <div className="text-center text-sm font-medium mt-2">
-                  {modalParameters.course.course_code}
+      <div>
+          <Card className="overflow-hidden w-[36vh] h-[40vh] bg-gradient-to-br from-primary/5 to-secondary/5 flex flex-col">
+              <div className="relative h-[20vh] overflow-hidden">
+                  <Image
+                      src={image_url}
+                      alt={modalParameters.course.course_name}
+                      width={250}
+                      height={250}
+                      style={{width:'100%', height: '100%', objectFit:'cover'}}
+                      priority
+                  />
+                  <div className="absolute top-2 left-2 max-w-[90%]">
+                      <Badge variant="secondary" className="text-xs font-semibold overflow-hidden line-clamp-1
+                      cursor-default pointer-events-none select-none">
+                          {modalParameters.course.course_code}
+                      </Badge>
+                  </div>
               </div>
-          </div>
-
-          <CardContent className="flex flex-col">
-              <CardTitle>{modalParameters.course.course_name}</CardTitle>
-              <CardDescription className="flex line-clamp-3 max-w-[28lvh] overflow-x-hidden">
-            {modalParameters.course.course_description}
-          </CardDescription>
-        </CardContent>
+              <CardContent className="p-4 flex flex-col h-[20vh]">
+                  <CardTitle className="text-lg font-bold mb-2 overflow-hidden line-clamp-1">
+                      {modalParameters.course.course_name}
+                  </CardTitle>
+                   <CardDescription
+                       className="text-sm overflow-hidden flex-1 flex-grow line-clamp-1"
+                       title={modalParameters.course.course_description}
+                   >
+                      {modalParameters.course.course_description}
+                  </CardDescription>
+                  <div className="flex justify-between items-center mt-4">
+                      <Button
+                          variant="ghost"
+                          className="text-primary hover:text-primary-dark transition-colors"
+                          onClick={() => router.push(`/course/${modalParameters.course.course_id}`)}
+                      >
+                          View Course
+                      </Button>
+                      <div className="flex space-x-2">
+                          <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => setEditDialogOpen(true)}
+                          >
+                              <Pencil2Icon />
+                          </Button>
+                          <ConfirmationDialog
+                            title="Confirm Deleting Study"
+                            description={`Are you sure you want to delete course ${modalParameters.course.course_name}? This action cannot be undone.`}
+                            triggerButtonLabel={<TrashIcon />}
+                            onConfirm={() => modalParameters.onCourseDelete(modalParameters.course.course_id)}
+                          />
+                      </div>
+                  </div>
+              </CardContent>
+          </Card>
+          <CourseEditDialogModal
+              isOpen={editDialogOpen}
+              onClose={() => setEditDialogOpen(false)}
+              course={modalParameters.course}
+              onCourseUpdate={modalParameters.onCourseUpdate}
+          />
       </div>
-
-      <div className="flex-shrink-0 flex space-x-2">
-          <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
-              <Pencil2Icon />
-          </Button>
-        <ConfirmationDialog
-          title="Confirm Deleting Study"
-          description={`Are you sure you want to delete course ${modalParameters.course.course_name}? This action cannot be undone.`}
-          triggerButtonLabel={<TrashIcon />}
-          onConfirm={() => modalParameters.onCourseDelete(modalParameters.course.course_id)}
-        />
-      </div>
-      <CourseEditDialogModal
-            isOpen={editDialogOpen}
-            onClose={() => setEditDialogOpen(false)}
-            course={modalParameters.course}
-            onCourseUpdate={modalParameters.onCourseUpdate}
-      />
-    </Card>
   );
 }

@@ -9,6 +9,7 @@ import {backendAPI} from "@/environment/backend_api";
 import {ToastAction} from "@/components/ui/toast";
 import {useToast} from "@/hooks/use-toast";
 import Cookies from "js-cookie";
+import {ScrollArea} from "@/components/ui/scroll-area";
 
 export function CoursesList (modalParameters: CoursesListProps) {
     const [token] = useState<string>(
@@ -33,15 +34,16 @@ export function CoursesList (modalParameters: CoursesListProps) {
           });
         }
     };
-  return (
-      <Card className="col-span-2">
+    return (
+      <Card className="col-span-3">
         <div className="flex items-center justify-between p-6">
           <CardTitle>Your Studies</CardTitle>
           <Pencil1Icon className="cursor-pointer hover:text-foreground/40 hover:bg-transparent text-foreground items-center justify-center" onClick={ () => modalParameters.setCourseDialog(true)}/>
         </div>
 
-        <div className="items-center h-[45lvh] overflow-auto px-6">
-          <div className="space-y-4">
+        <ScrollArea className="h-[45vh] w-full bg-transparent">
+          <div className="p-6">
+            <div className="flex flex-wrap gap-4">
             {modalParameters.courses.map((Course, index) => (
                 <div
                     key={index}
@@ -54,8 +56,9 @@ export function CoursesList (modalParameters: CoursesListProps) {
                   />
                 </div>
             ))}
+           </div>
           </div>
-        </div>
+        </ScrollArea>
       </Card>
-  );
+    );
 }
