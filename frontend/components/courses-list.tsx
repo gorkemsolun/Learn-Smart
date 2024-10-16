@@ -1,21 +1,43 @@
 "use client";
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { PlusCircledIcon } from "@radix-ui/react-icons";
+import React, {useState} from "react";
+import {Pencil1Icon} from "@radix-ui/react-icons";
 import {CoursesListProps} from "@/app/types";
 import {Card, CardTitle} from "@/components/ui/card";
 import {CourseCard} from "@/components/course-card";
+import {backendAPI} from "@/environment/backend_api";
+import {ToastAction} from "@/components/ui/toast";
+import {useToast} from "@/hooks/use-toast";
+import Cookies from "js-cookie";
+
 export function CoursesList (modalParameters: CoursesListProps) {
+    const [token] = useState<string>(
+        Cookies.get("authToken") as string
+    );
+    const {toast} = useToast();
+    const handleDeleteCourse = async (courseId: string) => {
+        try {
+          await backendAPI.delete(`/course/${courseId}`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          modalParameters.onCourseDelete();
+        } catch (error) {
+          toast({
+                title: "Error",
+                description: "Error deleting course:" + error,
+                variant: "destructive",
+                action: <ToastAction altText="Try again">Try again</ToastAction>,
+          });
+        }
+    };
   return (
       <Card className="col-span-2">
         <div className="flex items-center justify-between p-6">
           <CardTitle>Your Studies</CardTitle>
-          <Button
-              className="bg-none bg-transparent shadow-none hover:text-foreground/40 hover:bg-transparent text-foreground flex items-center"
-              onClick={ () => modalParameters.setCourseDialog(true)}>
-            <PlusCircledIcon/>
-          </Button>
+          <Pencil1Icon className="cursor-pointer hover:text-foreground/40 hover:bg-transparent text-foreground items-center justify-center" onClick={ () => modalParameters.setCourseDialog(true)}/>
         </div>
 
         <div className="items-center h-[45lvh] overflow-auto px-6">
@@ -25,8 +47,11 @@ export function CoursesList (modalParameters: CoursesListProps) {
                     key={index}
                     className="flex justify-between items-center"
                 >
-                  <CourseCard course={Course} onCourseDelete={modalParameters.onCourseDelete}
-                              onCourseUpdate={modalParameters.onCourseUpdate}/>
+                  <CourseCard
+                      course={Course}
+                      onCourseDelete={handleDeleteCourse}
+                      onCourseUpdate={modalParameters.onCourseUpdate}
+                  />
                 </div>
             ))}
           </div>

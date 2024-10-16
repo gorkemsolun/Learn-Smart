@@ -8,7 +8,7 @@ import {
     CardDescription,
     CardContent } from "@/components/ui/card";
 import {CoursesList} from "@/components/courses-list";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import Cookies from "js-cookie";
 import {Course} from "@/app/types";
 import {backendAPI} from "@/environment/backend_api";
@@ -24,13 +24,9 @@ export default function UserDashboard() {
   );
   const {toast} = useToast();
 
-  useEffect(() => {
-    if (token) {
-      fetchCourses();
-    }
-  }, [token]);
+  const fetchCourses = useCallback(async () => {
+    if (!token) return;
 
-  const fetchCourses = async () => {
     try {
       const response = await backendAPI.get(`/users/me`, {
         headers: {
@@ -39,37 +35,21 @@ export default function UserDashboard() {
         },
       });
 
-      setCourses(response.data["courses"]);
+      setCourses(response.data?.courses || []); // Optional chaining
     } catch (error) {
+      console.error(error.response); // Log full error response for debugging
       toast({
-            title: "Error",
-            description: "Error fetching course data:" + error,
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
+        title: "Error",
+        description: `Error fetching course data: ${error.message}`,
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
     }
-  };
-  const handleCourseUpdate = () => {
+  }, [token, toast]);
+
+  useEffect(() => {
     fetchCourses();
-  }
-  const handleDeleteCourse = async (courseId: string) => {
-    try {
-      await backendAPI.delete(`/course/${courseId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchCourses();
-    } catch (error) {
-      toast({
-            title: "Error",
-            description: "Error deleting course:" + error,
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
-      });
-    }
-  };
+  }, [fetchCourses]);
 
   const cardData = [
     {
@@ -131,15 +111,16 @@ export default function UserDashboard() {
             </CardFooter>
           </Card>
           <CoursesList courses={courses}
-                       onCourseDelete={handleDeleteCourse}
+                       onCourseDelete={fetchCourses}
                        setCourseDialog={setCourseDialog}
-                       onCourseUpdate={handleCourseUpdate}
+                       onCourseUpdate={fetchCourses}
           />
         </div>
         <CourseDialogModal
             isOpen={courseDialog}
             onClose={setCourseDialog}
-            onCourseCreation={handleCourseUpdate} />
+            onCourseCreation={fetchCourses}
+        />
       </div>
   );
 }

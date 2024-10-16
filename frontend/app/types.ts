@@ -24,7 +24,7 @@ export interface CourseDialogParameters {
 
 export interface CoursesListProps {
   courses: Course[];
-  onCourseDelete: (courseId: string) => void;
+  onCourseDelete: () => void;
   setCourseDialog: (value: boolean) => void;
   onCourseUpdate: () => void;
 }
@@ -46,5 +46,5 @@ export interface CourseEditDialogProps {
   isOpen: boolean;
   onClose: (value: boolean) => void;
   onCourseUpdate: () => void;
-  courseId: string;
+  course: Course;
 }

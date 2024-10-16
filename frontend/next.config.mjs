@@ -6,7 +6,7 @@ const nextConfig = {
     BACKEND_API_URL: process.env.BACKEND_API_URL,
   },
   images: {
-    domains: ['localhost', 'http://localhost:8000'],
+    domains: ['localhost'],
   },
 };
 export default nextConfig;

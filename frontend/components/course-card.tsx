@@ -19,34 +19,27 @@ import {Button} from "@/components/ui/button";
 export function CourseCard(modalParameters: CourseCardProps) {
   const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
+  const courseIconUrl = modalParameters.course.course_icon_url || "";
+    const imageUrl: string = courseIconUrl
+        ? `${backend.getUri()}/${courseIconUrl}?t=${Date.now()}`
+        : (default_study_logo as string);
   return (
-    <Card className="flex items-center justify-between p-4 w-full space-x-4 overflow-auto">
+    <Card className="flex items-center justify-between p-4 w-full space-x-4 overflow-hidden h-[20vh]">
       <div className="flex items-center space-x-4">
           <div
               className="rounded-md cursor-pointer"
               onClick={() => router.push(`/course/${modalParameters.course.course_id}`)}
           >
-              {modalParameters.course.course_icon_url ? (
-                  <Image
-                      src={`${backend.getUri()}/${modalParameters.course.course_icon_url}`}
-                      alt={modalParameters.course.course_name}
-                      className="object-cover object-fit rounded-md"
-                      width={250}
-                      height={250}
-                      style={{width: '12lvh', height: '12lvh'}}
-                  />
-              ) : (
 
-                  <Image
-                      src={default_study_logo}
-                      alt={modalParameters.course.course_name}
-                      className="object-cover object-fit rounded-md bg-foreground/20"
-                      width={250}
-                      height={250}
-                      style={{width: '12lvh', height: '12lvh'}}
-                  />
-              )}
-              <div className="text-center text-sm font-medium">
+               <Image
+                    src={imageUrl}
+                    alt={modalParameters.course.course_name}
+                    className="object-cover object-fit rounded-md w-[12vh] h-[12vh] bg-foreground/20"
+                    width={250}
+                    height={250}
+                    priority={true}
+               />
+              <div className="text-center text-sm font-medium mt-2">
                   {modalParameters.course.course_code}
               </div>
           </div>
@@ -70,10 +63,10 @@ export function CourseCard(modalParameters: CourseCardProps) {
           onConfirm={() => modalParameters.onCourseDelete(modalParameters.course.course_id)}
         />
       </div>
-        <CourseEditDialogModal
+      <CourseEditDialogModal
             isOpen={editDialogOpen}
             onClose={() => setEditDialogOpen(false)}
-            courseId={modalParameters.course.course_id}
+            course={modalParameters.course}
             onCourseUpdate={modalParameters.onCourseUpdate}
       />
     </Card>

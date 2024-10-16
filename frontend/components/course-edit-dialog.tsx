@@ -31,60 +31,58 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
   const [token] = useState<string>(
     Cookies.get("authToken") as string
   );
-  const [originalCourseName, setOriginalCourseName] = useState<string>("");
-  const [originalCourseCode, setOriginalCourseCode] = useState<string>("");
-  const [originalCourseDescription, setOriginalCourseDescription] =
-    useState<string>("");
-  const [originalSyllabus, setOriginalSyllabus] = useState<File | null>(null);
-  const [originalIcon, setOriginalIcon] = useState<File | null>(null);
+  const [originalCourseData, setOriginalCourseData] = useState<{
+    name: string;
+    code: string;
+    description: string;
+    syllabus: File | null;
+    icon: File | null;
+  }>({
+    name: "",
+    code: "",
+    description: "",
+    syllabus: null,
+    icon: null,
+  });
 
   const {toast} = useToast();
 
-  useEffect(() => {
-    if (token) {
-      fetchCourseDetails();
-    }
-  }, [token]);
-
   const resetFields = () => {
-    setCourseName(originalCourseName);
-    setCourseCode(originalCourseCode);
-    setCourseDescription(originalCourseDescription);
-    setSyllabus(originalSyllabus);
-    setIcon(originalIcon);
+    setCourseName(originalCourseData.name);
+    setCourseCode(originalCourseData.code);
+    setCourseDescription(originalCourseData.description);
+    setSyllabus(originalCourseData.syllabus);
+    setIcon(originalCourseData.icon);
   };
 
   const fetchCourseDetails = async () => {
     try {
-      const response = await backendAPI.get(
-        `/course/${modalParameters.courseId}`,
-        {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
       const {
         course_name = "",
         course_code = "",
         course_description = "",
         course_syllabus_url = null,
         course_icon_url = null,
-      } = response.data;
+      } = modalParameters.course;
 
       setCourseName(course_name);
       setCourseCode(course_code);
-      if (course_description) setCourseDescription(course_description);
+      setCourseDescription(course_description);
 
+      setOriginalCourseData({
+        name: course_name,
+        code: course_code,
+        description: course_description,
+        syllabus: null,
+        icon: null,
+      });
       if (course_syllabus_url) {
         const syllabusResponse = await fetch(
           `${backend.getUri()}/${course_syllabus_url}`
         );
         const syllabusBlob = await syllabusResponse.blob();
         const syllabusType = syllabusBlob.type;
-        const syllabusExtension = syllabusType.split("/")[1]; // Extract the file extension from the MIME type
+        const syllabusExtension = syllabusType.split("/")[1];
         const syllabusFile = new File(
           [syllabusBlob],
           `syllabus.${syllabusExtension}`,
@@ -93,7 +91,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
           }
         );
         setSyllabus(syllabusFile);
-        setOriginalSyllabus(syllabusFile);
+        setOriginalCourseData((prev) => ({ ...prev, syllabus: syllabusFile }));
       }
 
       if (course_icon_url) {
@@ -102,25 +100,35 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
         );
         const iconBlob = await iconResponse.blob();
         const iconType = iconBlob.type;
-        const iconExtension = iconType.split("/")[1]; // Extract the file extension from the MIME type
+        const iconExtension = iconType.split("/")[1];
         const iconFile = new File([iconBlob], `icon.${iconExtension}`, {
           type: iconType,
         });
         setIcon(iconFile);
-        setOriginalIcon(iconFile);
+        setOriginalCourseData((prev) => ({ ...prev, icon: iconFile }));
       }
-      setOriginalCourseName(course_name);
-      setOriginalCourseCode(course_code);
-      setOriginalCourseDescription(course_description);
-    } catch ({}) {
+      setOriginalCourseData((prev) => ({
+        ...prev,
+        name: course_name,
+        code: course_code,
+        description: course_description,
+      }));
+    } catch (error) {
+      console.log(error);
       toast({
-            title: "Error",
-            description: "Error fetching course details",
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
+        title: "Error",
+        description: "Error fetching course details",
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
     }
   };
+
+  useEffect(() => {
+    if (modalParameters.isOpen) {
+      fetchCourseDetails();
+    }
+  }, [modalParameters.isOpen]);
 
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -187,39 +195,43 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
     formData.append("course_name", courseName);
     formData.append("course_code", courseCode);
     formData.append("course_description", courseDescription);
+    formData.append("update_description", true);
+
     if (syllabus) {
       formData.append("course_syllabus_file", syllabus);
+      formData.append("course_update_syllabus", true);
     }
     if (icon) {
       formData.append("course_icon_file", icon);
+      formData.append("update_icon", true);
     }
 
     setDisableSaveButton(true);
 
-    // Send the form data to the backend
-    setDisableSaveButton(true);
-    try {
-      await backendAPI.put(`/course/${modalParameters.courseId}`, formData, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      modalParameters.onCourseUpdate();
-
-    }
-    catch {
-        toast({
+    await backendAPI
+        .put(`/course/${modalParameters.course.course_id}`, formData, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then(() => {
+          modalParameters.onCourseUpdate();
+        })
+        .catch((error) => {
+          console.log(error.response);
+          toast({
             title: "Error",
-            description: "Error editing course",
+            description: "Error creating course" + error,
             variant: "destructive",
             action: <ToastAction altText="Try again">Try again</ToastAction>,
+          });
+        })
+        .finally(() => {
+          setDisableSaveButton(false);
+          modalParameters.onClose(false);
         });
-    } finally {
-        setDisableSaveButton(false);
-        modalParameters.onClose(false);
-    }
   }
   return (
       <Dialog open={modalParameters.isOpen} onOpenChange={handleOpenChange} className="w-3/5">

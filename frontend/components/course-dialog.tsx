@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
 import {
   Dialog,
@@ -31,6 +31,7 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
   const [token] = useState<string>(
     Cookies.get("authToken") as string
   );
+
   const {toast} = useToast();
   const resetFields = () => {
     setCourseCode("");
@@ -113,6 +114,7 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
         modalParameters.onCourseCreation();
       })
       .catch((error) => {
+        console.log(error.response);
         toast({
             title: "Error",
             description: "Error creating course" + error,
