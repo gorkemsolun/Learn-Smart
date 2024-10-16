@@ -130,8 +130,13 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
       });
   }
 
+  function handleOpenChange() {
+    resetFields();
+    modalParameters.onClose(false);
+  }
+
   return (
-      <Dialog open={modalParameters.isOpen} onOpenChange={modalParameters.onClose} className="w-3/5">
+      <Dialog open={modalParameters.isOpen} onOpenChange={handleOpenChange} className="w-3/5">
         <DialogContent className="sm:max-w-[80vh] border-b-neutral-800">
           <div className="space-y-1">
             <DialogTitle className="mb-2">Create Individual Study</DialogTitle>
