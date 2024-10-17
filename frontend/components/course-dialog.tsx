@@ -112,12 +112,19 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
       .then(() => {
         // Call the onCourseCreation callback to update the course list
         modalParameters.onCourseCreation();
+        toast({
+            title: "Success",
+            description: "Course successfully created",
+            variant: "default",
+            action: <ToastAction altText="Dismiss" className="border-white hover:bg-background/20">Dismiss</ToastAction>,
+            className: "bg-green-500",
+        });
       })
       .catch((error) => {
         console.log(error.response);
         toast({
             title: "Error",
-            description: "Error creating course" + error,
+            description: "Error creating course",
             variant: "destructive",
             action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
@@ -127,13 +134,6 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
         setDisableCreateButton(false);
         resetFields();
         modalParameters.onClose(false);
-        toast({
-            title: "Success",
-            description: "Course successfully created",
-            variant: "default",
-            action: <ToastAction altText="Dismiss" className="border-white hover:bg-background/20">Dismiss</ToastAction>,
-            className: "bg-green-500",
-        });
       });
   }
 

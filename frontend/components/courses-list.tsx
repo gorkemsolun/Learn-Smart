@@ -43,7 +43,7 @@ export function CoursesList (modalParameters: CoursesListProps) {
 
         <ScrollArea className="h-[45vh] w-full bg-transparent">
           <div className="p-6">
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-6">
             {modalParameters.courses.map((Course, index) => (
                 <div
                     key={index}

@@ -32,7 +32,7 @@ export function CourseCard(modalParameters: CourseCardProps) {
           transition={{duration: 0.5}}
       >
           <Card
-              className="overflow-hidden w-[36.7vh] h-[40vh] g-gradient-to-br from-primary/10 to-secondary/10
+              className="overflow-hidden w-[36vh] h-[40vh] g-gradient-to-br from-primary/10 to-secondary/10
               hover:shadow-lg transition-shadow duration-300">
               <div className="relative h-[20vh] overflow-hidden group">
                   <Image
