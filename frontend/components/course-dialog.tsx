@@ -127,6 +127,13 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
         setDisableCreateButton(false);
         resetFields();
         modalParameters.onClose(false);
+        toast({
+            title: "Success",
+            description: "Course successfully created",
+            variant: "default",
+            action: <ToastAction altText="Dismiss" className="border-white hover:bg-background/20">Dismiss</ToastAction>,
+            className: "bg-green-500",
+        });
       });
   }
 
