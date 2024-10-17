@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inek Arkadaslari</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="#" class="nav-link" onclick="showSection('home')">Home</a></li>
+                <li><a href="#" class="nav-link" onclick="showSection('project')">Project</a></li>
+                <li><a href="#" class="nav-link" onclick="showSection('documents')">Documents</a></li>
+                <li><a href="#" class="nav-link" onclick="showSection('members')">Members</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="home" class="content-section">
+        <h1>Welcome to Home Page</h1>
+        <p>This is the home section of the website.</p>
+    </section>
+
+    <section id="project" class="content-section" style="display: none;">
+        <h1>Project</h1>
+        <p>Details about the project go here.</p>
+    </section>
+
+    <section id="documents" class="content-section" style="display: none;">
+        <h1>Documents</h1>
+        <p>Download the available documents below:</p>
+        <ul>
+            <li><a href="downloads/document1.pdf" download>Download Document 1</a></li>
+            <li><a href="downloads/document2.pdf" download>Download Document 2</a></li>
+            <li><a href="downloads/document3.pdf" download>Download Document 3</a></li>
+        </ul>
+    </section>
+
+    <section id="members" class="content-section" style="display: none;">
+        <h1>Members</h1>
+        <p>Information about the members of our project:</p>
+    
+        <div class="member">
+            <h2>Bilginer Oral</h2>
+            <p>22103163</p>
+            <p>bilginer.oral@ug.bilkent.edu.tr</p>
+        </div>
+    
+        <div class="member">
+            <h2>Cahit Ediz Civan</h2>
+            <p>22003206</p>
+            <p>ediz.civan@ug.bilkent.edu.tr</p>
+        </div>
+    
+        <div class="member">
+            <h2>Efe Kaan Fidancı</h2>
+            <p>22102589</p>
+            <p>kaan.fidanci@ug.bilkent.edu.tr</p>
+        </div>
+    
+        <div class="member">
+            <h2>Görkem Kadir Solun</h2>
+            <p>22003214</p>
+            <p>kadir.solun@ug.bilkent.edu.tr</p>
+        </div>
+    
+        <div class="member">
+            <h2>Murat Çağrı Kara</h2>
+            <p>22102505</p>
+            <p>cagri.kara@ug.bilkent.edu.tr</p>
+        </div>
+    </section>
+    
+    <script src="js/script.js"></script>
+</body>
+</html>
