@@ -15,7 +15,7 @@ import {
 import { backend } from "@/environment/backend_api";
 import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
 import { motion } from "framer-motion";
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -23,9 +23,9 @@ export function CourseCard(modalParameters: CourseCardProps) {
   const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
   const courseIconUrl = modalParameters.course.course_icon_url || "";
-  const image_url: string | StaticImageData = courseIconUrl
+  const image_url: string = courseIconUrl
     ? `${backend.getUri()}/${courseIconUrl}?t=${Date.now()}`
-    : default_study_logo;
+    : (default_study_logo as string);
 
   return (
     <motion.div
@@ -35,10 +35,7 @@ export function CourseCard(modalParameters: CourseCardProps) {
     >
       <Card
         className="overflow-hidden w-[36vh] h-[40vh] g-gradient-to-br from-primary/10 to-secondary/10
-              hover:shadow-lg transition-shadow duration-300 cursor-pointer"
-        onClick={() =>
-          router.push(`/course/${modalParameters.course.course_id}`)
-        }
+              hover:shadow-lg transition-shadow duration-300"
       >
         <div className="relative h-[20vh] overflow-hidden group">
           <Image
