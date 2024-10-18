@@ -31,6 +31,19 @@ export default function RoleSelectorCard() {
 
   const router = useRouter();
 
+  const fetchUserData = useCallback(async () => {
+    await backendAPI
+      .get("/users/me", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        setUserID(response.data.user_id);
+      });
+  }, [token]);
+
   useEffect(() => {
     if (!token) {
       router.replace("/sign-in");
@@ -39,18 +52,6 @@ export default function RoleSelectorCard() {
     }
   }, [token, router, userID, fetchUserData]);
 
-  const fetchUserData = useCallback(async () => {
-  await backendAPI
-    .get("/users/me", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then((response) => {
-      setUserID(response.data.user_id);
-    });
-}, [token]);
 
   const handleUserRoleSelection = (role: string) => {
     setSelectedUserRole(role);
