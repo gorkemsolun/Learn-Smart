@@ -11,7 +11,7 @@ import {useToast} from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import {ScrollArea} from "@/components/ui/scroll-area";
 
-export function CoursesCreateList (modalParameters: CoursesListProps) {
+export function CoursesList (modalParameters: CoursesListProps) {
     const [token] = useState<string>(
         Cookies.get("authToken") as string
     );

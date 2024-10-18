@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button"
 import Cookies from "js-cookie";
 import {backendAPI} from "@/environment/backend_api";
-import { CourseDialogParameters } from "@/app/types";
+import {CourseCreateDialogProps} from "@/app/types";
 import { LuUploadCloud } from "react-icons/lu";
 import { FileIcon, ImageIcon, FileTextIcon } from "@radix-ui/react-icons";
 import { Textarea } from "@/components/ui/textarea"
@@ -20,7 +20,7 @@ import {useToast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
 import * as React from "react";
 
-export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
+export function CourseCreateDialogModal( modalParameters: CourseCreateDialogProps ) {
 
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
@@ -116,8 +116,8 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
             title: "Success",
             description: "Course successfully created",
             variant: "default",
-            action: <ToastAction altText="Dismiss" className="border-white hover:bg-background/20">Dismiss</ToastAction>,
-            className: "bg-green-500",
+            action: <ToastAction altText="Dismiss" className="hover:bg-background/20">Dismiss</ToastAction>,
+            className: "bg-green-500 text-background",
         });
       })
       .catch((error) => {

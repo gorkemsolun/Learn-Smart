@@ -7,12 +7,12 @@ import {
     CardTitle,
     CardDescription,
     CardContent } from "@/components/ui/card";
-import {CoursesCreateList} from "@/components/courses-create-list";
+import {CoursesList} from "@/components/courses-list";
 import {useCallback, useEffect, useState} from "react";
 import Cookies from "js-cookie";
 import {Course} from "@/app/types";
 import {backendAPI} from "@/environment/backend_api";
-import {CourseDialogModal} from "@/components/course-dialog";
+import {CourseCreateDialogModal} from "@/components/course-create-dialog";
 import {useToast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
 
@@ -110,13 +110,13 @@ export default function UserDashboard() {
               <p>Footer for the big card</p>
             </CardFooter>
           </Card>
-          <CoursesCreateList courses={courses}
-                             onCourseDelete={fetchCourses}
-                             setCourseDialog={setCourseDialog}
-                             onCourseUpdate={fetchCourses}
+          <CoursesList courses={courses}
+                       onCourseDelete={fetchCourses}
+                       setCourseDialog={setCourseDialog}
+                       onCourseUpdate={fetchCourses}
           />
         </div>
-        <CourseDialogModal
+        <CourseCreateDialogModal
             isOpen={courseDialog}
             onClose={setCourseDialog}
             onCourseCreation={fetchCourses}
