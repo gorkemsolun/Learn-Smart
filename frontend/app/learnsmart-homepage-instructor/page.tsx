@@ -19,7 +19,7 @@ export default function Home() {
         if (!token) {
             router.replace("/sign-in");
         }
-    }, [router]);
+    }, [token, router]);
 
     const handleSearchButtonClick = () => {
       setDialogOpen(!isDialogOpen);

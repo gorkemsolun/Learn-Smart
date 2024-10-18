@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
 import {
   Dialog,
@@ -55,7 +55,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
     setIcon(originalCourseData.icon);
   };
 
-  const fetchCourseDetails = async () => {
+  const fetchCourseDetails = useCallback(async () => {
     try {
       const {
         course_name = "",
@@ -76,6 +76,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
         syllabus: null,
         icon: null,
       });
+
       if (course_syllabus_url) {
         const syllabusResponse = await fetch(
           `${backend.getUri()}/${course_syllabus_url}`
@@ -86,9 +87,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
         const syllabusFile = new File(
           [syllabusBlob],
           `syllabus.${syllabusExtension}`,
-          {
-            type: syllabusType,
-          }
+          { type: syllabusType }
         );
         setSyllabus(syllabusFile);
         setOriginalCourseData((prev) => ({ ...prev, syllabus: syllabusFile }));
@@ -122,13 +121,14 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
     }
-  };
+  }, [modalParameters.course, toast]);
 
   useEffect(() => {
     if (modalParameters.isOpen) {
       fetchCourseDetails();
     }
-  }, [modalParameters.isOpen]);
+  }, [fetchCourseDetails, modalParameters.isOpen]);
+
 
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -233,6 +233,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
           modalParameters.onClose(false);
         });
   }
+
   return (
       <Dialog open={modalParameters.isOpen} onOpenChange={handleOpenChange} className="w-3/5">
         <DialogContent className="sm:max-w-[80vh] border-b-neutral-800">

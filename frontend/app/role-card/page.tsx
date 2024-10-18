@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {backendAPI} from "@/environment/backend_api";
 import Cookies from "js-cookie";
 import {ToastAction} from "@/components/ui/toast";
@@ -31,15 +31,7 @@ export default function RoleSelectorCard() {
 
   const router = useRouter();
 
-  useEffect(() => {
-    if (!token) {
-      router.replace("/sign-in");
-    } else {
-      fetchUserData();
-    }
-  }, [router, userID]);
-
-  async function fetchUserData() {
+  const fetchUserData = useCallback(async () => {
     await backendAPI
       .get("/users/me", {
         headers: {
@@ -50,7 +42,16 @@ export default function RoleSelectorCard() {
       .then((response) => {
         setUserID(response.data.user_id);
       });
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) {
+      router.replace("/sign-in");
+    } else {
+      fetchUserData();
+    }
+  }, [token, router, userID, fetchUserData]);
+
 
   const handleUserRoleSelection = (role: string) => {
     setSelectedUserRole(role);

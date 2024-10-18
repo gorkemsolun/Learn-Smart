@@ -12,7 +12,7 @@ import {useCallback, useEffect, useState} from "react";
 import Cookies from "js-cookie";
 import {Course} from "@/app/types";
 import {backendAPI} from "@/environment/backend_api";
-import {CourseDialogModal} from "@/components/course-dialog";
+import {CourseCreateDialogModal} from "@/components/course-create-dialog";
 import {useToast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
 
@@ -116,7 +116,7 @@ export default function UserDashboard() {
                        onCourseUpdate={fetchCourses}
           />
         </div>
-        <CourseDialogModal
+        <CourseCreateDialogModal
             isOpen={courseDialog}
             onClose={setCourseDialog}
             onCourseCreation={fetchCourses}

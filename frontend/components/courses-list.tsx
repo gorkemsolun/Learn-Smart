@@ -34,6 +34,7 @@ export function CoursesList (modalParameters: CoursesListProps) {
           });
         }
     };
+
     return (
       <Card className="col-span-3">
         <div className="flex items-center justify-between p-6">
@@ -43,7 +44,7 @@ export function CoursesList (modalParameters: CoursesListProps) {
 
         <ScrollArea className="h-[45vh] w-full bg-transparent">
           <div className="p-6">
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-6">
             {modalParameters.courses.map((Course, index) => (
                 <div
                     key={index}

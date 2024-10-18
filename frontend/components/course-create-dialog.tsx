@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button"
 import Cookies from "js-cookie";
 import {backendAPI} from "@/environment/backend_api";
-import { CourseDialogParameters } from "@/app/types";
+import {CourseCreateDialogProps} from "@/app/types";
 import { LuUploadCloud } from "react-icons/lu";
 import { FileIcon, ImageIcon, FileTextIcon } from "@radix-ui/react-icons";
 import { Textarea } from "@/components/ui/textarea"
@@ -20,7 +20,7 @@ import {useToast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
 import * as React from "react";
 
-export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
+export function CourseCreateDialogModal( modalParameters: CourseCreateDialogProps ) {
 
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
@@ -112,12 +112,19 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
       .then(() => {
         // Call the onCourseCreation callback to update the course list
         modalParameters.onCourseCreation();
+        toast({
+            title: "Success",
+            description: "Course successfully created",
+            variant: "default",
+            action: <ToastAction altText="Dismiss" className="hover:bg-background/20">Dismiss</ToastAction>,
+            className: "bg-green-500 text-background",
+        });
       })
       .catch((error) => {
         console.log(error.response);
         toast({
             title: "Error",
-            description: "Error creating course" + error,
+            description: "Error creating course",
             variant: "destructive",
             action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
@@ -127,13 +134,6 @@ export function CourseDialogModal( modalParameters: CourseDialogParameters ) {
         setDisableCreateButton(false);
         resetFields();
         modalParameters.onClose(false);
-        toast({
-            title: "Success",
-            description: "Course successfully created",
-            variant: "default",
-            action: <ToastAction altText="Dismiss" className="border-white hover:bg-background/20">Dismiss</ToastAction>,
-            className: "bg-green-500",
-        });
       });
   }
 
