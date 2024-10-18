@@ -40,6 +40,7 @@ export function CourseCard(modalParameters: CourseCardProps) {
                       alt={modalParameters.course.course_name}
                       width={250}
                       height={250}
+                      className="bg-foreground/10"
                       style={{width: '100%', height: '100%', objectFit: 'cover'}}
                       priority
                   />

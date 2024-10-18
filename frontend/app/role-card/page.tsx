@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {backendAPI} from "@/environment/backend_api";
 import Cookies from "js-cookie";
 import {ToastAction} from "@/components/ui/toast";
@@ -37,20 +37,20 @@ export default function RoleSelectorCard() {
     } else {
       fetchUserData();
     }
-  }, [router, userID]);
+  }, [token, router, userID, fetchUserData]);
 
-  async function fetchUserData() {
-    await backendAPI
-      .get("/users/me", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => {
-        setUserID(response.data.user_id);
-      });
-  }
+  const fetchUserData = useCallback(async () => {
+  await backendAPI
+    .get("/users/me", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((response) => {
+      setUserID(response.data.user_id);
+    });
+}, [token]);
 
   const handleUserRoleSelection = (role: string) => {
     setSelectedUserRole(role);

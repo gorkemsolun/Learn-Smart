@@ -7,7 +7,7 @@ import {
     CardTitle,
     CardDescription,
     CardContent } from "@/components/ui/card";
-import {CoursesList} from "@/components/courses-list";
+import {CoursesCreateList} from "@/components/courses-create-list";
 import {useCallback, useEffect, useState} from "react";
 import Cookies from "js-cookie";
 import {Course} from "@/app/types";
@@ -110,10 +110,10 @@ export default function UserDashboard() {
               <p>Footer for the big card</p>
             </CardFooter>
           </Card>
-          <CoursesList courses={courses}
-                       onCourseDelete={fetchCourses}
-                       setCourseDialog={setCourseDialog}
-                       onCourseUpdate={fetchCourses}
+          <CoursesCreateList courses={courses}
+                             onCourseDelete={fetchCourses}
+                             setCourseDialog={setCourseDialog}
+                             onCourseUpdate={fetchCourses}
           />
         </div>
         <CourseDialogModal

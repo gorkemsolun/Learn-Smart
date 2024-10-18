@@ -51,7 +51,7 @@ export function Navbar({onSearchButtonClick}) {
     <header className="sticky top-0 z-50 w-full border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <NavigationMenu>
         <NavigationMenuList>
-          <Button type="button" onClick={handleHomePageClick} className="bg-transparent hover:bg-transparent focus:ring-0 text-foreground shadow-none space-x-1">
+          <Button type="button" onClick={handleHomePageClick} variant="ghost" className="hover:bg-transparent focus-visible:ring-0 space-x-1">
             <NavigationMenuItem>
               <Icons.logo className="h-6 w-6" />
             </NavigationMenuItem>
@@ -114,8 +114,7 @@ export function Navbar({onSearchButtonClick}) {
             <ModeToggle />
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Button variant="outline" size="icon" className="border-none bg-transparent shadow-none focus-visible:ring-0
-            " onClick={handleLogout}>
+            <Button variant="ghost" size="icon" className="focus-visible:ring-0 bg-transparent" onClick={handleLogout}>
               <ExitIcon className="h-[1.1rem] w-[1.1rem]" />
             </Button>
           </NavigationMenuItem>

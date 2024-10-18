@@ -11,7 +11,7 @@ import {useToast} from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import {ScrollArea} from "@/components/ui/scroll-area";
 
-export function CoursesList (modalParameters: CoursesListProps) {
+export function CoursesCreateList (modalParameters: CoursesListProps) {
     const [token] = useState<string>(
         Cookies.get("authToken") as string
     );
@@ -34,6 +34,7 @@ export function CoursesList (modalParameters: CoursesListProps) {
           });
         }
     };
+
     return (
       <Card className="col-span-3">
         <div className="flex items-center justify-between p-6">
