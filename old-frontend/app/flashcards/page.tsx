@@ -16,7 +16,7 @@ import {
 export default function FlashcardsPage({ flashcardData, onClose }) {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     if (flashcardData?.flashcards && flashcardData?.explanations) {
       const combinedFlashcards = flashcardData.flashcards.map(
@@ -33,7 +33,7 @@ export default function FlashcardsPage({ flashcardData, onClose }) {
       setLoading(false);
     }
   }, [flashcardData]);  // Run the effect whenever flashcardData changes
- 
+
 
 
   if (loading) {
@@ -41,10 +41,14 @@ export default function FlashcardsPage({ flashcardData, onClose }) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center bg-black">
-     
+    <div className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center rounded-lg"
+      style={{
+        background: 'rgba(0, 0, 0, 0.8)', // Semi-transparent black
+        backdropFilter: 'blur(13px)' // Blur effect
+      }}>
+
       {flashcards.length > 0 ? (
-        <div className="w-full h-full overflow-y-auto">
+        <div className="w-[80%] h-[80%] overflow-y-auto">
           <Carousel>
             <CarouselContent>
               {flashcards.map((flashcard, index) => (
@@ -57,7 +61,7 @@ export default function FlashcardsPage({ flashcardData, onClose }) {
               ))}
             </CarouselContent>
 
-            <CarouselPrevious className="w-8 h-8 p-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-full absolute left-2 top-1/2 transform -translate-y-1/2"/>
+            <CarouselPrevious className="w-8 h-8 p-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-full absolute left-2 top-1/2 transform -translate-y-1/2" />
             <CarouselNext className="w-8 h-8 p-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-full absolute right-2 top-1/2 transform -translate-y-1/2" />
           </Carousel>
         </div>
