@@ -43,29 +43,29 @@ const FlashcardModal = (modalParameters: FlashcardModalParameters) => {
   if (!modalParameters.isOpen) return null; // Prevent rendering if modal is not open
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 flex items-center justify-center z-50 ">
 
-            <div className="bg-white w-[1500px] h-[800px] rounded-lg shadow-lg overflow-hidden relative flex justify-center items-center">
-                {/* Close Button */}
-                <button
-                    onClick={() => handleClose()}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                    aria-label="Close"
-                    type="button"
-                >
-                    &#10005; {/* This is the Unicode character for an "X" symbol */}
-                </button>
-                {flashcardData ? (
-                    <div className="overflow-y-auto max-h-full">
-                        <FlashcardsPage flashcardData={flashcardData} onClose={() => handleClose()} />
-                    </div>
-                ) : isLoading ? (
-                    <div className="p-8 flex items-center justify-center h-full">Loading the flashcard for you...</div>
-                ) : (
-                    <div className="p-8">Error loading flashcard data: {error?.message}</div>
-                )}
-            </div>
-        </div>
+      <div className="bg-transparent w-[1500px] h-[800px] rounded-lg shadow-lg relative flex justify-center items-center">
+        {flashcardData ? (
+          <div className="w-full h-full">
+            {/* Close Button */}
+            <button
+              onClick={() => handleClose()}
+              className="absolute top-2 right-2 z-10 text-white hover:text-gray-700"
+              aria-label="Close"
+              type="button"
+            >
+              &#10005; {/* This is the Unicode character for an "X" symbol */}
+            </button>
+            <FlashcardsPage flashcardData={flashcardData} onClose={() => handleClose()} />
+          </div>
+        ) : isLoading ? (
+          <div className="p-8 flex items-center justify-center w-[%50] h-[%10] bg-black text-white rounded-lg">Loading the flashcard for you...</div>
+        ) : (
+          <div className="p-8">Error loading flashcard data: {error?.message}</div>
+        )}
+      </div>
+    </div>
   );
 };
 
