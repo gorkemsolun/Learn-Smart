@@ -22,19 +22,27 @@ import {
   FaUserTie,
 } from "react-icons/fa";
 import { IoCloudUploadSharp } from "react-icons/io5";
+import UpdateUploadSyllabus from "./upload-syllabus-modal-old";
 
 export default function CourseHomepage() {
   const router = useRouter();
   const { theme } = useTheme();
   const [course, setCourse] = useState<Course>();
   const [loading, setLoading] = useState(true);
+
   // Loading state is essential to ensure a smooth user experience, especially after a page refresh.
   // This helps handle potential issues with icon themes that may not load correctly due to changes in the current theme.
+
   const [token] = useState<string>(Cookies.get("authToken") || "");
   const { toast } = useToast();
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
-  const chat_id = "1";
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const handleModalOpen = () => setIsModalOpen(true);
+  const handleModalClose = () => setIsModalOpen(false);
+
+  const chat_id = "1"; // These can cause issues later. Separate from functional constants or label clearly.
 
   useEffect(() => {
     if (token) {
@@ -65,6 +73,29 @@ export default function CourseHomepage() {
     }
   };
 
+  const handleFlashcardsClick = () => {
+    console.log("handleFlashcardsClick");
+    // Handle the specific action
+  };
+
+  const handleQuizzesClick = () => {
+    console.log("handleQuizzesClick");
+    // Handle the specific action
+  };
+
+  const handleInstructorClick = () => {
+    router.push(`/course/${course_id}/instructor/${chat_id}`);
+  };
+
+  const handleWeeklyStudyPlanClick = () => {
+    console.log("handleWeeklyStudyPlanClick");
+    // Handle the specific action
+  };
+
+  const handleUploadSyllabusClick = () => {
+    handleModalOpen();
+  };
+
   const courseHomepageElements = [
     {
       title: "Flashcards",
@@ -76,7 +107,7 @@ export default function CourseHomepage() {
           }`}
         />
       ),
-      router: `/flashcards`,
+      onClick: handleFlashcardsClick,
     },
     {
       title: "Quizzes",
@@ -88,7 +119,7 @@ export default function CourseHomepage() {
           }`}
         />
       ),
-      router: `/quizzes`,
+      onClick: handleQuizzesClick,
     },
     {
       title: `Go to ${course?.course_name} Instructor`,
@@ -100,7 +131,7 @@ export default function CourseHomepage() {
           }`}
         />
       ),
-      router: `/instructor`,
+      onClick: handleInstructorClick,
     },
     {
       title: "Weekly study plan",
@@ -112,7 +143,7 @@ export default function CourseHomepage() {
           }`}
         />
       ),
-      router: `/weekly-study-plan`,
+      onClick: handleWeeklyStudyPlanClick,
     },
     {
       title: "Upload/Update Syllabus",
@@ -124,47 +155,54 @@ export default function CourseHomepage() {
           }`}
         />
       ),
-      router: `/upload-syllabus`,
+      onClick: handleUploadSyllabusClick,
     },
   ];
 
   return (
-    <div className="p-6 space-y-6">
-      {loading ? (
-        <div className="text-center">Loading...</div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {courseHomepageElements.map((element, index) => (
-            <Card
-              key={index}
-              className="flex flex-col justify-between h-full"
-              onClick={
-                () => router.push(`/course/${course_id}/instructor/${chat_id}`) // TODO: Change this to be dynamic
-              }
-            >
-              <CardHeader className="text-center">
-                <CardTitle className="text-lg font-semibold">
-                  {element.title}
-                </CardTitle>
-                <CardDescription className="text-gray-500">
-                  {element.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-center items-center h-32">
-                {element.icon}
-              </CardContent>
-              <CardFooter className="flex justify-center">
-                <a
-                  href={element.router}
-                  className="px-6 py-2 bg-black text-white rounded-full hover:bg-gray-700 transition duration-300 w-full text-center max-w-xs"
-                >
-                  {element.title}
-                </a>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+    <main className="bg-transparent min-h-screen text-black">
+      <div className="p-6 space-y-6">
+        {loading ? (
+          <div className="text-center">Loading...</div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {courseHomepageElements.map((element, index) => (
+              <Card
+                key={index}
+                className="flex flex-col justify-between h-full"
+              >
+                <CardHeader className="text-center">
+                  <CardTitle className="text-lg font-semibold">
+                    {element.title}
+                  </CardTitle>
+                  <CardDescription className="text-gray-500">
+                    {element.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center h-32">
+                  {element.icon}
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                  <div
+                    onClick={element.onClick}
+                    className="px-6 py-2 bg-black text-white rounded-full hover:bg-gray-700 transition duration-300 w-full text-center max-w-xs cursor-pointer"
+                  >
+                    {element.title}
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+      {isModalOpen && (
+        <UpdateUploadSyllabus
+          isOpen={isModalOpen}
+          modalTitle="Upload/Update Syllabus"
+          onClose={handleModalClose}
+          course_id={course_id}
+        />
       )}
-    </div>
+    </main>
   );
 }
