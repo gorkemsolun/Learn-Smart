@@ -32,7 +32,7 @@ export function ChatSidebar() {
   } = useSidebar();
 
   return (
-    <Sidebar>
+    <Sidebar variant="floating">
       <SidebarHeader />
       <SidebarContent className="p-1">
         <SidebarGroup>
