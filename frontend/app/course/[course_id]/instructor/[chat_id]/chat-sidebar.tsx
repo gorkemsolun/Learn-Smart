@@ -20,7 +20,12 @@ import {
 } from "@/components/ui/sidebar";
 import { FaChevronDown } from "react-icons/fa";
 
-export function ChatSidebar() {
+interface ChatSidebarParameters {
+  isChatCreateDialogOpen: boolean;
+  onChatCreateDialogClose: (isOpen: boolean) => void;
+}
+
+export function ChatSidebar(chatSidebarParameters: ChatSidebarParameters) {
   const {
     state,
     open,
@@ -41,7 +46,10 @@ export function ChatSidebar() {
               Chats
             </SidebarGroupLabel>
 
-            <SidebarMenuButton className="size-8">
+            <SidebarMenuButton
+              className="size-8"
+              onClick={() => chatSidebarParameters.onChatCreateDialogClose(true)}
+            >
               <Icons.createChat />
             </SidebarMenuButton>
           </div>

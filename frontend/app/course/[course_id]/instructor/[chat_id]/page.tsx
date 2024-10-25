@@ -11,14 +11,15 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useParams /*useRouter*/ } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ChatCreateDialog } from "./chat-create-dialog";
 import { ChatSidebar } from "./chat-sidebar";
 
 export default function ChatPage() {
-  const router = useRouter();
+  // const router = useRouter();
+  const [chatCreateDialog, setChatCreateDialog] = useState<boolean>(false);
   const params = useParams<{ chat_id: string; course_id: string }>();
   const { course_id, chat_id } = params;
 
@@ -27,7 +28,7 @@ export default function ChatPage() {
     }
   }, [course_id, chat_id]);
 
-  function fetchChat() {
+  function fetchChats() {
     // TODO: Fetch chat data
   }
 
@@ -35,7 +36,10 @@ export default function ChatPage() {
     <div className="flex">
       {/* Sidebar */}
       <SidebarProvider className="fixed left-0 top-0 z-50 h-full w-fit">
-        <ChatSidebar />
+        <ChatSidebar
+          isChatCreateDialogOpen={chatCreateDialog}
+          onChatCreateDialogClose={setChatCreateDialog}
+        />
         <SidebarTrigger />
       </SidebarProvider>
 
@@ -65,6 +69,13 @@ export default function ChatPage() {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      {/* Chat create dialog*/}
+      <ChatCreateDialog
+        isOpen={chatCreateDialog}
+        onClose={setChatCreateDialog}
+        onChatCreation={fetchChats}
+      />
     </div>
   );
 }
