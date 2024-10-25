@@ -1,7 +1,7 @@
 "use client";
 
-import {useState} from 'react';
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,30 +9,33 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea";
+import { ToastAction } from "@/components/ui/toast";
+import { backendAPI } from "@/environment/backend_api";
+import { useToast } from "@/hooks/use-toast";
+import { FileIcon, FileTextIcon, ImageIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
-import {backendAPI} from "@/environment/backend_api";
-import {CourseCreateDialogProps} from "@/app/types";
-import { LuUploadCloud } from "react-icons/lu";
-import { FileIcon, ImageIcon, FileTextIcon } from "@radix-ui/react-icons";
-import { Textarea } from "@/components/ui/textarea"
-import {useToast} from "@/hooks/use-toast";
-import {ToastAction} from "@/components/ui/toast";
 import * as React from "react";
+import { useState } from "react";
+import { LuUploadCloud } from "react-icons/lu";
 
-export function CourseCreateDialogModal( modalParameters: CourseCreateDialogProps ) {
+interface CourseCreateDialogParameters {
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onCourseCreation: () => void;
+}
 
+export function CourseCreateDialog(dialogParameters: CourseCreateDialogParameters) {
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
-  const [disableCreateButton, setDisableCreateButton] = useState<boolean>(false);
-  const [token] = useState<string>(
-    Cookies.get("authToken") as string
-  );
+  const [disableCreateButton, setDisableCreateButton] =
+    useState<boolean>(false);
+  const [token] = useState<string>(Cookies.get("authToken") as string);
 
-  const {toast} = useToast();
+  const { toast } = useToast();
   const resetFields = () => {
     setCourseCode("");
     setCourseName("");
@@ -55,25 +58,33 @@ export function CourseCreateDialogModal( modalParameters: CourseCreateDialogProp
     setter: React.Dispatch<React.SetStateAction<File | null>>,
     fileType: string
   ) {
-    if (file && fileType === "document" && documentMimeTypes.includes(file.type)) {
+    if (
+      file &&
+      fileType === "document" &&
+      documentMimeTypes.includes(file.type)
+    ) {
       setter(file);
-    } else if (file && fileType === "image" && imageMimeTypes.includes(file.type)) {
+    } else if (
+      file &&
+      fileType === "image" &&
+      imageMimeTypes.includes(file.type)
+    ) {
       setter(file);
     } else {
       setter(null);
       if (fileType === "document") {
         toast({
-            title: "Invalid File Type",
-            description: "Allowed types are: PDF, DOCX",
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
+          title: "Invalid File Type",
+          description: "Allowed types are: PDF, DOCX",
+          variant: "destructive",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
       } else {
         toast({
-            title: "Invalid File Type",
-            description: "Allowed types are: JPG, JPEG, PNG",
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
+          title: "Invalid File Type",
+          description: "Allowed types are: JPG, JPEG, PNG",
+          variant: "destructive",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
       }
     }
@@ -111,176 +122,180 @@ export function CourseCreateDialogModal( modalParameters: CourseCreateDialogProp
       })
       .then(() => {
         // Call the onCourseCreation callback to update the course list
-        modalParameters.onCourseCreation();
+        dialogParameters.onCourseCreation();
         toast({
-            title: "Success",
-            description: "Course successfully created",
-            variant: "default",
-            action: <ToastAction altText="Dismiss" className="hover:bg-background/20">Dismiss</ToastAction>,
-            className: "bg-green-500 text-background",
+          title: "Success",
+          description: "Course successfully created",
+          variant: "default",
+          action: (
+            <ToastAction altText="Dismiss" className="hover:bg-background/20">
+              Dismiss
+            </ToastAction>
+          ),
+          className: "bg-green-500 text-background",
         });
       })
       .catch((error) => {
         console.log(error.response);
         toast({
-            title: "Error",
-            description: "Error creating course",
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
+          title: "Error",
+          description: "Error creating course",
+          variant: "destructive",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
       })
       .finally(() => {
         // Reset form fields and close the modal
         setDisableCreateButton(false);
         resetFields();
-        modalParameters.onClose(false);
+        dialogParameters.onClose(false);
       });
   }
 
   function handleOpenChange() {
     resetFields();
-    modalParameters.onClose(false);
+    dialogParameters.onClose(false);
   }
 
   return (
-      <Dialog open={modalParameters.isOpen} onOpenChange={handleOpenChange} className="w-3/5">
-        <DialogContent className="sm:max-w-[80vh] border-b-neutral-800">
-          <div className="space-y-1">
-            <DialogTitle className="mb-2">Create Individual Study</DialogTitle>
-            <DialogDescription></DialogDescription>
-            <label className="text-xs font-semibold text-foreground/70">
-              Name
-            </label>
-            <Input
-                id="courseName"
-                type="text"
-                value={courseName}
-                onChange={(event) => setCourseName(event.target.value)}
-                required
-            />
-            <label className="text-xs font-semibold text-foreground/70">
-              Code
-            </label>
-            <Input
-                id="courseCode"
-                type="text"
-                value={courseCode}
-                onChange={(event) => setCourseCode(event.target.value)}
-                required
-            />
-            <label className="text-xs font-semibold text-foreground/70">
-              Description
-            </label>
-            <Textarea
-                id="description"
-                value={courseDescription}
-                onChange={(event) => setCourseDescription(event.target.value)}
-            />
-          </div>
-          <div className="flex space-x-4 items-center">
-            <div
-                className="flex flex-col items-center justify-center w-1/2"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  handleFile(file, setSyllabus, "document");
-                }}
+    <Dialog
+      open={dialogParameters.isOpen}
+      onOpenChange={handleOpenChange}
+      className="w-3/5"
+    >
+      <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
+        <div className="space-y-1">
+          <DialogTitle className="mb-2">Create Individual Study</DialogTitle>
+          <DialogDescription></DialogDescription>
+          <label className="text-foreground/70 text-xs font-semibold">
+            Name
+          </label>
+          <Input
+            id="courseName"
+            type="text"
+            value={courseName}
+            onChange={(event) => setCourseName(event.target.value)}
+            required
+          />
+          <label className="text-foreground/70 text-xs font-semibold">
+            Code
+          </label>
+          <Input
+            id="courseCode"
+            type="text"
+            value={courseCode}
+            onChange={(event) => setCourseCode(event.target.value)}
+            required
+          />
+          <label className="text-foreground/70 text-xs font-semibold">
+            Description
+          </label>
+          <Textarea
+            id="description"
+            value={courseDescription}
+            onChange={(event) => setCourseDescription(event.target.value)}
+          />
+        </div>
+        <div className="flex items-center space-x-4">
+          <div
+            className="flex w-1/2 flex-col items-center justify-center"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files[0];
+              handleFile(file, setSyllabus, "document");
+            }}
+          >
+            <label
+              htmlFor="syllabus"
+              className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
             >
-              <label
-                  htmlFor="syllabus"
-                  className="flex flex-col items-center justify-center w-full h-[24vh] border-2 border-dashed rounded-lg cursor-pointer"
-              >
-                <div className="flex flex-col items-center justify-center">
-                  {syllabus ? (
-                      <div>
-                        {syllabus.name.endsWith(".pdf") && (
-                            <FileIcon className="w-[6vh] h-[6vh] mb-4"/>
-                        )}
-                        {syllabus.name.endsWith(".docx") && (
-                            <FileTextIcon className="w-[6vh] h-[6vh] mb-4"/>
-                        )}
-                        <p>{syllabus.name}</p>
-                      </div>
-                  ) : (
-                      <div>
-                        <LuUploadCloud className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
-                        <p className="text-sm text-foreground/70">
-                          <span className="font-semibold">Click to upload</span>{" "}
-                          or drag and drop
-                        </p>
-                        <p className="text-foreground/70 text-base">PDF or DOCX</p>
-                      </div>
-                  )}
-                </div>
-                <input
-                    id="syllabus"
-                    type="file"
-                    accept=".pdf,.docx"
-                    onChange={(event) =>
-                        handleFileChange(
-                            event,
-                            setSyllabus,
-                            "document"
-                        )
-                    }
-                    className="hidden"
-                />
-              </label>
-            </div>
-            <div
-                className="flex flex-col items-center justify-center w-1/2"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  handleFile(file, setIcon, "image");
-                }}
-            >
-              <label
-                  htmlFor="image"
-                  className="flex flex-col items-center justify-center w-full h-[24vh] border-2 border-dashed rounded-lg cursor-pointer"
-              >
-                <div className="flex flex-col items-center justify-center">
-                  {icon ? (
-                      <div>
-                        {<ImageIcon className="w-[6vh] h-[6vh] mb-4"/>}
-                        <p>{icon.name}</p>
-                      </div>
-                  ) : (
-                      <div>
-                        <LuUploadCloud className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
-                        <p className="text-sm text-foreground/70">
-                          <span className="font-semibold">Click to upload</span>{" "}
-                          or drag and drop
-                        </p>
-                        <p className="text-foreground/70 text-base">JPG, JPEG or PNG</p>
-                      </div>
-                  )}
-                </div>
-                <input
-                    id="image"
-                    type="file"
-                    accept=".jpg,.jpeg,.png"
-                    onChange={(event) =>
-                        handleFileChange(event, setIcon, "image")
-                    }
-                    className="hidden"
-                />
-              </label>
-            </div>
+              <div className="flex flex-col items-center justify-center">
+                {syllabus ? (
+                  <div>
+                    {syllabus.name.endsWith(".pdf") && (
+                      <FileIcon className="mb-4 size-[6vh]" />
+                    )}
+                    {syllabus.name.endsWith(".docx") && (
+                      <FileTextIcon className="mb-4 size-[6vh]" />
+                    )}
+                    <p>{syllabus.name}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <LuUploadCloud className="text-foreground/70 mb-4 size-[6vh]" />
+                    <p className="text-foreground/70 text-sm">
+                      <span className="font-semibold">Click to upload</span> or
+                      drag and drop
+                    </p>
+                    <p className="text-foreground/70 text-base">PDF or DOCX</p>
+                  </div>
+                )}
+              </div>
+              <input
+                id="syllabus"
+                type="file"
+                accept=".pdf,.docx"
+                onChange={(event) =>
+                  handleFileChange(event, setSyllabus, "document")
+                }
+                className="hidden"
+              />
+            </label>
           </div>
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSubmit}
-              type="submit"
-              className="w-1/5"
-              disabled={!courseName || !courseCode || disableCreateButton}
+          <div
+            className="flex w-1/2 flex-col items-center justify-center"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files[0];
+              handleFile(file, setIcon, "image");
+            }}
+          >
+            <label
+              htmlFor="image"
+              className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
             >
-              Create
-            </Button>
+              <div className="flex flex-col items-center justify-center">
+                {icon ? (
+                  <div>
+                    {<ImageIcon className="mb-4 size-[6vh]" />}
+                    <p>{icon.name}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <LuUploadCloud className="text-foreground/70 mb-4 size-[6vh]" />
+                    <p className="text-foreground/70 text-sm">
+                      <span className="font-semibold">Click to upload</span> or
+                      drag and drop
+                    </p>
+                    <p className="text-foreground/70 text-base">
+                      JPG, JPEG or PNG
+                    </p>
+                  </div>
+                )}
+              </div>
+              <input
+                id="image"
+                type="file"
+                accept=".jpg,.jpeg,.png"
+                onChange={(event) => handleFileChange(event, setIcon, "image")}
+                className="hidden"
+              />
+            </label>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSubmit}
+            type="submit"
+            className="w-1/5"
+            disabled={!courseName || !courseCode || disableCreateButton}
+          >
+            Create
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
