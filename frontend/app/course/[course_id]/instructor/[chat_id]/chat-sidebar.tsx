@@ -1,10 +1,18 @@
 import { Icons } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FaEllipsisH } from "react-icons/fa";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Sidebar,
   SidebarContent,
@@ -72,7 +80,29 @@ export function ChatSidebar(chatSidebarParameters: ChatSidebarParameters) {
             </DropdownMenu>
 
             <SidebarMenu className="flex-col pl-4 ">
-              <SidebarMenuItem>Chat 1</SidebarMenuItem>
+              <SidebarMenuItem>
+                <div className="flex place-content-center place-items-center justify-between">
+                  <span>Chat 1</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost">
+                        <FaEllipsisH />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-fit flex-col place-content-center place-items-center justify-center align-middle">
+                      <div>
+                        <Button variant="ghost">Create a quiz</Button>
+                      </div>
+                      <div>
+                        <Button variant="ghost">Create a flashcard</Button>
+                      </div>
+                      <div>
+                        <Button variant="ghost">Delete</Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
