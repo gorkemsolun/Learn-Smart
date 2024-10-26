@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { NavbarHeader } from "@/components/navbar-header";
 import {SearchDialogModal} from "@/components/search-dialog";

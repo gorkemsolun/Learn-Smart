@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
 import { backendAPI } from "@/environment/backend_api";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
 import {
   Card,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {Icons} from "@/components/icons";
-import {EnvelopeClosedIcon, LockClosedIcon, PersonIcon, CrossCircledIcon, CheckCircledIcon} from "@radix-ui/react-icons"
+import {EnvelopeClosedIcon, LockClosedIcon, PersonIcon, CrossCircledIcon, CheckCircledIcon} from "@radix-ui/react-icons";
 import { useState } from "react";
 
 export default function SignUp() {
@@ -34,7 +34,7 @@ export default function SignUp() {
     const validateEmail = (inputText: string) => {
       const regex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
       return regex.test(inputText);
-    }
+    };
 
     if (!username || !email || !password || !confirmPassword) {
       toast({

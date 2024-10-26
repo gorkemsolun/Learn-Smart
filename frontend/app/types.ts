@@ -17,6 +17,12 @@ export interface Course {
   course_icon_url: string;
 }
 
+export interface CourseCreateDialogProps {
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onCourseCreation: () => void;
+}
+
 export interface CoursesListProps {
   courses: Course[];
   onCourseDelete: () => void;

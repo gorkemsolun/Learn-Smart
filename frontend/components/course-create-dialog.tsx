@@ -18,14 +18,9 @@ import Cookies from "js-cookie";
 import * as React from "react";
 import { useState } from "react";
 import { LuUploadCloud } from "react-icons/lu";
+import {CourseCreateDialogProps} from "@/app/types";
 
-interface CourseCreateDialogParameters {
-  isOpen: boolean;
-  onClose: (value: boolean) => void;
-  onCourseCreation: () => void;
-}
-
-export function CourseCreateDialog(dialogParameters: CourseCreateDialogParameters) {
+export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");

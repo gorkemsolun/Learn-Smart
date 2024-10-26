@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import * as React from "react";
 import {Button} from "@/components/ui/button";
 import {ToastAction} from "@/components/ui/toast";
@@ -12,7 +12,7 @@ import {
 import {Input} from "@/components/ui/input";
 import Cookies from "js-cookie";
 import {Icons} from "@/components/icons";
-import {EnvelopeClosedIcon, LockClosedIcon} from "@radix-ui/react-icons"
+import {EnvelopeClosedIcon, LockClosedIcon} from "@radix-ui/react-icons";
 import {FcGoogle} from "react-icons/fc";
 import {useRouter} from "next/navigation";
 import {useToast} from "@/hooks/use-toast";
@@ -120,13 +120,12 @@ export default function SignIn() {
             Sign up
           </Button>
 
-          <div className="w-1/2 bg-foreground/5 p-4 rounded-l-lg flex items-center justify-center border-1 relative">
+          <div className="w-1/2 bg-foreground/5 p-4 rounded-l-lg flex items-center justify-center border-1 relative space-y-4">
             <div className="absolute top-4 left-4 flex items-center space-x-2">
               <Icons.logo className="h-6 w-6"/>
               <p className="font-bold">edux/ai</p>
             </div>
-            <div>
-              {/* Sliding images logic : remove the parent div if not liked */}
+            <div className="w-full h-[56vh]">
               <ImageSlider/>
             </div>
           </div>

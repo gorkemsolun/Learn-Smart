@@ -18,20 +18,21 @@ const ImageSlider = () => {
   }, [images.length]);
 
   return (
-    <div className="bg-foreground/5 p-2 rounded-lg flex items-center justify-center relative">
-      <div className="relative w-96 h-96">
+      <div className="relative w-full h-full overflow-hidden bg-foreground/5 rounded-lg flex items-center justify-center p-2">
         {images.map((image, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentIndex ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <img src={image} alt={`Slide ${index + 1}`} className="w-full h-full object-cover" />
-          </div>
+            <div
+                key={index}
+                className={`absolute inset-0 transition-opacity duration-1000 ${
+                    index === currentIndex ? 'opacity-100' : 'opacity-0'
+                }`}
+                style={{transitionDuration: '1s', willChange: 'opacity'}}
+            >
+              <div className="w-full h-full p-2">
+                <img src={image} alt={`Slide ${index + 1}`} className="w-full h-full object-cover rounded-lg"/>
+              </div>
+            </div>
         ))}
       </div>
-    </div>
   );
 };
 
