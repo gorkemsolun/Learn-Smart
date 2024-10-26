@@ -114,7 +114,7 @@ export default function SignUp() {
         <div className="w-1/2 bg-foreground/5 p-4 rounded-l-lg flex items-center justify-center border-1 relative">
           <div className="absolute top-4 left-4 flex items-center space-x-2">
             <Icons.logo className="h-6 w-6" />
-            <p className="font-bold">learnsmart</p>
+            <p className="font-bold">edux/ai</p>
           </div>
         </div>
 

@@ -132,7 +132,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
 
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<any>>,
+    setter: React.Dispatch<React.SetStateAction<File | null>>,
     fileType: string
   ) {
     const file = event.target.files && event.target.files[0];
@@ -141,7 +141,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
 
   function handleFile(
     file: File | null,
-    setter: React.Dispatch<React.SetStateAction<any>>,
+    setter: React.Dispatch<React.SetStateAction<File | null>>,
     fileType: string
   ) {
     // Check if file is of correct type for document
@@ -182,6 +182,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
     modalParameters.onClose(false);
   }
 
+
   async function handleSubmit(
     event:
       | React.FormEvent<HTMLFormElement>
@@ -194,8 +195,10 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
     const formData = new FormData();
     formData.append("course_name", courseName);
     formData.append("course_code", courseCode);
-    formData.append("course_description", courseDescription);
-    formData.append("update_description", true);
+    if (courseDescription) {
+     formData.append("course_description", courseDescription);
+     formData.append("update_description", true);
+    }
 
     if (syllabus) {
       formData.append("course_syllabus_file", syllabus);
@@ -285,12 +288,12 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
               >
                 <div className="flex flex-col items-center justify-center">
                   {syllabus ? (
-                      <div>
+                      <div className="space-y-4">
                         {syllabus.name.endsWith(".pdf") && (
-                            <FileIcon className="w-[6vh] h-[6vh] mb-4"/>
+                            <FileIcon className="w-[6vh] h-[6vh]"/>
                         )}
                         {syllabus.name.endsWith(".docx") && (
-                            <FileTextIcon className="w-[6vh] h-[6vh] mb-4"/>
+                            <FileTextIcon className="w-[6vh] h-[6vh]"/>
                         )}
                         <p>{syllabus.name}</p>
                       </div>
@@ -335,7 +338,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
               >
                 <div className="flex flex-col items-center justify-center">
                   {icon ? (
-                      <div>
+                      <div className="space-y-4">
                         {<ImageIcon className="w-[6vh] h-[6vh] mb-4"/>}
                         <p>{icon.name}</p>
                       </div>

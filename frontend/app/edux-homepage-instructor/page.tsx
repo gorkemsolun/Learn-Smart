@@ -1,6 +1,6 @@
 "use client"
 
-import { Navbar } from "@/components/navbar";
+import { NavbarHeader } from "@/components/navbar-header";
 import {SearchDialogModal} from "@/components/search-dialog";
 import {useEffect, useState} from "react";
 import InstructorDashboard from "@/components/instructor-dashboard";
@@ -27,7 +27,7 @@ export default function Home() {
 
     return (
         <main>
-           <Navbar onSearchButtonClick={handleSearchButtonClick} />
+           <NavbarHeader onSearchButtonClick={handleSearchButtonClick} />
            <SearchDialogModal isOpen={isDialogOpen} onClose={setDialogOpen} />
            <InstructorDashboard />
         </main>

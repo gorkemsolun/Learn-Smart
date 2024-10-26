@@ -36,13 +36,13 @@ export function CoursesList (modalParameters: CoursesListProps) {
     };
 
     return (
-      <Card className="col-span-3">
+      <Card className="h-full">
         <div className="flex items-center justify-between p-6">
           <CardTitle>Your Studies</CardTitle>
           <Pencil1Icon className="cursor-pointer hover:text-foreground/40 hover:bg-transparent text-foreground items-center justify-center" onClick={ () => modalParameters.setCourseDialog(true)}/>
         </div>
 
-        <ScrollArea className="h-[45vh] w-full bg-transparent">
+        <ScrollArea className="h-[47vh] w-full bg-transparent -mt-2">
           <div className="p-6">
             <div className="flex flex-wrap gap-6">
             {modalParameters.courses.map((Course, index) => (

@@ -52,7 +52,8 @@ export function CourseCard(modalParameters: CourseCardProps) {
             <Badge
               variant="secondary"
               className="text-xs font-semibold overflow-hidden line-clamp-1
-                      cursor-default pointer-events-none select-none"
+                      cursor-default pointer-events-none select-none
+                      bg-background/40"
             >
               {modalParameters.course.course_code}
             </Badge>

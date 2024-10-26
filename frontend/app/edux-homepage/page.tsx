@@ -1,14 +1,12 @@
 "use client"
 
-import { Navbar } from "@/components/navbar";
-import {SearchDialogModal} from "@/components/search-dialog";
+import { Navbar } from "@/components/navbar"
 import {useEffect, useState} from "react";
 import UserDashboard from "@/components/user-dashboard";
 import {useRouter} from "next/navigation";
 import Cookies from "js-cookie";
 
 export default function Home() {
-    const [isDialogOpen, setDialogOpen] = useState(false);
     const [token, setToken] = useState<string | null>(null);
 
     const router = useRouter();
@@ -22,15 +20,10 @@ export default function Home() {
         }
     }, [router, token]);
 
-    const handleSearchButtonClick = () => {
-      setDialogOpen(!isDialogOpen);
-    };
-
     return (
         <main>
-           <Navbar onSearchButtonClick={handleSearchButtonClick} />
-           <SearchDialogModal isOpen={isDialogOpen} onClose={setDialogOpen} />
-           <UserDashboard />
+          <Navbar />
+          <UserDashboard />
         </main>
     );
 }

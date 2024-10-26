@@ -9,7 +9,7 @@ import Cookies from "js-cookie";
 import {ToastAction} from "@/components/ui/toast";
 import {toast} from "@/hooks/use-toast";
 import {useRouter} from "next/navigation";
-import {Navbar} from "@/components/navbar";
+import {NavbarHeader} from "@/components/navbar-header";
 
 const userRoles = [
   {
@@ -18,7 +18,7 @@ const userRoles = [
   },
   {
     role: "Instructor",
-    description: "Inspire, guide, and benefit from learnsmart.",
+    description: "Inspire, guide, and benefit from edux.",
   },
 ];
 
@@ -84,9 +84,9 @@ export default function RoleSelectorCard() {
         .then((response) => {
           if(response) {
             if(selectedUserRole == "Instructor")
-              router.replace("/learnsmart-homepage-instructor");
+              router.replace("/edux-homepage-instructor");
             else
-              router.replace("/learnsmart-homepage");
+              router.replace("/edux-homepage");
           }
 
         }).catch((error) => {
@@ -103,7 +103,7 @@ export default function RoleSelectorCard() {
 
   return (
       <main>
-        <Navbar/>
+        <NavbarHeader/>
         <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
           <Card className="p-4 relative w-2/5 h-[48vh] flex flex-col justify-between overflow-auto">
             <div className="flex flex-col">

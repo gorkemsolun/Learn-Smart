@@ -39,9 +39,9 @@ export default function SignIn() {
       if (role == null) {
         router.push("/role-card");
       } else if (role === "User") {
-        router.push("/learnsmart-homepage");
+        router.push("/edux-homepage");
       } else if (role === "Instructor") {
-        router.push("/learnsmart-homepage-instructor");
+        router.push("/edux-homepage-instructor");
       }
     }
   }, [router, role]);
@@ -89,9 +89,9 @@ export default function SignIn() {
           if (role == null) {
             router.push("/role-card");
           } else if (role === "User") {
-            router.push("/learnsmart-homepage");
+            router.push("/edux-homepage");
           } else if (role === "Instructor") {
-            router.push("/learnsmart-homepage-instructor");
+            router.push("/edux-homepage-instructor");
           }
         })
         .catch((error) => {
@@ -122,7 +122,7 @@ export default function SignIn() {
           <div className="w-1/2 bg-foreground/5 p-4 rounded-l-lg flex items-center justify-center border-1 relative">
             <div className="absolute top-4 left-4 flex items-center space-x-2">
               <Icons.logo className="h-6 w-6"/>
-              <p className="font-bold">learnsmart</p>
+              <p className="font-bold">edux/ai</p>
             </div>
           </div>
 

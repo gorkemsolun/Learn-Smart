@@ -1,7 +1,7 @@
 "use client"
 
 import CourseDashboard from "@/components/course-dashboard";
-import { Navbar } from "@/components/navbar";
+import { NavbarHeader } from "@/components/navbar-header";
 import {useState} from "react";
 
 export default function CourseHomePage() {
@@ -13,7 +13,7 @@ export default function CourseHomePage() {
 
   return (
       <main>
-        <Navbar onSearchButtonClick={handleSearchButtonClick} />
+        <NavbarHeader onSearchButtonClick={handleSearchButtonClick} />
          <CourseDashboard />
       </main>
   );

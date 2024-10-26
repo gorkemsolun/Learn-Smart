@@ -1,4 +1,5 @@
 import {ReactNode} from "react";
+import {HierarchyNode, SimulationNodeDatum} from "d3";
 
 export interface User {
   user_id: string;
@@ -47,4 +48,21 @@ export interface CourseEditDialogProps {
   onClose: (value: boolean) => void;
   onCourseUpdate: () => void;
   course: Course;
+}
+
+export interface NodeData {
+  id: string;
+  label: string;
+  group: number;
+}
+
+export interface LinkData {
+  source: string;
+  target: string;
+}
+
+export interface CustomSimulationNode extends SimulationNodeDatum, HierarchyNode<NodeData> {
+  id: string;
+  label: string;
+  group: number;
 }
