@@ -1,7 +1,7 @@
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 import type { Metadata } from "next";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider"
-import {Toaster} from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "edux",
@@ -14,20 +14,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-      <>
-        <html lang="en" className="font-sans font-light" suppressHydrationWarning>
+    <>
+      <html lang="en" className="font-sans font-light" suppressHydrationWarning>
         <body suppressHydrationWarning>
-        <ThemeProvider
+          <ThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-        <Toaster />
+          >
+            {children}
+          </ThemeProvider>
+          <Toaster />
         </body>
-        </html>
-      </>
-);
+      </html>
+    </>
+  );
 }

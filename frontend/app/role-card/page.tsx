@@ -1,15 +1,20 @@
 "use client";
 
-import * as React from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import {Button} from "@/components/ui/button";
-import {useCallback, useEffect, useState} from "react";
-import {backendAPI} from "@/environment/backend_api";
+import { Navbar } from "@/components/navbar";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ToastAction } from "@/components/ui/toast";
+import { backendAPI } from "@/environment/backend_api";
+import { toast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
-import {ToastAction} from "@/components/ui/toast";
-import {toast} from "@/hooks/use-toast";
-import {useRouter} from "next/navigation";
-import {NavbarHeader} from "@/components/navbar-header";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 const userRoles = [
   {
@@ -25,9 +30,7 @@ const userRoles = [
 export default function RoleSelectorCard() {
   const [selectedUserRole, setSelectedUserRole] = useState<string | null>(null);
   const [userID, setUserID] = useState<string | null>(null);
-  const [token] = useState<string>(
-    Cookies.get("authToken") as string
-  );
+  const [token] = useState<string>(Cookies.get("authToken") as string);
 
   const router = useRouter();
 
@@ -52,21 +55,20 @@ export default function RoleSelectorCard() {
     }
   }, [token, router, userID, fetchUserData]);
 
-
   const handleUserRoleSelection = (role: string) => {
     setSelectedUserRole(role);
   };
 
-  const handleRoleSelection= async () => {
-      if (selectedUserRole === null) {
-        toast({
-            title: "Please select a role",
-            description: "You have to choose a role to proceed",
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
-        });
-      } else {
-        await backendAPI
+  const handleRoleSelection = async () => {
+    if (selectedUserRole === null) {
+      toast({
+        title: "Please select a role",
+        description: "You have to choose a role to proceed",
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
+    } else {
+      await backendAPI
         .put(
           `/users/update`,
           {
@@ -82,14 +84,13 @@ export default function RoleSelectorCard() {
           }
         )
         .then((response) => {
-          if(response) {
-            if(selectedUserRole == "Instructor")
+          if (response) {
+            if (selectedUserRole == "Instructor")
               router.replace("/edux-homepage-instructor");
-            else
-              router.replace("/edux-homepage");
+            else router.replace("/edux-homepage");
           }
-
-        }).catch((error) => {
+        })
+        .catch((error) => {
           console.error("Role selection:", error);
           toast({
             title: "An error occurred.",
@@ -98,48 +99,48 @@ export default function RoleSelectorCard() {
             action: <ToastAction altText="Try again">Try again</ToastAction>,
           });
         });
-      }
+    }
   };
 
   return (
-      <main>
-        <NavbarHeader/>
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <Card className="p-4 relative w-2/5 h-[48vh] flex flex-col justify-between overflow-auto">
-            <div className="flex flex-col">
-              <CardHeader>
-                <CardTitle>Choose Your Role</CardTitle>
-              </CardHeader>
-            </div>
+    <main>
+      <Navbar />
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Card className="relative flex h-[48vh] w-2/5 flex-col justify-between overflow-auto p-4">
+          <div className="flex flex-col">
+            <CardHeader>
+              <CardTitle>Choose Your Role</CardTitle>
+            </CardHeader>
+          </div>
 
-            <CardContent className="flex flex-col-2 space-x-4">
-              {userRoles.map((userRole) => (
-                  <Card
-                      key={userRole.role}
-                      className={`cursor-pointer transition-transform transform shadow ${
-                          selectedUserRole === userRole.role ? "ring-2 ring-blue-500" : ""
-                      } rounded-xl`}
-                      onClick={() => handleUserRoleSelection(userRole.role)}
-                  >
-                    <CardHeader className="bg-foreground/10 rounded-t-xl mb-4">
-                      <CardTitle>{userRole.role}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription>{userRole.description}</CardDescription>
-                    </CardContent>
-                  </Card>
-              ))}
-            </CardContent>
-
-            <div className="flex justify-end mb-6 mr-6">
-              <Button
-                  onClick={handleRoleSelection} className="w-1/5"
+          <CardContent className="flex-col-2 flex space-x-4">
+            {userRoles.map((userRole) => (
+              <Card
+                key={userRole.role}
+                className={`cursor-pointer shadow transition-transform${
+                  selectedUserRole === userRole.role
+                    ? "ring-2 ring-blue-500"
+                    : ""
+                } rounded-xl`}
+                onClick={() => handleUserRoleSelection(userRole.role)}
               >
-                Submit
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </main>
+                <CardHeader className="bg-foreground/10 mb-4 rounded-t-xl">
+                  <CardTitle>{userRole.role}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>{userRole.description}</CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </CardContent>
+
+          <div className="mb-6 mr-6 flex justify-end">
+            <Button onClick={handleRoleSelection} className="w-1/5">
+              Submit
+            </Button>
+          </div>
+        </Card>
+      </div>
+    </main>
   );
 }

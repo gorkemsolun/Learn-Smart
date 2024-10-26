@@ -1,5 +1,6 @@
 "use client";
 
+import { Navbar } from "@/components/navbar";
 import {
   Accordion,
   AccordionContent,
@@ -33,49 +34,54 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex">
-      {/* Sidebar */}
-      <SidebarProvider className="fixed left-0 top-0 z-50 h-full w-fit">
-        <ChatSidebar
-          isChatCreateDialogOpen={chatCreateDialog}
-          onChatCreateDialogClose={setChatCreateDialog}
-        />
-        <SidebarTrigger />
-      </SidebarProvider>
+    <div>
+      <Navbar />
+      <div className="flex">
+        {/* Sidebar */}
+        <SidebarProvider className="fixed left-0 top-12 z-50 h-full w-fit">
+          <ChatSidebar
+            isChatCreateDialogOpen={chatCreateDialog}
+            onChatCreateDialogClose={setChatCreateDialog}
+          />
+          <SidebarTrigger />
+        </SidebarProvider>
 
-      {/* Chat & Slider*/}
-      <div className="size-full p-1 text-white">
-        <ResizablePanelGroup direction="horizontal">
-          {/* Slide slider */}
-          <ResizablePanel className="">
-            This place will be used for slide
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-
-          {/* Chat */}
-          <ResizablePanel>
-            {/* Chat header */}
-            <Accordion type="single" collapsible>
-              <AccordionItem value="item-1">
-                <AccordionTrigger>
-                  Accordion'ed chat name and its details
-                </AccordionTrigger>
-                <AccordionContent>Name / Details of the chat</AccordionContent>
-              </AccordionItem>
-            </Accordion>
+        {/* Chat & Slider*/}
+        <div className="size-full p-1 text-white">
+          <ResizablePanelGroup direction="horizontal">
+            {/* Slide slider */}
+            <ResizablePanel className="">
+              This place will be used for slide
+            </ResizablePanel>
+            <ResizableHandle withHandle />
 
             {/* Chat */}
-            <div>This place will be used for chat</div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+            <ResizablePanel>
+              {/* Chat header */}
+              <Accordion type="single" collapsible>
+                <AccordionItem value="item-1">
+                  <AccordionTrigger>
+                    Accordion'ed chat name and its details
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    Name / Details of the chat
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
-      {/* Chat create dialog*/}
-      <ChatCreateDialog
-        isOpen={chatCreateDialog}
-        onClose={setChatCreateDialog}
-        onChatCreation={fetchChats}
-      />
+              {/* Chat */}
+              <div>This place will be used for chat</div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+
+        {/* Chat create dialog*/}
+        <ChatCreateDialog
+          isOpen={chatCreateDialog}
+          onClose={setChatCreateDialog}
+          onChatCreation={fetchChats}
+        />
+      </div>
     </div>
   );
 }

@@ -48,7 +48,9 @@ export function ChatSidebar(chatSidebarParameters: ChatSidebarParameters) {
 
             <SidebarMenuButton
               className="size-8"
-              onClick={() => chatSidebarParameters.onChatCreateDialogClose(true)}
+              onClick={() =>
+                chatSidebarParameters.onChatCreateDialogClose(true)
+              }
             >
               <Icons.createChat />
             </SidebarMenuButton>
