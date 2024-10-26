@@ -1,5 +1,8 @@
 "use client"
 import * as React from "react";
+import { Course } from "@/app/types";
+import { CourseCreateDialogModal } from "@/components/course-create-dialog";
+import { CoursesList } from "@/components/courses-list";
 import {
     Card,
     CardHeader,
@@ -7,12 +10,9 @@ import {
     CardTitle,
     CardDescription,
     CardContent } from "@/components/ui/card";
-import {CoursesList} from "@/components/courses-list";
 import {useCallback, useEffect, useState} from "react";
 import Cookies from "js-cookie";
-import {Course} from "@/app/types";
 import {backendAPI} from "@/environment/backend_api";
-import {CourseCreateDialogModal} from "@/components/course-create-dialog";
 import {useToast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
 import HubIcon from '@mui/icons-material/Hub';
@@ -21,10 +21,8 @@ import {useRouter} from "next/navigation";
 export default function UserDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseDialog, setCourseDialog] = useState<boolean>(false);
-  const [token] = useState<string>(
-    Cookies.get("authToken") as string
-  );
-  const {toast} = useToast();
+  const [token] = useState<string>(Cookies.get("authToken") as string);
+  const { toast } = useToast();
   const router = useRouter();
 
   const fetchCourses = useCallback(async () => {

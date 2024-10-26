@@ -49,24 +49,24 @@ const GenerateFlashcardModal = (modalParameters: GenerateFlashcardModalParameter
     if (!modalParameters.isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-50">
 
-            <div className="bg-white w-[1500px] h-[800px] rounded-lg shadow-lg overflow-hidden relative flex justify-center items-center">
+            <div className="bg-transparent w-[1500px] h-[800px] rounded-lg shadow-lg relative flex justify-center items-center">
                 {/* Close Button */}
                 <button
                     onClick={() => handleClose(null)}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    className="absolute top-2 right-2 z-10 text-white hover:text-gray-700"
                     aria-label="Close"
                     type="button"
                 >
                     &#10005; {/* This is the Unicode character for an "X" symbol */}
                 </button>
                 {flashcardData ? (
-                    <div className="overflow-y-auto max-h-full">
+                    <div className="w-full h-full">
                         <FlashcardsPage flashcardData={flashcardData} onClose={() => handleClose(null)} />
                     </div>
                 ) : isLoading ? (
-                    <div className="p-8 flex items-center justify-center h-full">Preparing a flashcard for you...</div>
+                    <div className="p-8 flex items-center justify-center w-[%50] h-[%10] bg-black text-white rounded-lg">Preparing a flashcard for you...</div>
                 ) : (
                     <div className="p-8">Error loading flashcard data: {error?.message}</div>
                 )}

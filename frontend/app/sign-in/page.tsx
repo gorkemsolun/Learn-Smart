@@ -18,6 +18,7 @@ import {useRouter} from "next/navigation";
 import {useToast} from "@/hooks/use-toast";
 import {useEffect, useState} from "react";
 import {backendAPI} from "@/environment/backend_api";
+import ImageSlider from "@/components/image-slider";
 
 export default function SignIn() {
 
@@ -123,6 +124,10 @@ export default function SignIn() {
             <div className="absolute top-4 left-4 flex items-center space-x-2">
               <Icons.logo className="h-6 w-6"/>
               <p className="font-bold">edux/ai</p>
+            </div>
+            <div>
+              {/* Sliding images logic : remove the parent div if not liked */}
+              <ImageSlider/>
             </div>
           </div>
 
