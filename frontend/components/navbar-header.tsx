@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import * as React from "react";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Searchbar } from "@/components/searchbar"
+import { Searchbar } from "@/components/searchbar";
 import {Button} from "@/components/ui/button";
 import {useRouter} from "next/navigation";
 import Cookies from "js-cookie";
@@ -147,5 +147,5 @@ const ListItem = React.forwardRef<
       </NavigationMenuLink>
     </li>
   );
-})
-ListItem.displayName = "ListItem"
+});
+ListItem.displayName = "ListItem";

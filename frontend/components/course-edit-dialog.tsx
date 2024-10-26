@@ -15,7 +15,7 @@ import {backend, backendAPI} from "@/environment/backend_api";
 import { CourseEditDialogProps } from "@/app/types";
 import { FileIcon, ImageIcon, FileTextIcon } from "@radix-ui/react-icons";
 import { LuUploadCloud } from "react-icons/lu";
-import { Textarea } from "@/components/ui/textarea"
+import { Textarea } from "@/components/ui/textarea";
 import {useToast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
 import * as React from "react";

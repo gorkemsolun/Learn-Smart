@@ -1,7 +1,8 @@
-"use client"
+"use client";
+
 import * as React from "react";
 import { Course } from "@/app/types";
-import { CourseCreateDialogModal } from "@/components/course-create-dialog";
+import { CourseCreateDialog } from "@/components/course-create-dialog";
 import { CoursesList } from "@/components/courses-list";
 import {
     Card,
@@ -81,7 +82,7 @@ export default function UserDashboard() {
 
   const handleCardClick = (link: string) => {
     router.replace(link);
-  }
+  };
 
   return (
       <div className="p-6 space-y-6">
@@ -136,7 +137,7 @@ export default function UserDashboard() {
             />
           </div>
         </div>
-        <CourseCreateDialogModal
+        <CourseCreateDialog
             isOpen={courseDialog}
             onClose={setCourseDialog}
             onCourseCreation={fetchCourses}

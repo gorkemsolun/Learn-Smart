@@ -10,7 +10,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { ConfirmationDialogProps } from "@/app/types"
+import { ConfirmationDialogProps } from "@/app/types";
 
 export function ConfirmationDialog({
   title,
