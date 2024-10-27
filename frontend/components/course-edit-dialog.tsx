@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import Cookies from "js-cookie";
 import {backend, backendAPI} from "@/environment/backend_api";
 import { CourseEditDialogProps } from "@/app/types";
@@ -267,9 +267,9 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
               Description
             </label>
             <Textarea
-                id="description"
-                value={courseDescription}
-                onChange={(event) => setCourseDescription(event.target.value)}
+              id="description"
+              value={courseDescription || ""}
+              onChange={(event) => setCourseDescription(event.target.value)}
             />
           </div>
           <div className="flex space-x-4 items-center">

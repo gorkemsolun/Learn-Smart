@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from 'react';
 import * as d3 from 'd3';
 import { Navbar } from "@/components/navbar";
-import {NodeData, LinkData, CustomSimulationNode} from "@/app/types"
+import {NodeData, LinkData, CustomSimulationNode} from "@/app/types";
 
 // TO-DO IN BACKEND WE NEED TO LIMIT THE NUMBER OF BRANCHES A NODE CAN HAVE
 // TO-DO ADD QUIZ PARAMETERS TO NODE DATA
@@ -87,7 +87,7 @@ export default function SkillTree() {
           .id((d) => d.id)
           .distance(40)
       )
-      .force('charge', d3.forceManyBody().strength(-400))
+      .force('charge', d3.forceManyBody().strength(-500))
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide<CustomSimulationNode>().radius((d) => getNodeRadius(d) + 5));
 
