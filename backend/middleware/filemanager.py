@@ -7,7 +7,6 @@ classes to interact with the S3 bucket instead of the local file system.
 from io import BytesIO
 import os
 import pymupdf
-from pptx import Presentation
 from docx import Document
 from fastapi import UploadFile
 from abc import ABC, abstractmethod
@@ -292,7 +291,6 @@ class PresentationFile(BaseFile):
 
         """
         super().save(path)
-        print("passing " + path + " to convert_pptx_to_pdf")
         new_path = convert_pptx_to_pdf(path)
         self.file.filename = os.path.basename(new_path)
         self.path = new_path

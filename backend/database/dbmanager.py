@@ -254,6 +254,7 @@ class ChatDB(DatabaseInterface):
         chat_title: str,
         history_url: str = None,
         slides_mode: bool = False,
+        last_opened_slide_id: int = None,
     ):
         """
         Create a new chat object and save it in the database.
@@ -272,6 +273,7 @@ class ChatDB(DatabaseInterface):
             chat_title=chat_title,
             history_url=history_url,
             slides_mode=slides_mode,
+            last_opened_slide_id=last_opened_slide_id,
         )
 
         # save the chat object in the database
@@ -350,6 +352,8 @@ class ChatDB(DatabaseInterface):
             **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
                 - chat_title (str): The new title for the chat.
                 - history_url (str): The new history URL for the chat.
+                - slides_mode (bool): Enable/disable slides mode of the chat.
+                - last_opened_slide_id: The last opened slide's ID of the chat.
 
         Returns:
             dict: A dictionary representing the updated chat details.
@@ -360,6 +364,7 @@ class ChatDB(DatabaseInterface):
         chat_title = kwargs.get("chat_title", None)
         history_url = kwargs.get("history_url", None)
         slides_mode = kwargs.get("slides_mode", None)
+        last_opened_slide_id = kwargs.get("last_opened_slide_id", None)
 
         with db_connection as db:
             chat = db.query(Chat).filter(Chat.chat_id == chat_id).first()
@@ -372,6 +377,8 @@ class ChatDB(DatabaseInterface):
                 chat.history_url = history_url
             if slides_mode is not None:
                 chat.slides_mode = slides_mode
+            if last_opened_slide_id:
+                chat.last_opened_slide_id = last_opened_slide_id
 
             db.commit()
             db.refresh(chat)

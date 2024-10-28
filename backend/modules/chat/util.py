@@ -1,4 +1,4 @@
-import pymupdf, os, io, json, jsonpickle
+import pymupdf, os, io, json, jsonpickle, base64
 import google.generativeai as genai
 from typing import Optional
 from fastapi import HTTPException, UploadFile
@@ -119,6 +119,7 @@ def save_history(history_path, history):
 def get_slide_content(slide_id: int, page_number: int):
     """
     Returns the content of the slide as a PIL Image with the given slide ID and page number.
+    page_number is 1-based, not 0-based.
     """
     slide = SlideDB.fetch(slide_id=slide_id)
     if not slide:
@@ -273,3 +274,17 @@ def get_formatted_history(history_path, history_metadata_path):
                 messages.append(chat_dict)
 
     return messages
+
+def image_to_base64(image: Image.Image) -> str:
+    """
+    Convert a PIL Image to a base64 encoded string.
+
+    Args:
+        image (Image.Image): The PIL Image to be converted.
+
+    Returns:
+        str: The base64 encoded string representation of the image.
+    """
+    buffered = io.BytesIO()
+    image.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")

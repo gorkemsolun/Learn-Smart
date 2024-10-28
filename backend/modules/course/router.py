@@ -63,9 +63,13 @@ async def get_chats(course_id: int, current_user: dict = Depends(auth.get_curren
         raise HTTPException(status_code=403, detail="Forbidden.")
 
     chats = ChatDB.fetch(course_id=course_id, all=True)
-    return [{"chat_id": chat["chat_id"],
-                       "chat_title": chat["chat_title"],
-                       "created_at": chat["created_at"]} for chat in chats]  # return chat titles along with chat IDs
+    return [
+        {"chat_id": chat["chat_id"],
+         "chat_title": chat["chat_title"],
+         "slides_mode": chat["slides_mode"],
+         "last_opened_slide_id": chat["last_opened_slide_id"],
+         "created_at": chat["created_at"]} 
+        for chat in chats]  # return chat titles along with chat IDs
 
 
 @router.get("/{course_id}/quizzes")
@@ -314,10 +318,8 @@ async def delete_course(course_id: int, current_user: dict = Depends(auth.get_cu
         FileFactory()(path=course_study_plan_url).delete()
 
     chats = ChatDB.fetch(course_id=course_id, all=True)  # delete all chats associated with the course
-    print(chats)
     for chat in chats:
         await delete_chat(chat["chat_id"], current_user)  # delete the chat
-        print(chat["chat_id"])
 
     CourseDB.delete(course_id=course_id)  # delete the course
     return {"message": "Course deleted successfully."}

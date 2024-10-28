@@ -17,10 +17,10 @@ class Chat(Base):
     history_url = Column(String(255))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     slides_mode = Column(Boolean, default=False)
+    last_opened_slide_id = Column(Integer, ForeignKey('slides.slide_id'), nullable=True)  # the last opened slide ID
     
-    # quiz relationships, quiz URLs, might be added here
-    slide = relationship("Slide", uselist=False, back_populates="chat") # one-to-one relationship with Slide
-    course = relationship("Course", back_populates="chats") # many-to-one relationship with Course
+    slide = relationship("Slide", back_populates="chat", foreign_keys='Slide.chat_id')  # specify foreign key explicitly
+    course = relationship("Course", back_populates="chats")  # many-to-one relationship with Course
 
     def to_dict(self):
         """
@@ -36,7 +36,8 @@ class Chat(Base):
             "course_id": self.course_id,
             "history_url": self.history_url,
             "slides_mode": self.slides_mode,
-            "created_at": self.created_at
+            "created_at": self.created_at,
+            "last_opened_slide_id": self.last_opened_slide_id
         }
     
 
@@ -57,7 +58,7 @@ class Slide(Base):
     pages_count = Column(Integer, nullable=False)  # the total number of pages in the slides file
     last_slide_number = Column(Integer, nullable=False)  # the last fetched slide number (e.g. page 3 of a slides file)
 
-    chat = relationship("Chat", back_populates="slide")  # one-to-one relationship with Chat
+    chat = relationship("Chat", back_populates="slide", foreign_keys=[chat_id])  # specify the correct foreign key
 
     def to_dict(self):
         """

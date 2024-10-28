@@ -70,6 +70,7 @@ def splitext(filename: str):
     extension = os.path.splitext(filename)[-1][1:]
     return base_name, extension
     
+
 # Validate file extension
 def validate_file_extension(filename, valid_extensions: list[str]):
     ext = splitext(filename)[1].lower()

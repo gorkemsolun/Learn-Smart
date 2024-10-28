@@ -68,21 +68,26 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
                 pages_count = pdf.page_count
 
             new_slide = SlideDB.create(chat_id=chat["chat_id"], slides_file_name=slides_file_name, slides_file_url=slides_file_path,
-                                       pages_count=pages_count, last_slide_number=0)
+                                       pages_count=pages_count, last_slide_number=1)
+            
+            new_slide.pop("chat_id")
+            new_slide.pop("slides_file_url")
+            chat = ChatDB.update(chat_id=chat["chat_id"], last_opened_slide_id=new_slide["slide_id"])
+            chat["slides"] = [new_slide]
 
         # Rollback changes
         except ValueError as e: # If the file extension is invalid (file manager can't handle it)
             ChatDB.delete(chat_id=chat["chat_id"])
+            file.delete()
+            SlideDB.delete(chat_id=chat["chat_id"], all=True)
+            shutil.rmtree(storage_dir) # "rm -rf chat_<chat_id>", remove the directory and its contents
             raise HTTPException(status_code=400, detail=str(e))
-        except Exception as e: # Unsupported platform in slide_generator call
+        except Exception as e:
             ChatDB.delete(chat_id=chat["chat_id"])
+            file.delete()
+            SlideDB.delete(chat_id=chat["chat_id"], all=True)
             shutil.rmtree(storage_dir) # "rm -rf chat_<chat_id>", remove the directory and its contents
             raise HTTPException(status_code=500, detail=str(e))
-    
-    if new_slide:
-        new_slide.pop("chat_id")
-        new_slide.pop("slides_file_url")
-        chat["slides"] = [new_slide]
         
     chat.pop("history_url") # it's null on creation
     return {"chat": chat, "message": "Chat created successfully."}
@@ -122,8 +127,6 @@ async def get_chat(chat_id: int, current_user: dict = Depends(auth.get_current_u
     for slide in slides:
         slide.pop("chat_id")
         slide.pop("slides_file_url")
-
-    print(slides)
 
     chat.pop("history_url") # in slides mode, history_url is not used
     chat["slides"] = slides
@@ -272,6 +275,7 @@ async def send_message(chat_id: int, slide_id: int = None, page_number: int = No
         history = jsonpickle.encode(model.history, True) 
         save_history(slide_history_path, history)
 
+        ChatDB.update(chat_id=chat_id, last_opened_slide_id=slide_id)
         return {"text": response.text, "role": "model"}
     
     history_path, metadata_path = get_chat_history_path(chat_id), get_chat_history_metadata_path(chat_id) 
@@ -296,29 +300,55 @@ async def send_message(chat_id: int, slide_id: int = None, page_number: int = No
     if not os.path.exists(history_path):
         ChatDB.update(chat_id=chat_id, history_url=history_path)
 
+    ChatDB.update(chat_id=chat_id, last_opened_slide_id=slide_id)
     return {"text": response.text, "role": "model"}
 
+
+@router.get("/slides/{slide_id}")
+async def get_slide_info(slide_id: int, current_user: dict = Depends(auth.get_current_user)):
+    """
+    Get the details of a specific slide by its ID.
+
+    Args:
+        slide_id (int): The ID of the slide to retrieve.
+        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
+
+    Returns:
+        dict: A dictionary containing the slide details.
+
+    Raises:
+        HTTPException: If the slide is not found or the user is not authorized to access the slide.
+    """
+    
+    slide = SlideDB.fetch(slide_id=slide_id)
+    if not slide:
+        raise HTTPException(status_code=404, detail="Slide not found.")
+    
+    fetch_chat_and_course(slide["chat_id"], current_user["user_id"])
+
+    return slide
 
 @router.get("/{chat_id}/slide/{slide_id}/page/{page_number}")
 async def get_slide(chat_id: int, slide_id: int, page_number: int, current_user: dict = Depends(auth.get_current_user)):
     """
     Get a specific slide and its explanation by its ID and page number.
     """
-    chat, course = fetch_chat_and_course(chat_id, current_user["user_id"])
+    fetch_chat_and_course(chat_id, current_user["user_id"])
 
     slide = SlideDB.fetch(slide_id=slide_id)
     if not slide:
         raise HTTPException(status_code=404, detail="Slide not found.")
 
-    if page_number < 0 or page_number >= slide["pages_count"]:
+    if page_number <= 0 or page_number > slide["pages_count"]:
         raise HTTPException(status_code=400, detail="Invalid slide number.")
-
+    
     slide_history_path, slide_metadata_path = get_slide_history_path(slide_id, page_number), get_slide_history_metadata_path(slide_id, page_number)
+    slide_content = get_slide_content(slide_id, page_number)
+    slide_base64 = image_to_base64(slide_content)
 
     # if slide history path doesn't exists, it means an explanation is not generated yet
     if not os.path.exists(slide_history_path):
         model = init_chat()
-        slide_content = get_slide_content(slide_id, page_number)
         response = model.send_message([EXPLAIN_SLIDE_PROMPT, slide_content]).text
         
         metadata_path = get_slide_history_metadata_path(slide_id, page_number)
@@ -329,12 +359,18 @@ async def get_slide(chat_id: int, slide_id: int, page_number: int, current_user:
         save_history(slide_history_path, history)
 
         SlideDB.update(slide_id, last_slide_number=page_number)
-        return {"history": [{"text": response, "role": "model", "message_id": 1}]}
+        return {
+            "slide": slide_base64,
+            "history": [{"text": response, "role": "model", "message_id": 1}]
+        }
     
     messages = get_formatted_history(slide_history_path, slide_metadata_path)
     
     SlideDB.update(slide_id, last_slide_number=page_number)
-    return {"history": messages}
+    ChatDB.update(chat_id=chat_id, last_opened_slide_id=slide_id)
+    return {"slide": slide_base64,
+            "history": messages
+    }
 
 
 @router.put("/{chat_id}/update_slides")
@@ -379,10 +415,11 @@ async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
             pages_count = pdf.page_count
 
         # Update the chat record with the new slides file information
-        SlideDB.create(chat_id=chat_id, slides_file_name=slides_file_name, 
+        new_slide = SlideDB.create(chat_id=chat_id, slides_file_name=slides_file_name, 
                         slides_file_url=slides_file_url, pages_count=pages_count, 
-                        last_slide_number=0)
+                        last_slide_number=1)
         slides = SlideDB.fetch(chat_id=chat_id, all=True)
+        ChatDB.update(chat_id=chat_id, last_opened_slide_id=new_slide["slide_id"])
         chat["slides"] = slides
         return {"chat": chat, "message": "Slides updated successfully."}
 
@@ -404,8 +441,6 @@ async def create_quiz(chat_id: int, current_user: dict = Depends(auth.get_curren
         
         if len(history_paths) == 0:
             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-        print(history_paths)
-        print(len(history_paths))
         history = []
         for history_path in history_paths:
             with open(history_path, "r") as file:
@@ -458,8 +493,7 @@ async def create_flashcards(chat_id: int, current_user: dict = Depends(auth.get_
         
         if len(history_paths) == 0:
             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-        print(history_paths)
-        print(len(history_paths))
+        
         history = []
         for history_path in history_paths:
             with open(history_path, "r") as file:

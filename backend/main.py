@@ -1,5 +1,3 @@
-import os
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -7,7 +5,6 @@ from modules.user.router import router as users_router
 from modules.course.router import router as course_router
 from modules.chat.router import router as chat_router
 from modules.notification.router import router as notification_router
-from middleware.router import router as files_router
 from tools import init
 from logger import logger
 
@@ -32,7 +29,7 @@ app.add_middleware(
 # Example: http://localhost:8000/files/myfile.png will directly serve the file "myfile.png" stored in the "files" directory
 app.mount("/files", StaticFiles(directory="files"), name="files")
 
-routers = [users_router, files_router, course_router, chat_router, notification_router]
+routers = [users_router, course_router, chat_router, notification_router]
 
 # Include the router in the app with the "/api" prefix for all routes
 for router in routers:
