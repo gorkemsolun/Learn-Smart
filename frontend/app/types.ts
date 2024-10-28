@@ -1,5 +1,5 @@
-import {ReactNode} from "react";
-import {HierarchyNode, SimulationNodeDatum} from "d3";
+import { HierarchyNode, SimulationNodeDatum } from "d3";
+import { ReactNode } from "react";
 
 export interface User {
   user_id: string;
@@ -15,6 +15,31 @@ export interface Course {
   course_code: string;
   course_description: string;
   course_icon_url: string;
+}
+
+export interface Chat {
+  chat_id: string;
+  chat_title: string;
+  slides_mode: boolean;
+  created_at: string;
+  history: Message[];
+}
+
+export interface Message {
+  text: string;
+  role: string;
+  message_id: number;
+  media_url: any; // TODO: Change to string
+}
+
+export interface Notification {
+  notification_id: string;
+  notification_title: string;
+  notification_content: string;
+  notification_date: string;
+  notification_is_new: boolean;
+  notification_receiver_id: string;
+  notification_sender_id: string;
 }
 
 export interface CourseCreateDialogProps {
@@ -61,7 +86,9 @@ export interface LinkData {
   target: string;
 }
 
-export interface CustomSimulationNode extends SimulationNodeDatum, HierarchyNode<NodeData> {
+export interface CustomSimulationNode
+  extends SimulationNodeDatum,
+    HierarchyNode<NodeData> {
   id: string;
   label: string;
   group: number;
