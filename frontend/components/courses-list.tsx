@@ -36,7 +36,7 @@ export function CoursesList (modalParameters: CoursesListProps) {
     };
 
     return (
-      <Card className="h-full">
+      <Card className="bg-gradient-to-br from-primary/5 via-secondary/5 to-background h-full">
         <div className="flex items-center justify-between p-6">
           <CardTitle>Your Studies</CardTitle>
           <Pencil1Icon className="cursor-pointer hover:text-foreground/40 hover:bg-transparent text-foreground items-center justify-center" onClick={ () => modalParameters.setCourseDialog(true)}/>

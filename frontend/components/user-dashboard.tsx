@@ -91,13 +91,11 @@ export default function UserDashboard() {
               <Card
                   key={index}
                   onClick={() => handleCardClick(card.link)}
-                  className="g-gradient-to-br from-primary/10 to-secondary/10
-                  hover:shadow-lg transition-shadow duration-300 cursor-pointer
+                  className="hover:shadow-lg transition-shadow duration-300 cursor-pointer
                   h-full"
               >
                 <div
-                    className="h-full flex items-center bg-gradient-to-br from-primary/5
-                    via-secondary/5 to-background p-6 rounded-xl"
+                    className="h-full flex items-center bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-6 rounded-xl"
                 >
                   <div className="flex-grow space-y-2">
                     <CardTitle className="text-xl font-bold">{card.title}</CardTitle>
@@ -116,7 +114,7 @@ export default function UserDashboard() {
 
         <div className="grid grid-cols-7 gap-4 h-[55vh]">
           <div className="col-span-4">
-            <Card className="h-full">
+            <Card className="h-full bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
               <CardHeader>
                 <CardTitle>Big Card</CardTitle>
                 <CardDescription>This is the big card on the left.</CardDescription>
