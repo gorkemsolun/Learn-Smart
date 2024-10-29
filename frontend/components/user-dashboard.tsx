@@ -81,7 +81,7 @@ export default function UserDashboard() {
   ];
 
   const handleCardClick = (link: string) => {
-    router.replace(link);
+    router.push(link);
   };
 
   return (
