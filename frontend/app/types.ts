@@ -1,5 +1,5 @@
-import {ReactNode} from "react";
-import {HierarchyNode, SimulationNodeDatum} from "d3";
+import { HierarchyNode, SimulationNodeDatum } from "d3";
+import { ReactNode } from "react";
 
 export interface User {
   user_id: string;
@@ -41,6 +41,16 @@ export interface Slide {
   slides_file_url?: string;
   pages_count: number;
   last_slide_number: number;
+}
+
+export interface Notification {
+  notification_id: string;
+  notification_title: string;
+  notification_content: string;
+  notification_date: string;
+  notification_is_new: boolean;
+  notification_receiver_id: string;
+  notification_sender_id: string;
 }
 
 export interface ChatInterfaceProps {
@@ -99,8 +109,11 @@ export interface LinkData {
   target: string;
 }
 
-export interface CustomSimulationNode extends SimulationNodeDatum, HierarchyNode<NodeData> {
+export interface CustomSimulationNode
+  extends SimulationNodeDatum,
+    HierarchyNode<NodeData> {
   id: string;
   label: string;
   group: number;
 }
+
