@@ -1,5 +1,9 @@
-"use client"
+"use client";
+
 import * as React from "react";
+import { Course } from "@/app/types";
+import { CourseCreateDialog } from "@/components/course-create-dialog";
+import { CoursesList } from "@/components/courses-list";
 import {
     Card,
     CardHeader,
@@ -7,108 +11,137 @@ import {
     CardTitle,
     CardDescription,
     CardContent } from "@/components/ui/card";
-import {Button} from "@/components/ui/button";
-import {PlusCircledIcon, TrashIcon} from "@radix-ui/react-icons";
+import {useCallback, useEffect, useState} from "react";
+import Cookies from "js-cookie";
+import {backendAPI} from "@/environment/backend_api";
+import {useToast} from "@/hooks/use-toast";
+import {ToastAction} from "@/components/ui/toast";
+import HubIcon from '@mui/icons-material/Hub';
+import {useRouter} from "next/navigation";
 
 export default function UserDashboard() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [courseDialog, setCourseDialog] = useState<boolean>(false);
+  const [token] = useState<string>(Cookies.get("authToken") as string);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const fetchCourses = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const response = await backendAPI.get(`/users/me`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setCourses(response.data?.courses || []);
+    } catch (error) {
+      console.error(error.response);
+      toast({
+        title: "Error",
+        description: `Error fetching course data: ${error.message}`,
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
+    }
+  }, [token, toast]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
   const cardData = [
     {
-      title: "Card 1",
-      description: "This is card 1 description.",
-      content: "Content for card 1.",
-      footer: "Footer for card 1"
+      title: "Skill Tree",
+      content: "Conquer each skill, reveal new branches and quizzes.",
+      icon: <HubIcon />,
+      link: "/skill-tree"
     },
     {
       title: "Card 2",
-      description: "This is card 2 description.",
       content: "Content for card 2.",
-      footer: "Footer for card 2"
+      icon: null,
+      link: ""
     },
     {
       title: "Card 3",
-      description: "This is card 3 description.",
       content: "Content for card 3.",
-      footer: "Footer for card 3"
+      icon: null,
+      link: ""
     },
     {
       title: "Card 4",
-      description: "This is card 4 description.",
       content: "Content for card 4.",
-      footer: "Footer for card 4"
+      icon: null,
+      link: ""
     }
   ];
 
-  const studyData = [
-    { label: "CS342", onClick: () => alert("Button 1 clicked") },
-    { label: "Deep Learning", onClick: () => alert("Button 2 clicked") },
-  ];
+  const handleCardClick = (link: string) => {
+    router.replace(link);
+  };
 
   return (
       <div className="p-6 space-y-6">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4 h-[25vh]">
           {cardData.map((card, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <CardTitle>{card.title}</CardTitle>
-                  <CardDescription>{card.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>{card.content}</p>
-                </CardContent>
-                <CardFooter>
-                  <p>{card.footer}</p>
-                </CardFooter>
+              <Card
+                  key={index}
+                  onClick={() => handleCardClick(card.link)}
+                  className="g-gradient-to-br from-primary/10 to-secondary/10
+                  hover:shadow-lg transition-shadow duration-300 cursor-pointer
+                  h-full"
+              >
+                <div
+                    className="h-full flex items-center bg-gradient-to-br from-primary/5
+                    via-secondary/5 to-background p-6 rounded-xl"
+                >
+                  <div className="flex-grow space-y-2">
+                    <CardTitle className="text-xl font-bold">{card.title}</CardTitle>
+                    <CardDescription className="text-sm text-muted-foreground">{card.content}</CardDescription>
+                  </div>
+                  <div
+                      className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary ml-4"
+                      aria-hidden="true"
+                  >
+                    {card.icon}
+                  </div>
+                </div>
               </Card>
           ))}
         </div>
 
-        <div className="grid grid-cols-5 gap-4 min-h-[55lvh]">
-          <Card className="col-span-3">
-            <CardHeader>
-              <CardTitle>Big Card</CardTitle>
-              <CardDescription>This is the big card on the left.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Content for the big card.</p>
-            </CardContent>
-            <CardFooter>
-              <p>Footer for the big card</p>
-            </CardFooter>
-          </Card>
-
-          <Card className="col-span-2 overflow-auto">
-            <div className="flex items-center justify-between p-6">
-              <CardTitle>Your Studies</CardTitle>
-              <Button
-                  className="bg-none bg-transparent shadow-none hover:text-foreground/40 hover:bg-transparent text-foreground flex items-center">
-                <PlusCircledIcon/>
-              </Button>
-            </div>
-
-            <CardContent>
-              <div className="mt-4 space-y-4">
-                {studyData.map((button, index) => (
-                    <div
-                        key={index}
-                        className="flex justify-between items-center"
-                    >
-                      <Button
-                          onClick={button.onClick}
-                          className="w-full"
-                      >
-                        {button.label}
-                      </Button>
-                      <Button
-                          className="bg-transparent shadow-none hover:text-foreground/40 hover:bg-transparent text-foreground"
-                      >
-                        <TrashIcon/>
-                      </Button>
-                    </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-7 gap-4 h-[55vh]">
+          <div className="col-span-4">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Big Card</CardTitle>
+                <CardDescription>This is the big card on the left.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>Content for the big card.</p>
+              </CardContent>
+              <CardFooter>
+                <p>Footer for the big card</p>
+              </CardFooter>
+            </Card>
+          </div>
+          <div className="col-span-3">
+            <CoursesList courses={courses}
+                       onCourseDelete={fetchCourses}
+                       setCourseDialog={setCourseDialog}
+                       onCourseUpdate={fetchCourses}
+            />
+          </div>
         </div>
+        <CourseCreateDialog
+            isOpen={courseDialog}
+            onClose={setCourseDialog}
+            onCourseCreation={fetchCourses}
+        />
       </div>
   );
 }

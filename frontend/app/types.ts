@@ -1,4 +1,6 @@
-// variable names need to match the response from the server
+import {ReactNode} from "react";
+import {HierarchyNode, SimulationNodeDatum} from "d3";
+
 export interface User {
   user_id: string;
   role: string;
@@ -49,4 +51,56 @@ export interface ChatInterfaceProps {
   isChatLoading: boolean
   chatContainerRef: React.RefObject<HTMLDivElement>
   activeChat: Chat | null
+  showToggleSidebarButton: boolean
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>
+}
+
+export interface CourseCreateDialogProps {
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onCourseCreation: () => void;
+}
+
+export interface CoursesListProps {
+  courses: Course[];
+  onCourseDelete: () => void;
+  setCourseDialog: (value: boolean) => void;
+  onCourseUpdate: () => void;
+}
+
+export interface ConfirmationDialogProps {
+  title: string;
+  description: string;
+  onConfirm: () => void;
+  triggerButtonLabel: ReactNode;
+}
+
+export interface CourseCardProps {
+  course: Course;
+  onCourseDelete: (courseId: string) => void;
+  onCourseUpdate: () => void;
+}
+
+export interface CourseEditDialogProps {
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onCourseUpdate: () => void;
+  course: Course;
+}
+
+export interface NodeData {
+  id: string;
+  label: string;
+  group: number;
+}
+
+export interface LinkData {
+  source: string;
+  target: string;
+}
+
+export interface CustomSimulationNode extends SimulationNodeDatum, HierarchyNode<NodeData> {
+  id: string;
+  label: string;
+  group: number;
 }

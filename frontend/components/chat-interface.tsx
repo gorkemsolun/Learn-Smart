@@ -2,16 +2,28 @@ import { ChatInterfaceProps } from "@/app/types"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { ScrollArea } from "./ui/scroll-area"
-import { Send } from "lucide-react"
+import { Send, Menu } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import { Skeleton } from "./ui/skeleton"
 
-export default function ChatInterface({ messages, input, handleInputChange, handleSubmit, isChatLoading, chatContainerRef, activeChat }: ChatInterfaceProps) {
+export default function ChatInterface({ messages, input, handleInputChange, handleSubmit, isChatLoading, chatContainerRef, activeChat, showToggleSidebarButton, setIsSidebarOpen }: ChatInterfaceProps) {
   return (
     <div className="h-full p-4 flex flex-col justify-between overflow-hidden">
       {activeChat && (
         <>
-          <h2 className="text-2xl font-bold mb-4">{activeChat.chat_title}</h2>
+          <div className="flex items-center mb-4">
+            {showToggleSidebarButton && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSidebarOpen((prev) => !prev)}
+                aria-label="Toggle sidebar"
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+            )}
+            <h2 className="text-2xl font-bold ml-2">{activeChat.chat_title}</h2>
+          </div>
           <div className="flex gap-2 mb-4">
             <Button variant="outline" onClick={() => console.log("Create Quiz clicked")}>
               Create Quiz
@@ -53,7 +65,6 @@ export default function ChatInterface({ messages, input, handleInputChange, hand
                   ) : (
                     <code className="bg-gray-200 dark:bg-gray-800 rounded px-1" {...props}>
                       {children}
-                    
                     </code>
                   )
                 },

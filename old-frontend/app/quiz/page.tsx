@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Quiz from "../components/quiz";
 import "../style/quiz.css";
+import { Card, CardHeader, CardTitle, CardContent} from "@/components/ui/card";
 
 export default function QuizMenu({ quizData, onClose }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -47,12 +48,15 @@ export default function QuizMenu({ quizData, onClose }) {
   );
 
   return (
-    <div>
-      <div className="flex flex-col items-center justify-center h-full">
-        <div className="w-full max-w-3xl bg-white rounded-lg shadow-lg p-6 md:p-8">
-          <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-4 md:mb-6 text-center">
+    <div className="flex flex-col items-center justify-center h-full">
+      <Card className="w-full max-w-3xl">
+        <CardHeader className="p-6 md:p-8">
+          <CardTitle className="text-2xl md:text-4xl font-bold text-gray-800 mb-4 md:mb-6 text-center">
             Quiz
-          </h1>
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
           <hr className="border-gray-300 mb-4 md:mb-8" />
           {quizEnded ? (
             <div className="flex flex-col items-center justify-center space-y-4">
@@ -87,10 +91,10 @@ export default function QuizMenu({ quizData, onClose }) {
               onNextQuestion={handleNextQuestion}
             />
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
-  
+
 }
 

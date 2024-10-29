@@ -1,0 +1,12 @@
+{
+    "trailingComma": "es5",
+    "tabWidth": 2,
+    "semi": true,
+    "doubleQuote": true,
+    "singleQuote": false,
+    "tailwindConfig": "./tailwind.config.js",
+    "plugins": [
+        "prettier-plugin-tailwind",
+        "@ianvs/prettier-plugin-sort-imports"
+    ]
+}

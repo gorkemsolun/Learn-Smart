@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import * as React from "react";
 import {Button} from "@/components/ui/button";
 import {ToastAction} from "@/components/ui/toast";
@@ -12,12 +12,13 @@ import {
 import {Input} from "@/components/ui/input";
 import Cookies from "js-cookie";
 import {Icons} from "@/components/icons";
-import {EnvelopeClosedIcon, LockClosedIcon} from "@radix-ui/react-icons"
+import {EnvelopeClosedIcon, LockClosedIcon} from "@radix-ui/react-icons";
 import {FcGoogle} from "react-icons/fc";
 import {useRouter} from "next/navigation";
 import {useToast} from "@/hooks/use-toast";
 import {useEffect, useState} from "react";
 import {backendAPI} from "@/environment/backend_api";
+import ImageSlider from "@/components/image-slider";
 
 export default function SignIn() {
 
@@ -39,9 +40,9 @@ export default function SignIn() {
       if (role == null) {
         router.push("/role-card");
       } else if (role === "User") {
-        router.push("/learnsmart-homepage");
+        router.push("/edux-homepage");
       } else if (role === "Instructor") {
-        router.push("/learnsmart-homepage-instructor");
+        router.push("/edux-homepage-instructor");
       }
     }
   }, [router, role]);
@@ -89,9 +90,9 @@ export default function SignIn() {
           if (role == null) {
             router.push("/role-card");
           } else if (role === "User") {
-            router.push("/learnsmart-homepage");
+            router.push("/edux-homepage");
           } else if (role === "Instructor") {
-            router.push("/learnsmart-homepage-instructor");
+            router.push("/edux-homepage-instructor");
           }
         })
         .catch((error) => {
@@ -119,10 +120,13 @@ export default function SignIn() {
             Sign up
           </Button>
 
-          <div className="w-1/2 bg-foreground/5 p-4 rounded-l-lg flex items-center justify-center border-1 relative">
+          <div className="w-1/2 bg-foreground/5 p-4 rounded-l-lg flex items-center justify-center border-1 relative space-y-4">
             <div className="absolute top-4 left-4 flex items-center space-x-2">
               <Icons.logo className="h-6 w-6"/>
-              <p className="font-bold">learnsmart</p>
+              <p className="font-bold">edux/ai</p>
+            </div>
+            <div className="w-full h-[56vh]">
+              <ImageSlider/>
             </div>
           </div>
 

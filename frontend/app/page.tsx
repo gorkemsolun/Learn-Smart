@@ -16,7 +16,7 @@ export default function PageHandler() {
   }, [router]);
 
   return (
-    <div className="bg-transparent min-h-screen">
+    <div className="min-h-screen bg-transparent">
       <h1>Redirecting to login...</h1>
     </div>
   );

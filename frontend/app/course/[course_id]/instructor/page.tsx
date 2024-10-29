@@ -3,12 +3,11 @@ import { useParams, useRouter } from "next/navigation";
 import React, { useState, useEffect, useRef } from 'react'
 import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronLeft, ChevronRight, MessageSquare, Plus, Send, ArrowLeft, ArrowRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Menu, ArrowLeft, ArrowRight } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Course, Chat, Slide, Message } from '@/app/types'
 import { backend, backendAPI } from '@/environment/backend_api'
+import ChatInterface from "@/components/chat-interface";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -21,13 +20,28 @@ import {
   SelectContent, 
   SelectItem 
 } from "@/components/ui/select";
-import ChatInterface from "@/components/chat-interface";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+import { CreateChatSheet } from "./create-chat-sheet";
+import { Sidebar } from "./sidebar";
+import { Navbar } from "@/components/navbar";
 
 export default function InstructorPage() {
   const router = useRouter();
   const [token, setToken] = useState<string>("");
 
   const [course, setCourse] = useState<Course>({} as Course);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [chats, setChats] = useState<{chat_id: string, chat_title: string}[]>([]);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -46,6 +60,10 @@ export default function InstructorPage() {
   const params = useParams<{ course_id: string }>();
   const courseID = params.course_id;
 
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
+  const [chatIDToDelete, setChatIDToDelete] = useState<string>("");
+
   // Check if user is authenticated
   useEffect(() => {
     const authToken = Cookies.get("authToken");
@@ -61,6 +79,7 @@ export default function InstructorPage() {
   useEffect(() => {
     if (token) {
       fetchCourse();
+      fetchAllCourses();
       fetchAllChats();
     }
   }, [token]);
@@ -155,6 +174,30 @@ export default function InstructorPage() {
         console.error("Error fetching course:", error);
       });
   };
+
+  const fetchAllCourses = async () => {
+    if (!token) {
+      return;
+    }
+    await backendAPI
+      .get(`/users/me`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        setCourses(response.data.courses.map((course: {course_id: string, course_name: string, course_code: string}) => ({
+          course_id: course.course_id,
+          course_name: course.course_name,
+          course_code: course.course_code,
+          })
+        ));
+      })
+      .catch((error) => {
+        console.error("Error fetching course:", error);
+      });
+  }
 
   const fetchAllChats = async () => {
     if (!token || !courseID) {
@@ -339,131 +382,213 @@ export default function InstructorPage() {
     })
   }
 
-  const handleNewChat = () => {
-    console.log("Create new chat clicked");
+  const handleNewChat = (newChat: Chat) => {
+    if (!newChat) {
+      return;
+    }
+    setChats((prevChats) => [...prevChats, newChat]);
+    setActiveChat(newChat);
+    setIsSheetOpen(false);
+    setActiveMessages([]);
   }
 
+  const handleChatAction = (action: string, chatID: string) => {
+    switch (action) {
+      case "select":
+        handleChatSelection(chatID);
+        break;
+      case "create":
+        setIsSheetOpen(true);
+        break;
+      case "delete":
+        setChatIDToDelete(chatID);
+        setIsAlertDialogOpen(true);
+        break;
+      default:
+        console.error("Invalid action");
+    }
+  }
+
+  const confirmDeleteChat = () => {
+    if (chatIDToDelete) {
+      backendAPI.delete(`/chat/${chatIDToDelete}`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then(() => {
+        setChats((prevChats) => prevChats.filter((chat) => chat.chat_id !== chatIDToDelete));
+        if (chatIDToDelete === activeChat.chat_id) {
+          setActiveChat({} as Chat);
+          setActiveMessages([]);
+          setLastMessageID(0);
+          setImgSrc('');
+          setCurrentSlidePage(1);
+          setCurrentSlide({} as Slide);
+          setPresentationFiles([]);
+          setActiveFile({ filename: '', slide_id: '' });
+          setInputMessage('');
+          setIsLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error("Error deleting chat:", error);
+        setIsLoading(false);
+      })
+      .finally(() => {
+        setIsAlertDialogOpen(false);
+        setChatIDToDelete("");
+      });
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className={`${isSidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 ease-in-out overflow-hidden border-r border-border`}>
-        <div className="p-4">
-          <Button onClick={handleNewChat} className="w-full mb-4">
-            <Plus className="mr-2 h-4 w-4" /> New Chat
-          </Button>
-          <ScrollArea className="h-[calc(100vh-5rem)]">
-            {chats.map(chat => (
-              <Button
-                key={chat.chat_id}
-                variant={chat.chat_id === activeChat.chat_id ? "secondary" : "ghost"}
-                className="w-full justify-start mb-2"
-                onClick={() => handleChatSelection(chat.chat_id)}
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                {chat.chat_title}
-              </Button>
-            ))}
-          </ScrollArea>
-        </div>
-      </div>
+    <div>
+      {/* <Navbar /> TODO: add navbar component, when hovered at the top it should display */}
+      <div className="flex h-screen bg-background">
+        {/* Sidebar */}
+        <Sidebar 
+          courses={courses.map(course => ({ course_id: course.course_id, course_title: course.course_name, course_code: course.course_code }))}
+          chats={chats}
+          selectedCourse={course.course_name}
+          isSidebarOpen={isSidebarOpen}
+          handleChatAction={handleChatAction}
+          handleCourseChange={(courseID) => {
+            router.push(`/course/${courseID}/instructor`);
+          }}
+        />
+    
+        {/* Main Content */}
+        <div className={`flex-1 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'ml-64' : 'ml-0'}`}>
+          {activeChat && activeChat.chat_id ? (
+            <>
+              {activeChat.slides_mode ? (
+                <ResizablePanelGroup direction="horizontal">
+                  <ResizablePanel defaultSize={50} minSize={30}>
+                    <div className="h-full flex flex-col">
+                      {/* Toggle sidebar button and file selection dropdown */}
+                      <div className="p-4 flex justify-between items-center">
+                        {/* Toggle sidebar button - Only shown in slides mode */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setIsSidebarOpen((prev) => !prev)}
+                          aria-label="Toggle sidebar"
+                        >
+                          <Menu className="h-6 w-6" />
+                        </Button>
 
-      {/* Toggle Sidebar Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-4 left-4 z-10"
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-      >
-        {isSidebarOpen ? <ChevronLeft /> : <ChevronRight />}
-      </Button>
+                        <Select onValueChange={handleFileChange} value={currentSlide.slide_id}>
+                          <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Select a file" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {presentationFiles.map((file) => (
+                              <SelectItem key={file.slide_id} value={file.slide_id}>
+                                {file.slides_file_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-      {/* Main Content */}
-      <div className="flex-1">
-        {activeChat && activeChat.chat_id ? (
-          activeChat.slides_mode ? (
-            <ResizablePanelGroup direction="horizontal">
-              <ResizablePanel defaultSize={50} minSize={30}>
-                <div className="h-full flex flex-col">
-                  {/* File selection dropdown */}
-                  <div className="p-4 flex justify-end">
-                    <Select onValueChange={handleFileChange} value={currentSlide.slide_id}>
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Select a file" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {presentationFiles.map((file) => (
-                          <SelectItem key={file.slide_id} value={file.slide_id}>
-                            {file.slides_file_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Slide content */}
-                  <div className="flex-1 p-4 flex flex-col items-center">
-                    {/* Centered page number */}
-                    <h2 className="text-2xl font-bold mb-4">Slide {currentSlidePage}</h2>
-                    
-                    <div className="bg-muted rounded-lg shadow-lg overflow-hidden max-w-full max-h-full mb-4 flex-1">
-                      <img 
-                        src={imgSrc}
-                        alt={`Presentation Slide ${currentSlide}`}
-                        className="w-full h-full object-contain"
-                      />
+                      {/* Slide content */}
+                      <div className="flex-1 p-4 flex flex-col items-center">
+                        {/* Centered page number */}
+                        <h2 className="text-2xl font-bold mb-4">Slide {currentSlidePage}</h2>
+
+                        <div className="bg-muted rounded-lg shadow-lg overflow-hidden max-w-full max-h-full mb-4 flex-1">
+                          <img 
+                            src={imgSrc}
+                            alt={`Presentation Slide ${currentSlide}`}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="flex gap-4">
+                          <Button onClick={handlePreviousSlide} disabled={isLoading || currentSlidePage === 1}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+                          </Button>
+                          <Button onClick={handleNextSlide} disabled={isLoading || currentSlidePage === currentSlide.pages_count}>
+                            Next <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex gap-4">
-                      <Button onClick={handlePreviousSlide} disabled={isLoading || currentSlidePage === 1}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-                      </Button>
-                      <Button onClick={handleNextSlide} disabled={isLoading || currentSlidePage === currentSlide.pages_count}>
-                        Next <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </ResizablePanel>
-              <ResizableHandle />
-              <ResizablePanel defaultSize={50} minSize={30}>
+                  </ResizablePanel>
+                  <ResizableHandle />
+                  <ResizablePanel defaultSize={50} minSize={30}>
+                    <ChatInterface
+                      messages={activeMessages}
+                      input={inputMessage}
+                      handleInputChange={(e) => setInputMessage(e.target.value)}
+                      handleSubmit={(e) => {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }}
+                      isChatLoading={isLoading}
+                      chatContainerRef={messagesEndRef}
+                      activeChat={activeChat}
+                      showToggleSidebarButton={false}
+                      setIsSidebarOpen={setIsSidebarOpen}
+                    />
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              ) : (
+                // Chat-only mode
                 <ChatInterface
-                messages={activeMessages}
-                input={inputMessage}
-                handleInputChange={(e) => setInputMessage(e.target.value)}
-                handleSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendMessage();
-                }}
-                isChatLoading={isLoading}
-                chatContainerRef={messagesEndRef}
-                activeChat={activeChat}
+                  messages={activeMessages}
+                  input={inputMessage}
+                  handleInputChange={(e) => setInputMessage(e.target.value)}
+                  handleSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }}
+                  isChatLoading={isLoading}
+                  chatContainerRef={messagesEndRef}
+                  activeChat={activeChat}
+                  showToggleSidebarButton={true}
+                  setIsSidebarOpen={setIsSidebarOpen}
                 />
-              </ResizablePanel>
-            </ResizablePanelGroup>
+              )}
+            </>
           ) : (
-            // Chat-only mode
-            <ChatInterface
-              messages={activeMessages}
-              input={inputMessage}
-              handleInputChange={(e) => setInputMessage(e.target.value)}
-              handleSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }}
-              isChatLoading={isLoading}
-              chatContainerRef={messagesEndRef}
-              activeChat={activeChat}
-            />
-          )
-    ) : (
-      /* Placeholder part, when initially no chat is clicked */
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Welcome to Presentation Chat</h2>
-          <p className="text-muted-foreground">Select a chat from the sidebar or create a new one to get started.</p>
+            /* Placeholder part, when initially no chat is clicked */
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-4">Welcome to Presentation Chat</h2>
+                <p className="text-muted-foreground">Select a chat from the sidebar or create a new one to get started.</p>
+              </div>
+            </div>
+          )}
         </div>
+    
+        {/* Create Chat Sheet */}
+        <CreateChatSheet
+          isOpen={isSheetOpen}
+          closeModal={() => setIsSheetOpen(false)}
+          authToken={token}
+          onChatCreated={handleNewChat}
+        />
+
+        {/* Delete Chat Dialog */}
+        <AlertDialog open={isAlertDialogOpen} onOpenChange={setIsAlertDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete this chat
+                and its data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteChat}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
       </div>
-    )}
     </div>
-  </div>
-  )
+  );  
 }

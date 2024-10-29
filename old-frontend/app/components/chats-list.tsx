@@ -12,6 +12,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { printDebugMessage } from "../debugger";
 import ChatRenameModal from "./modals/chat-rename-modal";
 import GenerateQuizModal from "./modals/generate-quiz-modal";
+import GenerateFlashcardModal from "./modals/generate-flashcard-modal";
 
 export default function ChatsList({
   chats,
@@ -26,6 +27,10 @@ export default function ChatsList({
 
   const [isQuizModalOpen, setIsQuizModalOpen] = useState<boolean>(false);
   const [generatedQuizName, setGeneratedQuizName] = useState<string>("");
+
+  const [isFlashcardModalOpen, setIsFlashcardModalOpen] = useState<boolean>(false);
+  const [generatedFlashcardName, setGeneratedFlashcardName] = useState<string>("");
+
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingMessage, setLoadingMessage] = useState<string>("");
@@ -107,32 +112,8 @@ export default function ChatsList({
     setIsQuizModalOpen(true);
   };
 
-  const handleCreateFlashCards = async (chat_id: string) => {
-    setIsLoading(true);
-    setLoadingMessage("Creating flashcards...");
-
-    try {
-      const response = await backendAPI.post(
-        `/chat/${chat_id}/create_flashcards`,
-        {},
-        {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = JSON.stringify(response.data.combined_data);
-      const url = `/flashcards?data=${encodeURIComponent(data)}`;
-      router.push(url);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setIsLoading(false);
-      setLoadingMessage("");
-    }
+  const handleCreateFlashCards = async () => {
+    setIsFlashcardModalOpen(true);
   };
 
   const handleDelete = async (chat_id: string) => {
@@ -247,7 +228,7 @@ export default function ChatsList({
                             />
                             <button
                               onClick={() =>
-                                handleCreateFlashCards(chat.chat_id)
+                                handleCreateFlashCards()
                               }
                               type="button"
                               className="font-normal flex items-center text-sm text-gray-400 hover:bg-gray-800 py-2 px-4 rounded-lg transition duration-150 ease-in-out"
@@ -255,6 +236,21 @@ export default function ChatsList({
                               <IoCreate className="mr-2 text-gray-400" />
                               Create Flashcards
                             </button>
+                            <GenerateFlashcardModal
+                              isOpen={isFlashcardModalOpen}
+                              token={token}
+                              chatID={chat.chat_id}
+                              onClose={(error) => {
+                                setIsFlashcardModalOpen(false);
+                                if (!error) {
+                                  toast.success(
+                                    `Flashcard saved successfully`
+                                  );
+                                }
+                                setGeneratedFlashcardName("");
+                              }}
+                              setFlashcardName={setGeneratedFlashcardName}
+                            />
                             <button
                               onClick={() => handleDelete(chat.chat_id)}
                               type="button"

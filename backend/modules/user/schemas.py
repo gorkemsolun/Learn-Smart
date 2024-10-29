@@ -42,7 +42,7 @@ class UserUpdateRequest(BaseModel):
         email (Optional[EmailStr]): The email address of the user.
         password (Optional[str]): The password of the user.
     """
-    role: Optional[Literal["instructor", "user"]] = None
+    role: Optional[Literal["Instructor", "User"]] = None
     nickname: Optional[str] = None
     email: Optional[EmailStr] = None  # EmailStr is a Pydantic email validator
     password: Optional[str] = None
