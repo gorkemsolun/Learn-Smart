@@ -21,6 +21,7 @@ class Course(Base):
     course_icon_url = Column(String(255), nullable=True) # nullable for now (generate an image for the course in the future)
     user_id = Column(Integer, ForeignKey('users.user_id'))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
     user = relationship("User", back_populates="courses")
     chats = relationship("Chat", back_populates="course")
 

@@ -7,12 +7,11 @@ classes to interact with the S3 bucket instead of the local file system.
 from io import BytesIO
 import os
 import pymupdf
-from pptx import Presentation
 from docx import Document
 from fastapi import UploadFile
 from abc import ABC, abstractmethod
 from PIL import Image
-from tools import splitext
+from tools import splitext, convert_pptx_to_pdf
 
 
 class BaseFile(ABC):
@@ -175,7 +174,7 @@ class ImageFile(BaseFile):
 
     def __init__(self, file: UploadFile = None, path: str = None):
         ext = splitext(file.filename if file else path if path else "")[1] # extension of the file
-        if ext not in ["png", "jpeg", "jpg"]:
+        if ext.lower() not in ["png", "jpeg", "jpg"]:
             raise ValueError("Unsupported extension: " + ext)
         if file and file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
             raise ValueError("Unsupported content type: " + file.content_type)
@@ -245,11 +244,12 @@ class PresentationFile(BaseFile):
 
     def __init__(self, file: UploadFile = None, path: str = None):
         ext = splitext(file.filename if file else path if path else "")[1]
-        if ext != "pptx":
+        if ext.lower() != "pptx":
             raise ValueError("Unsupported extension: " + ext)
         if file and file.content_type != "application/vnd.openxmlformats-officedocument.presentationml.presentation":
             raise ValueError("Unsupported content type: " + file.content_type)
         super().__init__(file, path)
+        self.converted_to_pdf = False
 
     def content(self):
         """
@@ -262,21 +262,13 @@ class PresentationFile(BaseFile):
             ValueError: If no file is provided.
 
         """
+
         if not self.path and not self.file:
             raise ValueError("No file provided.")
-        
-        text = ""
 
-        if self.path:
-            presentation = Presentation(self.path)
-        else:
-            presentation = Presentation(BytesIO(self.file.file.read()))
-        for slide in presentation.slides:
-            for shape in slide.shapes:
-                if not shape.has_text_frame:
-                    continue
-                text += shape.text_frame.text
-        return text
+        assert self.converted_to_pdf, "The presentation file must be converted to PDF with .save() first."
+        with pymupdf.open(self.path) as doc:
+            return chr(12).join([page.get_text() for page in doc])
     
     def get(self):
         """
@@ -286,8 +278,27 @@ class PresentationFile(BaseFile):
             ResourceWrapper: The presentation resource.
 
         """
-        presentation = Presentation(self.path)
-        return self.ResourceWrapper(presentation)
+        assert self.converted_to_pdf, "The presentation file must be converted to PDF with .save() first."
+        doc = pymupdf.open(self.path)
+        return self.ResourceWrapper(doc)
+    
+    def save(self, path: str):
+        """
+        Saves the presentation file as a PDF file.
+
+        Args:
+            path (str): The path to save the presentation file.
+
+        """
+        super().save(path)
+        new_path = convert_pptx_to_pdf(path)
+        self.file.filename = os.path.basename(new_path)
+        self.path = new_path
+
+        with open(new_path, "rb") as file:
+            self.file.file = file 
+        
+        self.converted_to_pdf = True
     
 
 class PDFFile(BaseFile):
@@ -313,7 +324,7 @@ class PDFFile(BaseFile):
 
     def __init__(self, file: UploadFile = None, path: str = None):
         ext = splitext(file.filename if file else path if path else "")[1]
-        if ext != "pdf":
+        if ext.lower() != "pdf":
             raise ValueError("Unsupported extension: " + ext)
         if file and file.content_type != "application/pdf":
             raise ValueError("Unsupported content type: " + file.content_type)
@@ -378,7 +389,7 @@ class WordFile(BaseFile):
 
     def __init__(self, file: UploadFile = None, path: str = None):
         ext = splitext(file.filename if file else path if path else "")[1]
-        if ext != "docx":
+        if ext.lower() != "docx":
             raise ValueError("Unsupported extension: " + ext)
         if file and file.content_type != "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
             raise ValueError("Unsupported content type: " + file.content_type)
@@ -431,7 +442,7 @@ class FileFactory:
         }
 
     def __call__(self, file: UploadFile = None, path: str = None):
-        extension = splitext(path if path else file.filename if file else "")[1]
+        extension = splitext(path if path else file.filename if file else "")[1].lower()
         if extension not in self.file_types:
             return GenericFile(file=file, path=path)
         return self.file_types[extension](file=file, path=path) # delegate the creation of the file to the corresponding class

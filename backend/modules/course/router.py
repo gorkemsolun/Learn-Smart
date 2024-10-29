@@ -1,6 +1,5 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Form, HTTPException, File, UploadFile
-import google.generativeai as genai
 import os
 import shutil
 
@@ -8,17 +7,12 @@ from middleware import authentication as auth
 from middleware.filemanager import FileFactory
 from database.dbmanager import CourseDB, ChatDB
 from modules.course.schemas import CourseCreationRequest, CourseUpdateRequest
+from modules.chat.router import delete_chat
 from modules.chat.util import *
 from modules.course.util import *
 from tools import validate_file_extension
 
 router = APIRouter(prefix="/course", tags=["Course"])
-
-@router.post("/generate_flashcards")
-def generate_flashcards(course_flashcard_file_content: str = Form(...), course_id: str = Form(...)):
-    # Your logic to generate flashcards
-    success, data = create_flashcards(course_flashcard_file_content, course_id)
-    return {"success": success, "data": data}
 
 @router.get("/{course_id}")
 async def get_course(course_id: int, current_user: dict = Depends(auth.get_current_user)):
@@ -69,9 +63,13 @@ async def get_chats(course_id: int, current_user: dict = Depends(auth.get_curren
         raise HTTPException(status_code=403, detail="Forbidden.")
 
     chats = ChatDB.fetch(course_id=course_id, all=True)
-    return [{"chat_id": chat["chat_id"],
-                       "chat_title": chat["chat_title"],
-                       "created_at": chat["created_at"]} for chat in chats]  # return chat titles along with chat IDs
+    return [
+        {"chat_id": chat["chat_id"],
+         "chat_title": chat["chat_title"],
+         "slides_mode": chat["slides_mode"],
+         "last_opened_slide_id": chat["last_opened_slide_id"],
+         "created_at": chat["created_at"]} 
+        for chat in chats]  # return chat titles along with chat IDs
 
 
 @router.get("/{course_id}/quizzes")
@@ -177,18 +175,17 @@ async def get_quiz(course_id: int, quiz_name: str, current_user: dict = Depends(
         raise HTTPException(status_code=403, detail="Forbidden. You are not authorized to rename this quiz.")
 
     quiz_name = quiz_name.strip()
-    print(quiz_name)
     chats = ChatDB.fetch(course_id=course_id, all=True)
     for chat in chats:
         quizzes_path = get_quizzes_folder_path(chat["chat_id"])
         if os.path.exists(quizzes_path):
             filenames = [splitext(filename)[0] for filename in os.listdir(quizzes_path)]
-            print(filenames)
             if quiz_name in filenames:
                 with open(os.path.join(quizzes_path, f"{quiz_name}.json"), "r") as f:
                     return json.load(f)
 
     raise HTTPException(status_code=404, detail="Quiz not found.")
+
 
 @router.delete("/{course_id}/quizzes/{quiz_name}")
 async def delete_quiz(course_id: int, quiz_name: str, current_user: dict = Depends(auth.get_current_user)):
@@ -320,28 +317,11 @@ async def delete_course(course_id: int, current_user: dict = Depends(auth.get_cu
     if course_study_plan_url: 
         FileFactory()(path=course_study_plan_url).delete()
 
-    chats = ChatDB.delete(course_id=course_id, all=True)  # delete all chats associated with the course
-    CourseDB.delete(course_id=course_id)  # delete the course
-    
+    chats = ChatDB.fetch(course_id=course_id, all=True)  # delete all chats associated with the course
     for chat in chats:
-        history_url, slides_furl = chat["history_url"], chat["slides_furl"]
-        metadata_url = get_chat_metadata_path(history_url) if history_url else None
-        generator_url = get_generator_path(slides_furl) if slides_furl else None
-        items_folder = get_chat_folder_path(chat["chat_id"])
+        await delete_chat(chat["chat_id"], current_user)  # delete the chat
 
-        if os.path.exists(history_url):
-            os.remove(history_url)
-        if items_folder and os.path.exists(items_folder):
-            shutil.rmtree(items_folder)
-        if slides_furl and os.path.exists(slides_furl):
-            os.remove(slides_furl)
-        if metadata_url and os.path.exists(metadata_url):
-            os.remove(metadata_url)
-        if generator_url and os.path.exists(generator_url):
-            os.remove(generator_url)
-
-        # TODO: delete quiz and flashcards too
-
+    CourseDB.delete(course_id=course_id)  # delete the course
     return {"message": "Course deleted successfully."}
 
 
@@ -350,8 +330,6 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
                         course_code: Optional[str] = Form(None),
                         course_description: Optional[str] = Form(None),
                         update_description: bool = Form(False),  # flag variable indicating whether to update the
-                        # course_description (necessary because course_description is
-                        # optional and might be None)
                         course_syllabus_file: UploadFile = File(None),
                         course_update_syllabus: bool = Form(False),  # flag variable indicating whether to update the syllabus
                         course_icon_file: UploadFile = File(None),

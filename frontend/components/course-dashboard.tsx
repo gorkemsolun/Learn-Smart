@@ -42,8 +42,6 @@ export default function CourseHomepage() {
   const handleModalOpen = () => setIsModalOpen(true);
   const handleModalClose = () => setIsModalOpen(false);
 
-  const chat_id = "1"; // These can cause issues later. Separate from functional constants or label clearly.
-
   useEffect(() => {
     if (token) {
       fetchCourseData(course_id);
@@ -84,7 +82,7 @@ export default function CourseHomepage() {
   };
 
   const handleInstructorClick = () => {
-    router.push(`/course/${course_id}/instructor/${chat_id}`);
+    router.push(`/course/${course_id}/instructor`);
   };
 
   const handleWeeklyStudyPlanClick = () => {
