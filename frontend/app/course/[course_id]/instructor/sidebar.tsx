@@ -41,7 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex h-full flex-col">
         <div className="p-4 space-y-4">
           <Button variant="outline" className="w-full" onClick={() => handleChatAction("create", "")}>
-            Create Course
+            Create Chat
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
