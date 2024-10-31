@@ -3,7 +3,7 @@ import { useParams, useRouter } from "next/navigation";
 import React, { useState, useEffect, useRef } from 'react'
 import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Menu, ArrowLeft, ArrowRight } from "lucide-react"
+import { Menu, ArrowLeft, ArrowRight } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Course, Chat, Slide, Message } from '@/app/types'
 import { backend, backendAPI } from '@/environment/backend_api'
@@ -29,7 +29,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 import { CreateChatSheet } from "./create-chat-sheet";
@@ -40,29 +39,34 @@ export default function InstructorPage() {
   const router = useRouter();
   const [token, setToken] = useState<string>("");
 
+  const params = useParams<{ course_id: string }>();
+  const courseID = params.course_id;
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Sidebar state
+  const [isLoading, setIsLoading] = useState(false); // Loading state for fetching slides and messages
+  const [isSheetOpen, setIsSheetOpen] = useState(false); // Create chat sheet state
+  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false); // Delete chat dialog state
+
   const [course, setCourse] = useState<Course>({} as Course);
   const [courses, setCourses] = useState<Course[]>([]);
   const [chats, setChats] = useState<{chat_id: string, chat_title: string}[]>([]);
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [imgSrc, setImgSrc] = useState('')
-  const [currentSlidePage, setCurrentSlidePage] = useState(1)
-  const [activeChat, setActiveChat] = useState<Chat>({} as Chat)
-  const [activeMessages, setActiveMessages] = useState<Message[]>([])
-  const [lastMessageID, setLastMessageID] = useState(0)
-  const [inputMessage, setInputMessage] = useState('')
-  const [currentSlide, setCurrentSlide] = useState<Slide>({} as Slide)
-  const [presentationFiles, setPresentationFiles] = useState<{slide_id: string, slides_file_name: string}[]>([])
-  const [activeFile, setActiveFile] = useState<{filename: string, slide_id: string}>({ filename: '', slide_id: '' })
-  const [isLoading, setIsLoading] = useState(false)
+  const [imgSrc, setImgSrc] = useState<string|undefined>(undefined); // Image source for presentation slide
+  const [currentSlide, setCurrentSlide] = useState<Slide>({} as Slide); // Current slide info
+  const [currentSlidePage, setCurrentSlidePage] = useState(1); // Current page number of the open slide
+
+  const [activeChat, setActiveChat] = useState<Chat>({} as Chat); // Currently open chat
+  const [activeMessages, setActiveMessages] = useState<Message[]>([]); // Messages in the active chat
+  const [lastMessageID, setLastMessageID] = useState(0); // ID of the last message sent in the active chat
+
+  const [inputMessage, setInputMessage] = useState(''); // Text field input in the chat
+
+  const [presentationFiles, setPresentationFiles] = useState<{slide_id: string, slides_file_name: string}[]>([]); // List of presentation files of the active chat
+  const [activeFile, setActiveFile] = useState<{filename: string, slide_id: string}>({ filename: '', slide_id: '' }); // Currently active presentation file
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const params = useParams<{ course_id: string }>();
-  const courseID = params.course_id;
-
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
-  const [chatIDToDelete, setChatIDToDelete] = useState<string>("");
+  const [chatIDToDelete, setChatIDToDelete] = useState<string>(""); // Chat ID of the chat being deleted
 
   // Check if user is authenticated
   useEffect(() => {
@@ -311,13 +315,7 @@ export default function InstructorPage() {
       })
       .then((response) => {
         setActiveChat(response.data);
-        /* fetchSlide() */
-        console.log("response.data");
-        console.log(response.data);
-        console.log("hist:");
-        console.log(response.data.history);
-        setActiveMessages(response.data.history || []);
-        setLastMessageID(response.data.history[response.data.history.length - 1]?.message_id);
+        // rest is handled by useEffect
       })
       .catch((error) => {
         console.error("Error fetching chat:", error);
@@ -343,9 +341,12 @@ export default function InstructorPage() {
     setIsLoading(true);
     setInputMessage("");
 
+    const url = activeChat.slides_mode
+    ? `/chat/${activeChat.chat_id}/send_message?slide_id=${currentSlide.slide_id}&page_number=${currentSlidePage}`
+    : `/chat/${activeChat.chat_id}/send_message`;
+
     backendAPI
-      .post(`/chat/${activeChat?.chat_id}/send_message?slide_id=${currentSlide.slide_id}&page_number=${currentSlidePage}`, 
-        formData, {
+      .post(url, formData, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
@@ -370,6 +371,7 @@ export default function InstructorPage() {
       .finally(() => {
         setIsLoading(false);
       });
+
   }
 
   const handleFileChange = (slide_id: string) => {
@@ -423,7 +425,7 @@ export default function InstructorPage() {
           setActiveChat({} as Chat);
           setActiveMessages([]);
           setLastMessageID(0);
-          setImgSrc('');
+          setImgSrc(undefined);
           setCurrentSlidePage(1);
           setCurrentSlide({} as Slide);
           setPresentationFiles([]);
