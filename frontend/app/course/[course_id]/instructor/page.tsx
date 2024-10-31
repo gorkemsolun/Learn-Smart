@@ -33,7 +33,6 @@ import {
 
 import { CreateChatSheet } from "./create-chat-sheet";
 import { Sidebar } from "./sidebar";
-import { Navbar } from "@/components/navbar";
 
 export default function InstructorPage() {
   const router = useRouter();

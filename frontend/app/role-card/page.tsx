@@ -1,6 +1,5 @@
 "use client";
 
-import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -104,7 +103,6 @@ export default function RoleSelectorCard() {
 
   return (
     <main>
-      <Navbar />
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <Card className="relative flex h-[48vh] w-2/5 flex-col justify-between overflow-auto p-4">
           <div className="flex flex-col">

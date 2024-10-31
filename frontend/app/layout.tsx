@@ -1,6 +1,5 @@
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
-import type { Metadata } from "next";
+import { Metadata } from "next";
+import ClientLayout from "@/components/client-layout";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,25 +8,15 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-  children,
+  children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <>
-      <html lang="en" className="font-sans font-light" suppressHydrationWarning>
-        <body suppressHydrationWarning>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-          <Toaster />
-        </body>
-      </html>
-    </>
+    <html lang="en" className="font-sans font-light" suppressHydrationWarning>
+      <body suppressHydrationWarning>
+        <ClientLayout> {children} </ClientLayout>
+      </body>
+    </html>
   );
 }

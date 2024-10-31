@@ -1,6 +1,5 @@
 "use client";
 
-import { Navbar } from "@/components/navbar";
 import {useEffect, useState} from "react";
 import UserDashboard from "@/components/user-dashboard";
 import {useRouter} from "next/navigation";
@@ -22,7 +21,6 @@ export default function Home() {
 
     return (
         <main>
-          <Navbar />
           <UserDashboard />
         </main>
     );
