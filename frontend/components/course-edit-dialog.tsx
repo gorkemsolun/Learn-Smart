@@ -239,7 +239,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
 
   return (
       <Dialog open={modalParameters.isOpen} onOpenChange={handleOpenChange} className="w-3/5">
-        <DialogContent className="sm:max-w-[80vh] border-b-neutral-800">
+        <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
           <div className="space-y-1">
             <DialogTitle className="mb-2">Edit Individual Study</DialogTitle>
             <DialogDescription></DialogDescription>
@@ -272,9 +272,9 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
               onChange={(event) => setCourseDescription(event.target.value)}
             />
           </div>
-          <div className="flex space-x-4 items-center">
+          <div className="flex items-center space-x-4">
             <div
-                className="flex flex-col items-center justify-center w-1/2"
+                className="flex w-1/2 flex-col items-center justify-center"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -284,27 +284,27 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
             >
               <label
                   htmlFor="syllabus"
-                  className="flex flex-col items-center justify-center w-full h-[24vh] border-2 border-dashed rounded-lg cursor-pointer"
+                  className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
               >
                 <div className="flex flex-col items-center justify-center">
                   {syllabus ? (
                       <div className="space-y-4">
                         {syllabus.name.endsWith(".pdf") && (
-                            <FileIcon className="w-[6vh] h-[6vh]"/>
+                            <FileIcon className="size-[6vh]"/>
                         )}
                         {syllabus.name.endsWith(".docx") && (
-                            <FileTextIcon className="w-[6vh] h-[6vh]"/>
+                            <FileTextIcon className="size-[6vh]"/>
                         )}
                         <p>{syllabus.name}</p>
                       </div>
                   ) : (
                       <div>
-                        <LuUploadCloud className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
+                        <LuUploadCloud className="mb-4 size-[6vh] text-foreground/70"/>
                         <p className="text-sm text-foreground/70">
                           <span className="font-semibold">Click to upload</span>{" "}
                           or drag and drop
                         </p>
-                        <p className="text-foreground/70 text-base">PDF or DOCX</p>
+                        <p className="text-base text-foreground/70">PDF or DOCX</p>
                       </div>
                   )}
                 </div>
@@ -324,7 +324,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
               </label>
             </div>
             <div
-                className="flex flex-col items-center justify-center w-1/2"
+                className="flex w-1/2 flex-col items-center justify-center"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -334,22 +334,22 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
             >
               <label
                   htmlFor="image"
-                  className="flex flex-col items-center justify-center w-full h-[24vh] border-2 border-dashed rounded-lg cursor-pointer"
+                  className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
               >
                 <div className="flex flex-col items-center justify-center">
                   {icon ? (
                       <div className="space-y-4">
-                        {<ImageIcon className="w-[6vh] h-[6vh] mb-4"/>}
+                        {<ImageIcon className="mb-4 size-[6vh]"/>}
                         <p>{icon.name}</p>
                       </div>
                   ) : (
                       <div>
-                        <LuUploadCloud className="text-foreground/70 w-[6vh] h-[6vh] mb-4"/>
+                        <LuUploadCloud className="mb-4 size-[6vh] text-foreground/70"/>
                         <p className="text-sm text-foreground/70">
                           <span className="font-semibold">Click to upload</span>{" "}
                           or drag and drop
                         </p>
-                        <p className="text-foreground/70 text-base">JPG, JPEG or PNG</p>
+                        <p className="text-base text-foreground/70">JPG, JPEG or PNG</p>
                       </div>
                   )}
                 </div>

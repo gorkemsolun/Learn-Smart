@@ -51,7 +51,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
   };
 
   return (
-    <div className="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full backdrop-blur">
+    <div className="sticky top-0 z-50 w-full border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <NavigationMenu>
         <NavigationMenuList>
           <Button
@@ -69,7 +69,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
           </Button>
           <NavigationMenuItem>
             <NavigationMenuTrigger
-              className="hover:text-foreground/80 text-foreground/60 bg-transparent font-light
+              className="bg-transparent font-light text-foreground/60 hover:text-foreground/80
             focus:bg-transparent group-hover:bg-transparent"
             >
               About
@@ -79,14 +79,14 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
                 <li className="row-span-3">
                   <NavigationMenuLink asChild>
                     <a
-                      className="from-muted/50 to-muted flex size-full select-none flex-col justify-end rounded-md bg-gradient-to-b p-6 no-underline outline-none focus:shadow-md"
+                      className="flex size-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
                       href="/"
                     >
                       <Icons.logo className="size-6" />
                       <div className="mb-2 mt-4 text-lg font-normal">
                         Edux/ai
                       </div>
-                      <p className="text-muted-foreground text-sm leading-tight">
+                      <p className="text-sm leading-tight text-muted-foreground">
                         Designed to help students study their courses more
                         effectively by intending to improve their grade output
                         with its learning guide.
@@ -107,7 +107,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
             </NavigationMenuContent>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuTrigger className="hover:text-foreground/80 text-foreground/60 bg-transparent font-light focus:bg-transparent group-hover:bg-transparent">
+            <NavigationMenuTrigger className="bg-transparent font-light text-foreground/60 hover:text-foreground/80 focus:bg-transparent group-hover:bg-transparent">
               Services
             </NavigationMenuTrigger>
             <NavigationMenuContent>
@@ -158,13 +158,13 @@ const ListItem = React.forwardRef<
         <a
           ref={ref}
           className={cn(
-            "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors",
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
             className
           )}
           {...props}
         >
           <div className="text-sm font-normal leading-none">{title}</div>
-          <p className="text-muted-foreground line-clamp-2 text-sm leading-snug">
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
             {children}
           </p>
         </a>

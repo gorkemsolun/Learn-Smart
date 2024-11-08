@@ -45,7 +45,7 @@ export default function InstructorDashboard() {
   ];
 
   return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6 p-6">
         <div className="grid grid-cols-4 gap-4">
           {cardData.map((card, index) => (
               <Card key={index}>
@@ -63,7 +63,7 @@ export default function InstructorDashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-5 gap-4 min-h-[55lvh]">
+        <div className="grid min-h-[55lvh] grid-cols-5 gap-4">
           <Card className="col-span-3">
             <CardHeader>
               <CardTitle>Big Card</CardTitle>
@@ -81,7 +81,7 @@ export default function InstructorDashboard() {
             <div className="flex items-center justify-between p-6">
               <CardTitle>Your Studies</CardTitle>
               <Button
-                  className="bg-none bg-transparent shadow-none hover:text-foreground/40 hover:bg-transparent text-foreground flex items-center">
+                  className="flex items-center bg-transparent bg-none text-foreground shadow-none hover:bg-transparent hover:text-foreground/40">
                 <PlusCircledIcon/>
               </Button>
             </div>
@@ -91,7 +91,7 @@ export default function InstructorDashboard() {
                 {studyData.map((button, index) => (
                     <div
                         key={index}
-                        className="flex justify-between items-center"
+                        className="flex items-center justify-between"
                     >
                       <Button
                           onClick={button.onClick}
@@ -100,7 +100,7 @@ export default function InstructorDashboard() {
                         {button.label}
                       </Button>
                       <Button
-                          className="bg-transparent shadow-none hover:text-foreground/40 hover:bg-transparent text-foreground"
+                          className="bg-transparent text-foreground shadow-none hover:bg-transparent hover:text-foreground/40"
                       >
                         <TrashIcon/>
                       </Button>

@@ -162,7 +162,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
         <div className="space-y-1">
           <DialogTitle className="mb-2">Create Individual Study</DialogTitle>
           <DialogDescription></DialogDescription>
-          <label className="text-foreground/70 text-xs font-semibold">
+          <label className="text-xs font-semibold text-foreground/70">
             Name
           </label>
           <Input
@@ -172,7 +172,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
             onChange={(event) => setCourseName(event.target.value)}
             required
           />
-          <label className="text-foreground/70 text-xs font-semibold">
+          <label className="text-xs font-semibold text-foreground/70">
             Code
           </label>
           <Input
@@ -182,7 +182,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
             onChange={(event) => setCourseCode(event.target.value)}
             required
           />
-          <label className="text-foreground/70 text-xs font-semibold">
+          <label className="text-xs font-semibold text-foreground/70">
             Description
           </label>
           <Textarea
@@ -218,12 +218,12 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
                   </div>
                 ) : (
                   <div>
-                    <LuUploadCloud className="text-foreground/70 mb-4 size-[6vh]" />
-                    <p className="text-foreground/70 text-sm">
+                    <LuUploadCloud className="mb-4 size-[6vh] text-foreground/70" />
+                    <p className="text-sm text-foreground/70">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-foreground/70 text-base">PDF or DOCX</p>
+                    <p className="text-base text-foreground/70">PDF or DOCX</p>
                   </div>
                 )}
               </div>
@@ -259,12 +259,12 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
                   </div>
                 ) : (
                   <div>
-                    <LuUploadCloud className="text-foreground/70 mb-4 size-[6vh]" />
-                    <p className="text-foreground/70 text-sm">
+                    <LuUploadCloud className="mb-4 size-[6vh] text-foreground/70" />
+                    <p className="text-sm text-foreground/70">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-foreground/70 text-base">
+                    <p className="text-base text-foreground/70">
                       JPG, JPEG or PNG
                     </p>
                   </div>

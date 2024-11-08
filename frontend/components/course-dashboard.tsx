@@ -158,8 +158,8 @@ export default function CourseHomepage() {
   ];
 
   return (
-    <main className="bg-transparent min-h-screen text-black">
-      <div className="p-6 space-y-6">
+    <main className="min-h-screen bg-transparent text-black">
+      <div className="space-y-6 p-6">
         {loading ? (
           <div className="text-center">Loading...</div>
         ) : (
@@ -167,7 +167,7 @@ export default function CourseHomepage() {
             {courseHomepageElements.map((element, index) => (
               <Card
                 key={index}
-                className="flex flex-col justify-between h-full"
+                className="flex h-full flex-col justify-between"
               >
                 <CardHeader className="text-center">
                   <CardTitle className="text-lg font-semibold">
@@ -177,13 +177,13 @@ export default function CourseHomepage() {
                     {element.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex justify-center items-center h-32">
+                <CardContent className="flex h-32 items-center justify-center">
                   {element.icon}
                 </CardContent>
                 <CardFooter className="flex justify-center">
                   <div
                     onClick={element.onClick}
-                    className="px-6 py-2 bg-black text-white rounded-full hover:bg-gray-700 transition duration-300 w-full text-center max-w-xs cursor-pointer"
+                    className="w-full max-w-xs cursor-pointer rounded-full bg-black px-6 py-2 text-center text-white transition duration-300 hover:bg-gray-700"
                   >
                     {element.title}
                   </div>

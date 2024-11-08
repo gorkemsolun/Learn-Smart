@@ -36,19 +36,19 @@ export function CoursesList (modalParameters: CoursesListProps) {
     };
 
     return (
-      <Card className="bg-gradient-to-br from-primary/5 via-secondary/5 to-background h-full">
+      <Card className="h-full bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
         <div className="flex items-center justify-between p-6">
           <CardTitle>Your Studies</CardTitle>
-          <Pencil1Icon className="cursor-pointer hover:text-foreground/40 hover:bg-transparent text-foreground items-center justify-center" onClick={ () => modalParameters.setCourseDialog(true)}/>
+          <Pencil1Icon className="cursor-pointer items-center justify-center text-foreground hover:bg-transparent hover:text-foreground/40" onClick={ () => modalParameters.setCourseDialog(true)}/>
         </div>
 
-        <ScrollArea className="h-[47vh] w-full bg-transparent -mt-2">
+        <ScrollArea className="-mt-2 h-[47vh] w-full bg-transparent">
           <div className="p-6">
             <div className="flex flex-wrap gap-6">
             {modalParameters.courses.map((Course, index) => (
                 <div
                     key={index}
-                    className="flex justify-between items-center"
+                    className="flex items-center justify-between"
                 >
                   <CourseCard
                       course={Course}

@@ -34,10 +34,10 @@ export function CourseCard(modalParameters: CourseCardProps) {
       transition={{ duration: 0.5 }}
     >
       <Card
-        className="overflow-hidden w-[36vh] h-[40vh] g-gradient-to-br from-primary/10 to-secondary/10
-              hover:shadow-lg transition-shadow duration-300"
+        className="g-gradient-to-br h-[40vh] w-[36vh] overflow-hidden from-primary/10 to-secondary/10
+              transition-shadow duration-300 hover:shadow-lg"
       >
-        <div className="relative h-[20vh] overflow-hidden group">
+        <div className="group relative h-[20vh] overflow-hidden">
           <Image
             src={image_url}
             alt={modalParameters.course.course_name}
@@ -47,32 +47,32 @@ export function CourseCard(modalParameters: CourseCardProps) {
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
             priority
           />
-          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute top-2 left-2 z-10">
+          <div className="absolute inset-0 bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <div className="absolute left-2 top-2 z-10">
             <Badge
               variant="secondary"
-              className="text-xs font-semibold overflow-hidden line-clamp-1
-                      cursor-default pointer-events-none select-none
-                      bg-background/40"
+              className="pointer-events-none line-clamp-1 cursor-default select-none
+                      overflow-hidden bg-background/40 text-xs
+                      font-semibold"
             >
               {modalParameters.course.course_code}
             </Badge>
           </div>
         </div>
-        <CardContent className="p-4 flex flex-col h-[20vh]">
-          <CardTitle className="text-lg font-bold mb-2 overflow-hidden line-clamp-1">
+        <CardContent className="flex h-[20vh] flex-col p-4">
+          <CardTitle className="mb-2 line-clamp-1 overflow-hidden text-lg font-bold">
             {modalParameters.course.course_name}
           </CardTitle>
           <CardDescription
-            className="text-sm overflow-hidden flex-1 flex-grow line-clamp-1"
+            className="line-clamp-1 flex-1 grow overflow-hidden text-sm"
             title={modalParameters.course.course_description}
           >
             {modalParameters.course.course_description}
           </CardDescription>
-          <div className="flex justify-between items-center mt-4">
+          <div className="mt-4 flex items-center justify-between">
             <Button
               variant="ghost"
-              className="text-primary hover:text-primary-dark transition-colors"
+              className="hover:text-primary-dark text-primary transition-colors"
               onClick={() =>
                 router.push(`/course/${modalParameters.course.course_id}`)
               }

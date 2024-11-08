@@ -2,7 +2,6 @@
 
 import React, { useRef, useEffect } from 'react';
 import * as d3 from 'd3';
-import { Navbar } from "@/components/navbar";
 import {NodeData, LinkData, CustomSimulationNode} from "@/app/types";
 
 // TO-DO IN BACKEND WE NEED TO LIMIT THE NUMBER OF BRANCHES A NODE CAN HAVE
@@ -176,8 +175,7 @@ export default function SkillTree() {
 
   return (
     <main>
-      <Navbar />
-      <svg ref={svgRef} className="w-full h-screen -mt-[8vh]" />
+      <svg ref={svgRef} className="-mt-[8vh] h-screen w-full" />
     </main>
   );
 }

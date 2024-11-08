@@ -21,10 +21,10 @@ export function Searchbar({ onSearchButtonClick }) {
     <div className="relative">
       <button
         onClick={onSearchButtonClick}
-        className="inline-flex items-center whitespace-nowrap transition-colors focus-visible:outline-none
-        focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border
-        border-input hover:bg-accent hover:text-accent-foreground px-4 py-2 relative h-8 w-full justify-start
-        rounded-[0.5rem] bg-muted/50 text-sm text-muted-foreground shadow-none sm:pr-12 md:w-40
+        className="relative inline-flex h-8 w-full items-center
+        justify-start whitespace-nowrap rounded-[0.5rem] border border-input
+        bg-muted/50 px-4 py-2 text-sm text-muted-foreground shadow-none transition-colors hover:bg-accent hover:text-accent-foreground
+        focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 sm:pr-12 md:w-40
         lg:w-64"
       >
         <span className="hidden lg:inline-flex">Search in edux...</span>

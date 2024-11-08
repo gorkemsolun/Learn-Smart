@@ -85,24 +85,24 @@ export default function UserDashboard() {
   };
 
   return (
-      <div className="p-6 space-y-6">
-        <div className="grid grid-cols-4 gap-4 h-[25vh]">
+      <div className="space-y-6 p-6">
+        <div className="grid h-[25vh] grid-cols-4 gap-4">
           {cardData.map((card, index) => (
               <Card
                   key={index}
                   onClick={() => handleCardClick(card.link)}
-                  className="hover:shadow-lg transition-shadow duration-300 cursor-pointer
-                  h-full"
+                  className="h-full cursor-pointer transition-shadow duration-300
+                  hover:shadow-lg"
               >
                 <div
-                    className="h-full flex items-center bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-6 rounded-xl"
+                    className="flex h-full items-center rounded-xl bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-6"
                 >
-                  <div className="flex-grow space-y-2">
+                  <div className="grow space-y-2">
                     <CardTitle className="text-xl font-bold">{card.title}</CardTitle>
                     <CardDescription className="text-sm text-muted-foreground">{card.content}</CardDescription>
                   </div>
                   <div
-                      className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary ml-4"
+                      className="ml-4 flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
                       aria-hidden="true"
                   >
                     {card.icon}
@@ -112,7 +112,7 @@ export default function UserDashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-4 h-[55vh]">
+        <div className="grid h-[55vh] grid-cols-7 gap-4">
           <div className="col-span-4">
             <Card className="h-full bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
               <CardHeader>
