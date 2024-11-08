@@ -1,33 +1,70 @@
-// TODO: Implement WeeklyStudyPlan page
+"use client"
 
-import { useRouter } from "next/router";
+import { backend, backendAPI } from "@/environment/backend_api";
+import Cookies from "js-cookie";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Markdown from "react-markdown";
 
 export default function WeeklyStudyPlan() {
-  const router = useRouter();
-  const { course_id } = router.query;
+  const [token, setToken] = useState<string>(Cookies.get("authToken") || "");
+  const [loading, setLoading] = useState<boolean>(true);
   const [studyPlan, setStudyPlan] = useState(null);
+  const params = useParams<{ course_id: string }>();
+  const course_id = params.course_id;
+  const router = useRouter();
+  
+  useEffect(() => {
+    setToken(Cookies.get("authToken") || "");
+  }, []);
 
   useEffect(() => {
-    if (course_id) {
-      // Fetch the study plan for the course
-      fetch(`/api/courses/${course_id}/study-plan`)
-        .then((response) => response.json())
-        .then((data) => setStudyPlan(data))
-        .catch((error) => console.error("Error fetching study plan:", error));
+    if (token) {
+      fetchStudyPlanData(course_id);
     }
-  }, [course_id]);
+  }, [token, course_id]);
+
+  if (token == null) {
+    router.replace("/login");
+  }
+
+  const fetchStudyPlanData = async (course_id: string) => {
+    try {
+      setLoading(true);
+      const response = await backendAPI.get(`/course/${course_id}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      const studyPlanUrl = response.data.course_study_plan_url;
+      const studyPlanResponse = await backend.get(`${studyPlanUrl}`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setStudyPlan(studyPlanResponse.data);
+    } catch (error) {
+      console.error("Error fetching course data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (!studyPlan) {
-    return <div>Loading...</div>;
+    return <div>No study plan available.</div>;
   }
 
   return (
     <div>
-      <h1>
-        Weekly Study Plan for Course {course_id} Implement WeeklyStudyPlan page
-      </h1>
-      <ul></ul>
+      <pre><Markdown>{studyPlan}</Markdown></pre>
     </div>
   );
 }

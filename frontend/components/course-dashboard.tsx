@@ -87,7 +87,7 @@ export default function CourseHomepage() {
 
   const handleWeeklyStudyPlanClick = () => {
     console.log("handleWeeklyStudyPlanClick");
-    // Handle the specific action
+    router.push(`/course/${course_id}/weekly-study-plan`);
   };
 
   const handleUploadSyllabusClick = () => {
