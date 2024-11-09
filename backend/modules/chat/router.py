@@ -12,13 +12,14 @@ from modules.chat.util import *
 from modules.chat import CHATS_DIR
 from middleware import FILES_DIR
 from pydantic import BaseModel
+from .chat_auth_client import chat_get_current_user
 from . import SYSTEM_PROMPT, MODEL_VERSION, EXPLAIN_SLIDE_PROMPT, FLASHCARD_PROMPT, QUIZZES_PROMPT
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 @router.post("/create")
 async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File(None),
-                      current_user: dict = Depends(auth.get_current_user)):
+                      current_user: dict = Depends(chat_get_current_user)):
     """
     Create a new chat for a course.
 
@@ -26,7 +27,7 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
         course_id (int): The ID of the course.
         chat_title (str): The title of the chat.
         slides (UploadFile, optional): The slides file for the chat. Defaults to None.
-        current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
+        current_user (dict, optional): The current user. Defaults to Depends(chat_get_current_user).
 
     Returns:
         dict: A dictionary containing the chat ID and a success message.
@@ -87,13 +88,13 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
 
 
 @router.get("/{chat_id}")
-async def get_chat(chat_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def get_chat(chat_id: int, current_user: dict = Depends(chat_get_current_user)):
     """
     Retrieve a chat by its ID and return the chat details along with its history.
 
     Args:
         chat_id (int): The ID of the chat to retrieve.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
+        current_user (dict, optional): The current user's information. Defaults to Depends(chat_get_current_user).
 
     Returns:
         dict: A dictionary containing the chat details and its history.
@@ -166,13 +167,13 @@ async def get_chat(chat_id: int, current_user: dict = Depends(auth.get_current_u
     return chat
 
 @router.delete("/{chat_id}")
-async def delete_chat(chat_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def delete_chat(chat_id: int, current_user: dict = Depends(chat_get_current_user)):
     """
     Delete a chat by its ID.
 
     Args:
         chat_id (int): The ID of the chat to delete.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
+        current_user (dict, optional): The current user's information. Defaults to Depends(chat_get_current_user).
 
     Returns:
         dict: A message indicating the chat was successfully deleted.
@@ -209,14 +210,14 @@ async def delete_chat(chat_id: int, current_user: dict = Depends(auth.get_curren
 
 
 @router.put("/{chat_id}")
-def update_chat(chat_id: int, chat_title: str, current_user: dict = Depends(auth.get_current_user)):
+def update_chat(chat_id: int, chat_title: str, current_user: dict = Depends(chat_get_current_user)):
     """
     Update a chat's title by its ID.
 
     Args:
         chat_id (int): The ID of the chat to update.
         chat_title (str): The new title for the chat.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
+        current_user (dict, optional): The current user's information. Defaults to Depends(chat_get_current_user).
 
     Returns:
         dict: A dictionary containing the updated chat details.
@@ -239,13 +240,13 @@ def update_chat(chat_id: int, chat_title: str, current_user: dict = Depends(auth
     
 
 @router.get("/{chat_id}/next_slide")
-def get_next_slide(chat_id: int, current_user: dict = Depends(auth.get_current_user)):
+def get_next_slide(chat_id: int, current_user: dict = Depends(chat_get_current_user)):
     """
     Get the next slide content for a given chat.
 
     Args:
         chat_id (int): The ID of the chat.
-        current_user (User, optional): The current user. Defaults to Depends(auth.get_current_user).
+        current_user (User, optional): The current user. Defaults to Depends(chat_get_current_user).
 
     Returns:
         dict: The response containing the next slide content.
@@ -320,7 +321,7 @@ def get_next_slide(chat_id: int, current_user: dict = Depends(auth.get_current_u
 
 @router.post("/{chat_id}/send_message")
 async def send_message(chat_id: int, text: str = Form(...), file: UploadFile = File(None),
-                       current_user: dict = Depends(auth.get_current_user)):
+                       current_user: dict = Depends(chat_get_current_user)):
     """
     Send a message in a chat and generate a response.
 
@@ -403,7 +404,7 @@ async def send_message(chat_id: int, text: str = Form(...), file: UploadFile = F
 
 @router.put("/{chat_id}/update_slides")
 async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
-                             current_user: dict = Depends(auth.get_current_user)):
+                             current_user: dict = Depends(chat_get_current_user)):
     """
     Update the slides for a chat by its ID.
 
@@ -411,7 +412,7 @@ async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
         slides_mode:
         chat_id (int): The ID of the chat to update.
         slides (UploadFile): The new slides file to upload.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
+        current_user (dict, optional): The current user's information. Defaults to Depends(chat_get_current_user).
 
     Returns:
         dict: A dictionary containing the updated chat details.
@@ -469,7 +470,7 @@ async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
 
 
 @router.post("/{chat_id}/create_quiz")
-async def create_quiz(chat_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def create_quiz(chat_id: int, current_user: dict = Depends(chat_get_current_user)):
     chat = ChatDB.fetch(chat_id=chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found.")
@@ -510,7 +511,7 @@ async def create_quiz(chat_id: int, current_user: dict = Depends(auth.get_curren
     return {"filename": splitext(quiz_file_name)[0], "quiz": data}
 
 @router.post("/{chat_id}/create_flashcards")
-async def create_flashcards(chat_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def create_flashcards(chat_id: int, current_user: dict = Depends(chat_get_current_user)):
     chat = ChatDB.fetch(chat_id=chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found.")
@@ -557,7 +558,7 @@ async def create_flashcards(chat_id: int, current_user: dict = Depends(auth.get_
     return {"combined_data": combined_data}
 
 @router.get("/{chat_id}/flashcards")
-async def get_flashcards(chat_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def get_flashcards(chat_id: int, current_user: dict = Depends(chat_get_current_user)):
     """
     Get all flashcard JSONs for a specific chat.
 
@@ -597,7 +598,7 @@ async def get_flashcards(chat_id: int, current_user: dict = Depends(auth.get_cur
     return flashcards
 
 @router.get("/{chat_id}/flashcards/{flashcard_name}")
-async def get_flashcard(chat_id: int, flashcard_name: str, current_user: dict = Depends(auth.get_current_user)):
+async def get_flashcard(chat_id: int, flashcard_name: str, current_user: dict = Depends(chat_get_current_user)):
     """
     Get a specific flashcard JSON by its file name.
 
@@ -646,7 +647,7 @@ async def rename_flashcard(
     chat_id: int,
     flashcard_name: str,
     request: RenameFlashcardRequest,
-    current_user: dict = Depends(auth.get_current_user)
+    current_user: dict = Depends(chat_get_current_user)
 ):
     """
     Rename a specific flashcard file.
@@ -692,7 +693,7 @@ async def rename_flashcard(
     return {"message": f"Flashcard '{flashcard_name}.json' has been successfully renamed to '{new_name}.json'."}
 
 @router.delete("/{chat_id}/flashcards")
-async def delete_all_flashcards(chat_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def delete_all_flashcards(chat_id: int, current_user: dict = Depends(chat_get_current_user)):
     """
     Delete all flashcard files inside the folder without deleting the folder.
 
@@ -733,7 +734,7 @@ async def delete_all_flashcards(chat_id: int, current_user: dict = Depends(auth.
     return {"message": "All flashcards have been successfully deleted."}
 
 @router.delete("/{chat_id}/flashcards/{flashcard_name}")
-async def delete_flashcard(chat_id: int, flashcard_name: str, current_user: dict = Depends(auth.get_current_user)):
+async def delete_flashcard(chat_id: int, flashcard_name: str, current_user: dict = Depends(chat_get_current_user)):
     """
     Delete a specific flashcard by its file name.
 

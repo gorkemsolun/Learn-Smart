@@ -105,3 +105,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+#pem files
+*.pem

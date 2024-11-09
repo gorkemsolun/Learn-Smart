@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package auth;
+
+service Authentication {
+
+    //Unary
+    rpc GetCurrentUser (UserRequest) returns (User);
+
+}
+
+// created_at should be converted to datetime in the client side
+message User {
+    int32 user_id = 1;
+    string role = 2;
+    string nickname = 3;
+    string email = 4;
+    google.protobuf.Timestamp created_at = 5;
+    string hashed_password = 6;
+}
+
+message UserRequest {
+    string token = 1;
+}

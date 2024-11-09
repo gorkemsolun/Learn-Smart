@@ -11,6 +11,7 @@ from modules.course.schemas import CourseCreationRequest, CourseUpdateRequest
 from modules.chat.util import *
 from modules.course.util import *
 from tools import validate_file_extension
+from .course_auth_client import course_get_current_user
 
 router = APIRouter(prefix="/course", tags=["Course"])
 
@@ -21,7 +22,7 @@ def generate_flashcards(course_flashcard_file_content: str = Form(...), course_i
     return {"success": success, "data": data}
 
 @router.get("/{course_id}")
-async def get_course(course_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def get_course(course_id: int, current_user: dict = Depends(course_get_current_user)):
     """
     Get course details by course ID.
 
@@ -46,7 +47,7 @@ async def get_course(course_id: int, current_user: dict = Depends(auth.get_curre
 
 
 @router.get("/{course_id}/chats")
-async def get_chats(course_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def get_chats(course_id: int, current_user: dict = Depends(course_get_current_user)):
     """
     Get all chats for a course.
 
@@ -75,7 +76,7 @@ async def get_chats(course_id: int, current_user: dict = Depends(auth.get_curren
 
 
 @router.get("/{course_id}/quizzes")
-async def get_quizzes(course_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def get_quizzes(course_id: int, current_user: dict = Depends(course_get_current_user)):
     """
     Get all quizzes for a course.
 
@@ -107,7 +108,7 @@ async def get_quizzes(course_id: int, current_user: dict = Depends(auth.get_curr
 # Quizzes don't have entries in DB and don't have IDs, which makes this function inefficient
 @router.put("/{course_id}/quizzes/{quiz_name}")
 async def rename_quiz(course_id: int, quiz_name: str, new_quiz_name: str,
-                      current_user: dict = Depends(auth.get_current_user)):
+                      current_user: dict = Depends(course_get_current_user)):
     """
     Rename a quiz.
 
@@ -153,7 +154,7 @@ async def rename_quiz(course_id: int, quiz_name: str, new_quiz_name: str,
 
 
 @router.get("/{course_id}/quizzes/{quiz_name}")
-async def get_quiz(course_id: int, quiz_name: str, current_user: dict = Depends(auth.get_current_user)):
+async def get_quiz(course_id: int, quiz_name: str, current_user: dict = Depends(course_get_current_user)):
     """
     Get a quiz.
 
@@ -191,7 +192,7 @@ async def get_quiz(course_id: int, quiz_name: str, current_user: dict = Depends(
     raise HTTPException(status_code=404, detail="Quiz not found.")
 
 @router.delete("/{course_id}/quizzes/{quiz_name}")
-async def delete_quiz(course_id: int, quiz_name: str, current_user: dict = Depends(auth.get_current_user)):
+async def delete_quiz(course_id: int, quiz_name: str, current_user: dict = Depends(course_get_current_user)):
     """
     Delete a quiz.
 
@@ -229,13 +230,13 @@ async def create_course(course_name: str = Form(...), course_code: str = Form(..
                         course_description: Optional[str] = Form(None),
                         course_syllabus_file: UploadFile = File(None),
                         course_icon_file: UploadFile = File(None),
-                        current_user: dict = Depends(auth.get_current_user)):
+                        current_user: dict = Depends(course_get_current_user)):
     """
     Create a new course.
 
     Args:
         course (CourseCreationRequest): The course details.
-        current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
+        current_user (dict, optional): The current user. Defaults to Depends(course_get_current_user).
 
     Returns:
         The created course.
@@ -287,13 +288,13 @@ async def create_course(course_name: str = Form(...), course_code: str = Form(..
 
 
 @router.delete("/{course_id}")
-async def delete_course(course_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def delete_course(course_id: int, current_user: dict = Depends(course_get_current_user)):
     """
     Delete a course.
 
     Args:
         course_id (int): The ID of the course to delete.
-        current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
+        current_user (dict, optional): The current user. Defaults to Depends(course_get_current_user).
 
     Returns:
         Success message.
@@ -356,7 +357,7 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
                         course_update_syllabus: bool = Form(False),  # flag variable indicating whether to update the syllabus
                         course_icon_file: UploadFile = File(None),
                         update_icon: bool = Form(False),  # flag variable indicating whether to update the image
-                        current_user: dict = Depends(auth.get_current_user)):
+                        current_user: dict = Depends(course_get_current_user)):
     """
     Update a course with the given course_id.
 

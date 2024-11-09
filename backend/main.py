@@ -1,4 +1,5 @@
 import os
+import threading
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,11 @@ from modules.notification.router import router as notification_router
 from middleware.router import router as files_router
 from tools import init
 from logger import logger
+
+# boot up the grpc server for authentication service
+def run_auth_grpc_server():
+    script_path = os.path.join('modules', 'user', 'auth_servicer.py')
+    os.system(f'PYTHONPATH=./ python {script_path}')
 
 # create the FastAPI app
 app = FastAPI()
@@ -37,5 +43,8 @@ routers = [users_router, files_router, course_router, chat_router, notification_
 # Include the router in the app with the "/api" prefix for all routes
 for router in routers:
     app.include_router(router, prefix="/api")
+
+grpc_thread = threading.Thread(target=run_auth_grpc_server)
+grpc_thread.start()
 
 logger.info("FastAPI backend started successfully")

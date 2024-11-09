@@ -1,7 +1,7 @@
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
-from middleware import authentication as auth
+from .filemanager_client_auth import fm_get_current_user
 from middleware.filemanager import FileFactory
 from modules.user.model import User
 from middleware import FILES_DIR
@@ -10,7 +10,7 @@ from tools import generate_hash, splitext
 router = APIRouter(prefix="/files", tags=["Files"])
 
 @router.post("/")
-def upload_file(file: UploadFile = File(...), current_user: User = Depends(auth.get_current_user)):
+def upload_file(file: UploadFile = File(...), current_user: User = Depends(fm_get_current_user)):
     """
     Uploads a file to the server.
 
@@ -50,7 +50,7 @@ def upload_file(file: UploadFile = File(...), current_user: User = Depends(auth.
 # after the auth. mechanism is added, this function should be modified such that
 # the users should be able to delete their own files.
 @router.delete("/{filename}")
-def delete_file(filename: str, current_user: User = Depends(auth.get_current_user)):
+def delete_file(filename: str, current_user: User = Depends(fm_get_current_user)):
     """
     Delete a file with the given filename.
 
@@ -77,6 +77,6 @@ def delete_file(filename: str, current_user: User = Depends(auth.get_current_use
     
     
 @router.get("/{filename}")
-def get_file(filename: str, current_user: User = Depends(auth.get_current_user)):
+def get_file(filename: str, current_user: User = Depends(fm_get_current_user)):
 # TODO: file with its content should be returned
     pass

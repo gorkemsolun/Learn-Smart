@@ -3,7 +3,7 @@ import modules.user.schemas as schemas
 from fastapi import Depends, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 from database.dbmanager import UserDB, CourseDB
-from middleware import authentication as auth
+from . import authentication as auth
 from logger import logger
 
 router = APIRouter(prefix="/users", tags=["User"])
@@ -47,7 +47,7 @@ def create_user(user: schemas.UserCreationRequest):
 
 
 @router.get("/", response_model=schemas.UserResponse)
-def get_user(nickname: str = None, id: int = None, current_user: dict = Depends(auth.get_current_user)):
+def get_user(nickname: str = None, id: int = None, current_user: dict = Depends(auth.user_service_get_current_user)):
     """
     Retrieve a user by their nickname.
 
@@ -74,7 +74,7 @@ def get_user(nickname: str = None, id: int = None, current_user: dict = Depends(
 
 
 @router.get("/me")
-def get_current_user(current_user: dict = Depends(auth.get_current_user)):
+def get_current_user(current_user: dict = Depends(auth.user_service_get_current_user)):
     """
     Get the current authenticated user.
 
@@ -97,7 +97,7 @@ def get_current_user(current_user: dict = Depends(auth.get_current_user)):
     return current_user
 
 @router.put("/update", response_model=schemas.UserResponse)
-def update_user(user: schemas.UserUpdateRequest, current_user: dict = Depends(auth.get_current_user)):
+def update_user(user: schemas.UserUpdateRequest, current_user: dict = Depends(auth.user_service_get_current_user)):
     """
     Update a user's information.
 
