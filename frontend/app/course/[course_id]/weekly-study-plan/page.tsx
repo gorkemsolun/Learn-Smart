@@ -1,22 +1,18 @@
 "use client"
 
 import { backend, backendAPI } from "@/environment/backend_api";
-import Cookies from "js-cookie";
+import { useAuthToken } from "@/hooks/useAuthToken";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 
 export default function WeeklyStudyPlan() {
-  const [token, setToken] = useState<string>(Cookies.get("authToken") || "");
+  const token = useAuthToken();
   const [loading, setLoading] = useState<boolean>(true);
   const [studyPlan, setStudyPlan] = useState(null);
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
   const router = useRouter();
-  
-  useEffect(() => {
-    setToken(Cookies.get("authToken") || "");
-  }, []);
 
   useEffect(() => {
     if (token) {

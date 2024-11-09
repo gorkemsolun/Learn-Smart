@@ -11,7 +11,6 @@ import {
 import { ToastAction } from "@/components/ui/toast";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
-import Cookies from "js-cookie";
 import { useTheme } from "next-themes";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,6 +22,7 @@ import {
 } from "react-icons/fa";
 import { IoCloudUploadSharp } from "react-icons/io5";
 import UpdateUploadSyllabus from "./upload-syllabus-modal-old";
+import { useAuthToken } from "@/hooks/useAuthToken";
 
 export default function CourseHomepage() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function CourseHomepage() {
   // Loading state is essential to ensure a smooth user experience, especially after a page refresh.
   // This helps handle potential issues with icon themes that may not load correctly due to changes in the current theme.
 
-  const [token] = useState<string>(Cookies.get("authToken") || "");
+  const token = useAuthToken();
   const { toast } = useToast();
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
