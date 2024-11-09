@@ -408,3 +408,43 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         return course
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+
+@router.get("/{course_id}/flashcards")
+async def get_flashcards_list(course_id: int, current_user: dict = Depends(auth.get_current_user)):
+    """
+    Get all flashcards for a course.
+
+    Args:
+        course_id (int): The ID of the course.
+        current_user (User): The current authenticated user (used for authentication).
+
+    Returns:
+        list: A list of flashcards.
+    """
+
+    course = CourseDB.fetch(course_id=course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found.")
+    
+    if course["user_id"] != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="Forbidden. You are not authorized to rename this quiz.")
+
+    chats = ChatDB.fetch(course_id=course_id, all=True)
+    
+    flashcards = []
+    for chat in chats:
+        chat_id = chat["chat_id"]
+        flashcards_path = get_flashcards_folder_path(chat_id)
+
+        for filename in os.listdir(flashcards_path):
+            if filename.endswith(".json"):
+                with open(os.path.join(flashcards_path, filename), "r") as f:
+                    flashcard = json.load(f)
+                    flashcards.append({
+                        "chat_id": chat_id,
+                        "filename": filename,
+                        "content": flashcard
+                    })
+
+    return flashcards

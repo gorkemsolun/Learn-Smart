@@ -72,8 +72,7 @@ export default function CourseHomepage() {
   };
 
   const handleFlashcardsClick = () => {
-    console.log("handleFlashcardsClick");
-    // Handle the specific action
+    router.push(`/course/${course_id}/flashcards`);
   };
 
   const handleQuizzesClick = () => {

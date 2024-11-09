@@ -1,39 +1,62 @@
-import { useRouter } from "next/router";
+"use client"
+
+import { backendAPI } from "@/environment/backend_api";
+import Cookies from "js-cookie";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function FlashcardsPage() {
+export default function CourseFlashCardList() {
+  const [token, setToken] = useState<string>(Cookies.get("authToken") || "");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [flashcardList, setFlashcardList] = useState([]);
+  const params = useParams<{ course_id: string }>();
+  const course_id = params.course_id;
   const router = useRouter();
-  const { course_id } = router.query;
-  const [flashcards, setFlashcards] = useState([
-    { question: "What is the capital of France?", answer: "Paris" },
-    { question: "What is the capital of Germany?", answer: "Berlin" },
-  ]);
+  
+  useEffect(() => {
+    setToken(Cookies.get("authToken") || "");
+  }, []);
 
   useEffect(() => {
-    if (course_id) {
-      // Fetch flashcards for the course
-      fetch(`/api/courses/${course_id}/flashcards`)
-        .then((response) => response.json())
-        .then((data) => setFlashcards(data))
-        .catch((error) => console.error("Error fetching flashcards:", error));
+    if (token) {
+      fetchFlashcardList(course_id);
     }
-  }, [course_id]);
+  }, [token, course_id]);
 
-  if (!course_id) {
+  if (token == null) {
+    router.replace("/login");
+  }
+
+  const fetchFlashcardList = async (course_id: string) => {
+    try {
+      setLoading(true);
+      const response = await backendAPI.get(`/course/${course_id}/quizzes`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setFlashcardList(response.data)
+      console.log(flashcardList)
+    } catch (error) {
+      console.error("Error fetching course data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (!flashcardList || flashcardList.length === 0) {
+    return <div>No flashcards available.</div>
   }
 
   return (
     <div>
-      <h1>Flashcards for Course {course_id}</h1>
-      <ul>
-        {flashcards.map((flashcard, index) => (
-          <li key={index}>
-            <h2>{flashcard.question}</h2>
-            <p>{flashcard.answer}</p>
-          </li>
-        ))}
-      </ul>
+      <h2>flashcards</h2> {/* 10.11.2024 current chat does note create quizzes or flashcards */}
     </div>
   );
 }
