@@ -77,8 +77,7 @@ export default function CourseHomepage() {
   };
 
   const handleQuizzesClick = () => {
-    console.log("handleQuizzesClick");
-    // Handle the specific action
+    router.push(`/course/${course_id}/quizzes`);
   };
 
   const handleInstructorClick = () => {

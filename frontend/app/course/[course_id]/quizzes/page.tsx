@@ -1,36 +1,66 @@
-// TODO: Implement QuizPage
+"use client"
 
-import { useRouter } from "next/router";
+import { backendAPI } from "@/environment/backend_api";
+import Cookies from "js-cookie";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function QuizPage() {
+export default function CourseQuizList() {
+  const [token, setToken] = useState<string>(Cookies.get("authToken") || "");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [quizList, setQuizList] = useState([]);
+  const params = useParams<{ course_id: string }>();
+  const course_id = params.course_id;
   const router = useRouter();
-  const { course_id } = router.query;
-  const [quizzes, setQuizzes] = useState([
-    { id: 1, title: "Quiz 1" },
-    { id: 2, title: "Quiz 2" },
-  ]);
+  
+  useEffect(() => {
+    setToken(Cookies.get("authToken") || "");
+  }, []);
 
   useEffect(() => {
-    if (course_id) {
-      // Fetch quizzes for the course
-      /* fetch(`/api/courses/${course_id}/quizzes`)
-        .then((response) => response.json())
-        .then((data) => setQuizzes(data))
-        .catch((error) => console.error("Error fetching quizzes:", error)); */
+    if (token) {
+      fetchQuizList(course_id);
     }
-  }, [course_id]);
+  }, [token, course_id]);
 
-  if (!course_id) {
+  if (token == null) {
+    router.replace("/login");
+  }
+
+  const fetchQuizList = async (course_id: string) => {
+    try {
+      setLoading(true);
+      const response = await backendAPI.get(`/course/${course_id}/quizzes`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setQuizList(response.data)
+    } catch (error) {
+      console.error("Error fetching course data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (!quizList || quizList.length === 0) {
+    return <div>No quiz available.</div>;
   }
 
   return (
     <div>
       <h1>Quizzes for Course {course_id}</h1>
       <ul>
-        {quizzes.map((quiz) => (
-          <li key={quiz.id}>{quiz.title}</li>
+        {quizList.map((quiz, index) => (
+          <li key={index}>
+            <h2>{quiz}</h2> {/* 10.11.2024 current chat does note create quizzes or flashcards */}
+          </li>
         ))}
       </ul>
     </div>
