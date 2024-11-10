@@ -4,8 +4,6 @@ import shutil, os
 import json, jsonpickle
 from logger import logger
 from middleware.filemanager import FileFactory
-from middleware import authentication as auth
-from modules.user.model import User
 from database.dbmanager import ChatDB, CourseDB
 from tools import generate_hash, splitext
 from modules.chat.util import *

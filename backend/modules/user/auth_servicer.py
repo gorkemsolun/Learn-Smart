@@ -1,10 +1,9 @@
 import asyncio
 import grpclib.server
-import auth_pb2
-import auth_grpc
+from .protos import auth_pb2, auth_grpc
 
 from grpclib.server import Server
-from authentication import get_current_user
+from .authentication import get_current_user
 from google.protobuf.timestamp_pb2 import Timestamp
 
 

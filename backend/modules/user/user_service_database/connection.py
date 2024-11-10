@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from database import DATABASE_URL
+from . import USER_DATABASE_URL
 
 class DatabaseConnection:
     """
@@ -21,7 +21,7 @@ class DatabaseConnection:
         Initializes the database connection by creating the engine, session factory, and base.
         """
         self.engine = create_engine(
-            DATABASE_URL,
+            USER_DATABASE_URL,
             pool_size=20,
             max_overflow=10,
             pool_timeout=30
@@ -45,10 +45,7 @@ class DatabaseConnection:
         Drops the database tables based on the defined models.
         """
         with self as connection:
-            connection.execute(text("DROP TABLE IF EXISTS slides;"))
-            connection.execute(text("DROP TABLE IF EXISTS chats;"))
-            connection.execute(text("DROP TABLE IF EXISTS courses;"))
-            connection.execute(text("DROP TABLE IF EXISTS notifications;"))
+            connection.execute(text("DROP TABLE IF EXISTS users;"))
 
     def __enter__(self):
         """

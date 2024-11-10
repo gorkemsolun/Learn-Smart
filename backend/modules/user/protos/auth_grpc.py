@@ -10,7 +10,7 @@ if typing.TYPE_CHECKING:
     import grpclib.server
 
 import google.protobuf.timestamp_pb2
-import auth_pb2
+from . import auth_pb2
 
 
 class AuthenticationBase(abc.ABC):

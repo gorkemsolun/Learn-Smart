@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package course;
+
+service Course {
+
+    //Unary
+    rpc GetAllCourses (AllCoursesDBRequest) returns (AllCourses);
+    
+    // TODO: populate with other database operations
+
+}
+
+message AllCourses {
+   repeated CourseInstance courses = 1;
+}
+
+message CourseInstance {
+    int64 course_id = 1;
+    string course_name = 2;
+    string course_description = 3;
+    string course_code = 4;
+    int64 user_id = 5;
+    string course_syllabus_url = 6;
+    string course_study_plan_url = 7;
+    string course_icon_url = 8;
+}
+
+message AllCoursesDBRequest {
+    int64 user_id = 1;
+}

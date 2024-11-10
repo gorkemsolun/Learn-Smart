@@ -19,9 +19,8 @@ class Course(Base):
     course_syllabus_url = Column(String(255), nullable=True)
     course_study_plan_url = Column(String(255), nullable=True)
     course_icon_url = Column(String(255), nullable=True) # nullable for now (generate an image for the course in the future)
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    user_id = Column(Integer)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    user = relationship("User", back_populates="courses")
     chats = relationship("Chat", back_populates="course")
 
     # Add a unique constraint for user_id and course_code

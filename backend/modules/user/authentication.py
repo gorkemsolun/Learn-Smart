@@ -84,7 +84,7 @@ async def get_current_user(token: str):
     except InvalidTokenError:
         return None # return None if the token is not genuine
     
-    from database.dbmanager import UserDB
+    from modules.user.user_service_database.dbmanager import UserDB
     user = UserDB.fetch(email=email) # fetch the user from the database using the email
 
     if user is None:
@@ -122,7 +122,7 @@ async def user_service_get_current_user(token: str = Depends(oauth2_scheme)):
     except InvalidTokenError:
         raise credentials_exception # raise an exception if the token is not genuine
     
-    from database.dbmanager import UserDB
+    from modules.user.user_service_database.dbmanager import UserDB
     user = UserDB.fetch(email=email) # fetch the user from the database using the email
 
     if user is None:
@@ -185,7 +185,7 @@ def _authenticate_user(password, **kwargs):
     user_id = kwargs.get("user_id", None)
 
     # import the UserDB class here to avoid circular imports
-    from database.dbmanager import UserDB
+    from modules.user.user_service_database.dbmanager import UserDB
 
     user = UserDB.fetch(nickname=nickname, email=email, user_id=user_id) # fetch the user from the database
     

@@ -1,5 +1,7 @@
 from fastapi import Depends, HTTPException, status
-from . import auth_grpc, auth_pb2, oauth2_scheme
+
+from .protos import auth_grpc, auth_pb2
+from . import oauth2_scheme
 from grpclib.client import Channel
 
 # Course service's function for getting the current user. Implements the client stub for auth service

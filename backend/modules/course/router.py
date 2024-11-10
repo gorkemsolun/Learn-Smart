@@ -4,7 +4,6 @@ import google.generativeai as genai
 import os
 import shutil
 
-from middleware import authentication as auth
 from middleware.filemanager import FileFactory
 from database.dbmanager import CourseDB, ChatDB
 from modules.course.schemas import CourseCreationRequest, CourseUpdateRequest

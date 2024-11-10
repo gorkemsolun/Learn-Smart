@@ -2,9 +2,10 @@ import modules.user.schemas as schemas
 
 from fastapi import Depends, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
-from database.dbmanager import UserDB, CourseDB
+from modules.user.user_service_database.dbmanager import UserDB
 from . import authentication as auth
 from logger import logger
+from .user_course_client import get_all_courses
 
 router = APIRouter(prefix="/users", tags=["User"])
 
@@ -74,7 +75,7 @@ def get_user(nickname: str = None, id: int = None, current_user: dict = Depends(
 
 
 @router.get("/me")
-def get_current_user(current_user: dict = Depends(auth.user_service_get_current_user)):
+async def get_current_user(current_user: dict = Depends(auth.user_service_get_current_user)):
     """
     Get the current authenticated user.
 
@@ -91,8 +92,13 @@ def get_current_user(current_user: dict = Depends(auth.user_service_get_current_
     
     logger.info(f"User {current_user['nickname']} is fetching their own data.")
     
-    courses = CourseDB.fetch(user_id=current_user["user_id"], all=True)
-    current_user["courses"] = courses # add the user's courses to response
+    courses = await get_all_courses(user_id=current_user["user_id"])
+    
+    if courses:
+        current_user["courses"] = courses["courses"] # add the user's courses to response
+    else:
+        current_user["courses"] = [] 
+    
     current_user.pop("hashed_password") # remove the hashed password from the response
     return current_user
 

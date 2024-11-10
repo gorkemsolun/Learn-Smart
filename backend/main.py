@@ -12,10 +12,15 @@ from middleware.router import router as files_router
 from tools import init
 from logger import logger
 
+
 # boot up the grpc server for authentication service
 def run_auth_grpc_server():
-    script_path = os.path.join('modules', 'user', 'auth_servicer.py')
-    os.system(f'PYTHONPATH=./ python {script_path}')
+    from modules.user.user_service_database.connection import db_connection #this will belong in the user service in the future
+    db_connection.create_tables()
+    os.system("PYTHONPATH=./ python -m modules.user.auth_servicer")
+
+def run_course_grpc_server():
+    os.system("PYTHONPATH=./ python -m modules.course.course_servicer")
 
 # create the FastAPI app
 app = FastAPI()
@@ -44,7 +49,10 @@ routers = [users_router, files_router, course_router, chat_router, notification_
 for router in routers:
     app.include_router(router, prefix="/api")
 
-grpc_thread = threading.Thread(target=run_auth_grpc_server)
-grpc_thread.start()
+auth_grpc_thread = threading.Thread(target=run_auth_grpc_server)
+course_grpc_thread = threading.Thread(target=run_course_grpc_server)
+auth_grpc_thread.start()
+course_grpc_thread.start()
+
 
 logger.info("FastAPI backend started successfully")

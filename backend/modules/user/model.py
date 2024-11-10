@@ -1,7 +1,6 @@
 from sqlalchemy import Column, DateTime, Integer, String, func
-from sqlalchemy.orm import relationship
 
-from database.connection import db_connection
+from modules.user.user_service_database.connection import db_connection
 
 Base = db_connection.Base
 
@@ -29,7 +28,6 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     user_icon_url = Column(String(100), nullable=True)
 
-    courses = relationship("Course", back_populates="user") # one-to-many relationship with Course
 
     def to_dict(self):
         """
