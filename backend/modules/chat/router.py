@@ -1,13 +1,11 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
 import google.generativeai as genai
 import shutil, os, glob, json, jsonpickle, itertools
-from logger import logger
 from middleware.filemanager import FileFactory
 from middleware import authentication as auth
 from database.dbmanager import ChatDB, CourseDB, SlideDB
 from tools import generate_hash, splitext
 from modules.chat.util import *
-from middleware import FILES_DIR, CHATS_DIR
 from pydantic import BaseModel
 from . import SYSTEM_PROMPT, MODEL_VERSION, EXPLAIN_SLIDE_PROMPT, FLASHCARD_PROMPT, QUIZZES_PROMPT
 
@@ -250,7 +248,7 @@ async def send_message(chat_id: int, slide_id: int = None, page_number: int = No
         if not slide:
             raise HTTPException(status_code=404, detail="Slides not found.")
         
-        if page_number < 0 or page_number >= slide["pages_count"]:
+        if page_number <= 0 or page_number > slide["pages_count"]:
             raise HTTPException(status_code=400, detail="Invalid slide number.")
         
         slide_history_path, slide_metadata_path = get_slide_history_path(slide_id, page_number), get_slide_history_metadata_path(slide_id, page_number)
