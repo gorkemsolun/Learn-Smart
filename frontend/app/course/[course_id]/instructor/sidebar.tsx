@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import { Button } from "@/components/ui/button"
-import { ChevronDown } from 'lucide-react'
+import { Input } from "@/components/ui/input"
+import { ChevronDown, Check, X } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,7 @@ type SidebarProps = {
   chats: { chat_id: string, chat_title: string }[]
   selectedCourse: string
   isSidebarOpen: boolean
-  handleChatAction: (action: string, chatID: string) => void
+  handleChatAction: (action: string, chatID: string, editedTitle?: string) => void
   handleCourseChange: (courseID: string) => void // Action for creating a new chat
 }
 
@@ -31,6 +32,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
   handleChatAction,
   handleCourseChange,
 }) => {
+
+  const [editingChatId, setEditingChatId] = React.useState<string | null>(null);
+  const [editedTitle, setEditedTitle] = React.useState('');
+
+  const handleRenameStart = (chatId: string, currentTitle: string) => {
+    setEditingChatId(chatId)
+    setEditedTitle(currentTitle)
+  }
+
+  const handleRenameCancel = () => {
+    setEditingChatId(null)
+    setEditedTitle('')
+  }
+
+  const handleRenameConfirm = (chatId: string) => {
+    handleChatAction('rename', chatId, editedTitle);
+    setEditingChatId(null);
+    setEditedTitle('');
+  }
 
   return (
     <aside
@@ -67,60 +87,88 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div
                 key={chat.chat_id}
                 className="flex items-center justify-between rounded-lg p-2 hover:bg-gray-200 dark:hover:bg-gray-700"
-                onClick={() => handleChatAction('select', chat.chat_id)}
+                onClick={() => editingChatId !== chat.chat_id && handleChatAction('select', chat.chat_id)}
               >
-                <span className="flex items-center">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  {chat.chat_title}
-                </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                {editingChatId === chat.chat_id ? (
+                  <div className="flex items-center w-full">
+                    <Input
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      className="mr-2"
+                    />
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      onClick={() => handleRenameConfirm(chat.chat_id)}
                       className="h-8 w-8 p-0"
-                      onClick={(e) => e.stopPropagation()} // Stop propagation for the button
                     >
-                      <MoreHorizontal className="h-4 w-4" />
+                      <Check className="h-4 w-4 text-green-500" />
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[160px]">
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleChatAction('rename', chat.chat_id);
-                      }}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRenameCancel}
+                      className="h-8 w-8 p-0"
                     >
-                      Rename chat
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleChatAction('create-quiz', chat.chat_id);
-                      }}
-                    >
-                      Create quiz
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleChatAction('create-flashcards', chat.chat_id);
-                      }}
-                    >
-                      Create flashcards
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleChatAction('delete', chat.chat_id);
-                      }}
-                      className="text-red-600"
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <X className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="flex items-center">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      {chat.chat_title}
+                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[160px]">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRenameStart(chat.chat_id, chat.chat_title);
+                          }}
+                        >
+                          Rename chat
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChatAction('create-quiz', chat.chat_id);
+                          }}
+                        >
+                          Create quiz
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChatAction('create-flashcards', chat.chat_id);
+                          }}
+                        >
+                          Create flashcards
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChatAction('delete', chat.chat_id);
+                          }}
+                          className="text-red-600"
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                )}
               </div>
             ))}
           </div>

@@ -87,7 +87,7 @@ export default function InstructorPage() {
     }
   }, [token]);
 
-  // Fetch active chat's slide info and messages
+  // Fetch active chat
   useEffect(() => {
     if (activeChat) {
       const slideID = activeChat.slides_mode ? activeChat.last_opened_slide_id : null;
@@ -119,6 +119,25 @@ export default function InstructorPage() {
           .catch((error) => {
             console.error("Error fetching slide info:", error);
           });
+      } else {
+        setActiveFile({ filename: '', slide_id: '' });
+        setCurrentSlide({} as Slide);
+        setCurrentSlidePage(-1);
+        setPresentationFiles([]);
+        setImgSrc(undefined);
+
+        const chatID = activeChat.chat_id;
+        if (chatID) {
+          fetchChat(activeChat.chat_id).
+          then((response) => {
+            const history = response.data.history;
+            setActiveMessages(history);
+            setLastMessageID(history[history.length - 1].message_id);
+          })
+          .catch((error) => {
+            console.error("Error fetching chat messages:", error);
+          });
+        }
       }
     }
   }, [activeChat]);
@@ -222,6 +241,19 @@ export default function InstructorPage() {
       });
   };
 
+  const fetchChat = (chatID: string) => {
+    if (!token || !chatID) {
+      return Promise.reject(new Error("Invalid parameters"));
+    }
+  
+    return backendAPI.get(`/chat/${chatID}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  }
+
   const fetchSlide = (chatID: string, slideID: string, pageNumber: number) => {
     if (!token || !chatID || !slideID || pageNumber <= 0) {
       console.error("Invalid parameters");
@@ -305,6 +337,7 @@ export default function InstructorPage() {
   
   const handleChatSelection = async (chatID: string) => {
     if (!token || !chatID) return;
+    console.log("Selected chat:", chatID);
     await backendAPI
       .get(`/chat/${chatID}`, {
         headers: {
@@ -393,7 +426,30 @@ export default function InstructorPage() {
     setActiveMessages([]);
   }
 
-  const handleChatAction = (action: string, chatID: string) => {
+  const handleChatRename = (chatID: string, editedTitle: string) => {
+    if (!editedTitle.trim()) return;
+
+    backendAPI
+      .put(`/chat/${chatID}`, null, {
+        params: { chat_title: editedTitle },
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then(() => {
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat.chat_id === chatID ? { ...chat, chat_title: editedTitle } : chat
+          )
+        );
+      })
+      .catch((error) => {
+        console.error("Error renaming chat:", error);
+      });
+  }
+
+  const handleChatAction = (action: string, chatID: string, editedTitle?: string) => {
     switch (action) {
       case "select":
         handleChatSelection(chatID);
@@ -404,6 +460,9 @@ export default function InstructorPage() {
       case "delete":
         setChatIDToDelete(chatID);
         setIsAlertDialogOpen(true);
+        break;
+      case "rename":
+        handleChatRename(chatID, editedTitle || "");
         break;
       default:
         console.error("Invalid action");

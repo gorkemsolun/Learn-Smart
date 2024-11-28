@@ -35,7 +35,7 @@ export default function ChatInterface({ messages, input, handleInputChange, hand
         </>
       )}
       <ScrollArea className="flex-grow overflow-y-auto mb-4 border border-border rounded-lg p-4">
-        {!isChatLoading && messages.map((message) => (
+        {messages.map((message) => (
           <div 
             key={message.message_id} 
             className={`mb-4 p-3 rounded-lg ${
@@ -74,14 +74,12 @@ export default function ChatInterface({ messages, input, handleInputChange, hand
             </ReactMarkdown>
           </div>
         ))}
-        <div ref={chatContainerRef} />
         {isChatLoading && (
-          <div className="mb-2 p-2 rounded-lg bg-muted max-w-[80%]">
+          <div className="mb-4 p-3 rounded-lg bg-muted max-w-[80%] mr-auto">
             <Skeleton className="h-4 w-[200px]" />
-            <Skeleton className="h-4 w-[160px] mt-2" />
-            <Skeleton className="h-4 w-[180px] mt-2" />
           </div>
         )}
+        <div ref={chatContainerRef} />
       </ScrollArea>
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
@@ -97,5 +95,5 @@ export default function ChatInterface({ messages, input, handleInputChange, hand
         </Button>
       </form>
     </div>
-  )
+  );
 }
