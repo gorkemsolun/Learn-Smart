@@ -19,6 +19,7 @@ type SidebarProps = {
   courses: { course_id: string, course_code: string, course_title: string }[]
   chats: { chat_id: string, chat_title: string }[]
   selectedCourse: string
+  selectedChatId: string
   isSidebarOpen: boolean
   handleChatAction: (action: string, chatID: string, editedTitle?: string) => void
   handleCourseChange: (courseID: string) => void // Action for creating a new chat
@@ -28,6 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   courses,
   chats,
   selectedCourse,
+  selectedChatId,
   isSidebarOpen,
   handleChatAction,
   handleCourseChange,
@@ -58,7 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
-      <div className="flex h-full flex-col">
+      <div className="flex h-full flex-col bg-background">
         <div className="p-4 space-y-4">
           <Button variant="outline" className="w-full" onClick={() => handleChatAction("create", "")}>
             Create Chat
@@ -86,7 +88,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {chats.map((chat) => (
               <div
                 key={chat.chat_id}
-                className="flex items-center justify-between rounded-lg p-2 hover:bg-gray-200 dark:hover:bg-gray-700"
+                className={`flex items-center justify-between rounded-lg p-2 hover:bg-accent hover:text-accent-foreground ${
+                  selectedChatId === chat.chat_id ? 'bg-accent text-accent-foreground' : ''
+                }`}
                 onClick={() => editingChatId !== chat.chat_id && handleChatAction('select', chat.chat_id)}
               >
                 {editingChatId === chat.chat_id ? (
@@ -103,6 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className="h-8 w-8 p-0"
                     >
                       <Check className="h-4 w-4 text-green-500" />
+                      <span className="sr-only">Confirm rename</span>
                     </Button>
                     <Button
                       variant="ghost"
@@ -111,6 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className="h-8 w-8 p-0"
                     >
                       <X className="h-4 w-4 text-red-500" />
+                      <span className="sr-only">Cancel rename</span>
                     </Button>
                   </div>
                 ) : (
@@ -128,6 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           onClick={(e) => e.stopPropagation()}
                         >
                           <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">More options</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-[160px]">

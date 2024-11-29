@@ -59,6 +59,7 @@ export default function InstructorPage() {
   const [lastMessageID, setLastMessageID] = useState(0); // ID of the last message sent in the active chat
 
   const [inputMessage, setInputMessage] = useState(''); // Text field input in the chat
+  const [inputFile, setInputFile] = useState<File | null>(null); // File input in the chat
 
   const [presentationFiles, setPresentationFiles] = useState<{slide_id: string, slides_file_name: string}[]>([]); // List of presentation files of the active chat
   const [activeFile, setActiveFile] = useState<{filename: string, slide_id: string}>({ filename: '', slide_id: '' }); // Currently active presentation file
@@ -360,14 +361,13 @@ export default function InstructorPage() {
     const formData = new FormData();
     formData.append("text", inputMessage);
 
-    /* if (file) formData.append("file", file); */
+    if (inputFile) formData.append("file", inputFile);
 
     const newMessage: Message = {
       text: inputMessage,
       role: "user",
       message_id: lastMessageID + 1,
-      /* media_url: file ? URL.createObjectURL(file) : null, */
-      media_url: null,
+      media_url: inputFile ? URL.createObjectURL(inputFile) : null,
     };
     setActiveMessages((messages: Message[]) => [...messages, newMessage]);
     setIsLoading(true);
@@ -512,6 +512,7 @@ export default function InstructorPage() {
           courses={courses.map(course => ({ course_id: course.course_id, course_title: course.course_name, course_code: course.course_code }))}
           chats={chats}
           selectedCourse={course.course_name}
+          selectedChatId={activeChat.chat_id}
           isSidebarOpen={isSidebarOpen}
           handleChatAction={handleChatAction}
           handleCourseChange={(courseID) => {
@@ -582,6 +583,11 @@ export default function InstructorPage() {
                       messages={activeMessages}
                       input={inputMessage}
                       handleInputChange={(e) => setInputMessage(e.target.value)}
+                      handleInputFileChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setInputFile(e.target.files[0]);
+                        }
+                      }}
                       handleSubmit={(e) => {
                         e.preventDefault();
                         handleSendMessage();
@@ -600,6 +606,11 @@ export default function InstructorPage() {
                   messages={activeMessages}
                   input={inputMessage}
                   handleInputChange={(e) => setInputMessage(e.target.value)}
+                  handleInputFileChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setInputFile(e.target.files[0]);
+                    }
+                  }}
                   handleSubmit={(e) => {
                     e.preventDefault();
                     handleSendMessage();

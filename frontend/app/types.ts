@@ -57,6 +57,7 @@ export interface ChatInterfaceProps {
   messages: Message[]
   input: string
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  handleInputFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   isChatLoading: boolean
   chatContainerRef: React.RefObject<HTMLDivElement>
