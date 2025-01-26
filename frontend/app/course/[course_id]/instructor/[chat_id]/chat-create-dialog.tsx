@@ -16,7 +16,7 @@ import { FileIcon, FileTextIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
 import * as React from "react";
 import { useState } from "react";
-import { LuUploadCloud } from "react-icons/lu";
+import { LuUpload } from "react-icons/lu";
 
 interface ChatCreateDialogParameters {
   isOpen: boolean;
@@ -200,7 +200,7 @@ export function ChatCreateDialog(dialogParameters: ChatCreateDialogParameters) {
                   </div>
                 ) : (
                   <div>
-                    <LuUploadCloud className="text-foreground/70 mb-4 size-[6vh]" />
+                    <LuUpload className="text-foreground/70 mb-4 size-[6vh]" />
                     <p className="text-foreground/70 text-sm">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop

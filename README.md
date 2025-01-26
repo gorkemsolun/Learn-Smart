@@ -1,6 +1,6 @@
 ![LearnSmart Logo](https://github.com/gorkemsolun/Learn-Smart/blob/main/learnsmartlogo.png)
 
-# Learn Smart
+# Edux
 
 LearnSmart is a web application designed to help students study their courses more effectively by intending to improve their grade output with its learning guide.  LearnSmart intends to offer holistic help for students across all facets of their academic progress through newly developed technologies, such as LLMs, and it is intended to be delivered with the future scope of mobile/tablet/metaverse. 
 
@@ -16,13 +16,16 @@ In summary, LearnSmart provides essential tools and resources through a web appl
 
 ## Build
 
-1. Use node 20.15.0
+1. Use node 23.6.1
 
-2. Use python 3.12.4
+2. Use python 3.12.8
 
 3. You'll see a prepopulated .env file inside the root folder of the project. Adjust the ```DATABASE_URL``` field accordingly after setting up MySQL database. Leave everything else as is.
 
     * `DATABASE_URL=` (your MySQL DB URI, example: `mysql://<username>:<password>@localhost/<database_name>`)
+    * `SECRET_KEY=` should be filled
+    * `GOOGLE_API_KEY=` should be filled
+    * `MYSQL_ROOT_PASSWORD=` may be required (TODO)
 
 ## Frontend
 
@@ -39,8 +42,8 @@ In summary, LearnSmart provides essential tools and resources through a web appl
 2. * `backend\Scripts\activate` for Windows
    * `source backend/bin/activate` for Unix
 
-3. `cd backend && mkdir files chat_histories` for Unix
-    `cd backend && mkdir files && mkdir chat_histories` for Windows. This is where the file uploads are stored.
+3. `cd backend && mkdir files chat_histories logs` for Unix
+    `cd backend && mkdir files && mkdir chat_histories && mkdir logs` for Windows. This is where the file uploads are stored.
 
 4. `pip install -r requirements.txt`
 
@@ -58,11 +61,11 @@ In summary, LearnSmart provides essential tools and resources through a web appl
 
 4. Connect `\connect root@localhost`
 
-5. Create user `CREATE USER '<username>'@'localhost' IDENTIFIED BY '<password>';`
+5. Create user `CREATE USER '<username>'@'localhost' IDENTIFIED BY '<password>';` by changing <username> and <password>
 
-6. Create the database `CREATE DATABASE <database_name>;`
+6. Create the database `CREATE DATABASE <database_name>;` by changing <database_name>
 
-7. Grant privileges `GRANT ALL PRIVILEGES ON <database_name>.* TO '<username>'@'localhost';`
+7. Grant privileges `GRANT ALL PRIVILEGES ON <database_name>.* TO '<username>'@'localhost';` by changing <database_name> and <username>
 
 ## Database Example Setup Linux
 

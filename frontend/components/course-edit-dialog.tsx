@@ -1,7 +1,8 @@
 "use client";
 
-import {useCallback, useEffect, useState} from 'react';
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
+import { CourseEditDialogProps } from "@/app/types";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,16 +10,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import Cookies from "js-cookie";
-import {backend, backendAPI} from "@/environment/backend_api";
-import { CourseEditDialogProps } from "@/app/types";
-import { FileIcon, ImageIcon, FileTextIcon } from "@radix-ui/react-icons";
-import { LuUploadCloud } from "react-icons/lu";
 import { Textarea } from "@/components/ui/textarea";
-import {useToast} from "@/hooks/use-toast";
-import {ToastAction} from "@/components/ui/toast";
+import { ToastAction } from "@/components/ui/toast";
+import { backend, backendAPI } from "@/environment/backend_api";
+import { useToast } from "@/hooks/use-toast";
+import { FileIcon, FileTextIcon, ImageIcon } from "@radix-ui/react-icons";
+import Cookies from "js-cookie";
 import * as React from "react";
+import { useCallback, useEffect, useState } from 'react';
+import { LuUpload } from 'react-icons/lu';
 
 export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) {
 
@@ -299,7 +299,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
                       </div>
                   ) : (
                       <div>
-                        <LuUploadCloud className="mb-4 size-[6vh] text-foreground/70"/>
+                        <LuUpload className="mb-4 size-[6vh] text-foreground/70"/>
                         <p className="text-sm text-foreground/70">
                           <span className="font-semibold">Click to upload</span>{" "}
                           or drag and drop
@@ -344,7 +344,7 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
                       </div>
                   ) : (
                       <div>
-                        <LuUploadCloud className="mb-4 size-[6vh] text-foreground/70"/>
+                        <LuUpload className="mb-4 size-[6vh] text-foreground/70"/>
                         <p className="text-sm text-foreground/70">
                           <span className="font-semibold">Click to upload</span>{" "}
                           or drag and drop
