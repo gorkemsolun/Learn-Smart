@@ -1,6 +1,6 @@
 /chat_histories
 /files
-.env
+# .env
 /old-frontend/node_modules
 /old-frontend/.pnp
 /old-frontend/.pnp.js
@@ -61,16 +61,13 @@ __pycache__
 # dotenv
 logs/
 
-# virtualenv
 .venv
 venv/
 ENV/
 
-# Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
 htmlcov/
 .tox/
 .coverage
@@ -81,15 +78,12 @@ coverage.xml
 *.cover
 .hypothesis/
 
-# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
 *.so
 
-# Distribution / packaging
 .Python
 env/
 build/
