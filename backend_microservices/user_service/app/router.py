@@ -6,25 +6,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from schemas import *
 from database.session import get_db
 from database.dbmanager import UserDB, CourseDB
-from middleware import authentication as auth # TODO: Add communication mechanism with the auth service
 
 router = APIRouter(prefix="/users", tags=["User"])
-
-# TODO: This might have to be moved to the auth service
-@router.post("/login", response_model=auth.Token, include_in_schema=False)
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    Endpoint for user login.
-
-    Parameters:
-    - form_data: OAuth2PasswordRequestForm object containing user login credentials.
-
-    Returns:
-    - Token: Token object containing the JWT access token.
-
-    """
-    return auth.login_for_access_token(form_data)
-
 
 @router.post("/create", response_model=UserResponse)
 def create_user(user: UserCreationRequest, db: Session = Depends(get_db)):
