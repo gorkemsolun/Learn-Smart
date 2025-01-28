@@ -8,13 +8,54 @@ from io import BytesIO
 import os
 import pymupdf
 from docx import Document
-from fastapi import UploadFile
+from fastapi import File, UploadFile
 from abc import ABC, abstractmethod
 from PIL import Image
 from tools import splitext, convert_pptx_to_pdf
+from middleware import BUCKET_NAME
+import boto3
+from botocore.exceptions import ClientError
+
+
+s3_client = boto3.client("s3")
+
+def check_object_exists(bucket_name, object_key):
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=object_key)
+        return True  # Object exists
+    except ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            return False  # Object does not exist
+
+def upload_to_s3(path: str, file: UploadFile = File(...), bucket_name=BUCKET_NAME):
+    """
+    Uploads an UploadFile to an S3 bucket.
+
+    Args:
+        path (str): S3 Object key 
+        file (UploadFile): The uploaded file object.
+        bucket_name (str): The S3 bucket name.
+
+    Returns:
+        dict: A success message with the file's key in S3.
+    """
+    try:
+        s3_key = path
+
+        # Upload the file to S3
+        s3_client.upload_fileobj(file.file, bucket_name, s3_key)
+
+    except:
+        raise
+
+def delete_object(path, bucket_name=BUCKET_NAME):
+    try:
+        response = s3_client.delete_object(Bucket=bucket_name, Key=path)
+    except Exception as e:
+        raise
 
 class S3StreamWrapper:
-    def __init__(self, bucket_name, key, s3_client):
+    def __init__(self, key, s3_client=s3_client, bucket_name=BUCKET_NAME):
         """
         Wrap an S3 object for random-access reading.
         
@@ -153,7 +194,7 @@ class BaseFile(ABC):
         self.file = file
         self.path = path
 
-    def save(self, path: str):
+    def save(self, path: str, bucket_name=BUCKET_NAME):
         """
         Save the file to the specified path.
 
@@ -166,17 +207,18 @@ class BaseFile(ABC):
         """
         if self.path:
             return
-        if os.path.exists(path):
-            raise OSError(f"File already exists in path {path}")
+        
+        if check_object_exists(bucket_name=BUCKET_NAME, object_key=path):
+            raise FileExistsError(f"The file '{path}' already exists in bucket '{bucket_name}'.")
+       
         if not self.file:
             raise ValueError("No file provided to be saved.")
         
-        directory = os.path.dirname(path) # directory part of the path
-        os.makedirs(directory, exist_ok=True)
+        try:
+            upload_to_s3(path, self.file)
+        except:
+            raise
         
-        with open(path, "wb") as file:
-            file.write(self.file.file.read())
-
         self.path = path
 
     def delete(self):
@@ -187,9 +229,11 @@ class BaseFile(ABC):
         """
         if not self.path:
             return
-        if not os.path.exists(self.path):
+        if not check_object_exists(bucket_name=BUCKET_NAME, object_key=self.path):
             return
-        os.remove(self.path)
+
+        delete_object(path=self.path)
+
         self.path = None
 
     @abstractmethod
