@@ -13,7 +13,93 @@ from abc import ABC, abstractmethod
 from PIL import Image
 from tools import splitext, convert_pptx_to_pdf
 
+class S3StreamWrapper:
+    def __init__(self, bucket_name, key, s3_client):
+        """
+        Wrap an S3 object for random-access reading.
+        
+        Args:
+            bucket_name (str): Name of the S3 bucket.
+            key (str): Object key in the bucket.
+            s3_client: Boto3 S3 client instance.
+        """
+        self.bucket_name = bucket_name
+        self.key = key
+        self.s3_client = s3_client
+        self.position = 0  # Current pointer position
+        
+        # Get the total size of the object
+        response = s3_client.head_object(Bucket=bucket_name, Key=key)
+        self.file_size = response['ContentLength']
 
+    def read(self, size=-1):
+        """
+        Read data from the S3 object.
+        
+        Args:
+            size (int): Number of bytes to read. Default is -1 (read all).
+        
+        Returns:
+            bytes: The data read.
+        """
+        if size == -1:  # Read all remaining data
+            size = self.file_size - self.position
+        
+        # Ensure we don't read beyond the file
+        end_byte = min(self.position + size - 1, self.file_size - 1)
+        
+        # Fetch the specified byte range from S3
+        response = self.s3_client.get_object(
+            Bucket=self.bucket_name,
+            Key=self.key,
+            Range=f"bytes={self.position}-{end_byte}"
+        )
+        
+        data = response['Body'].read()
+        self.position += len(data)  # Update the position
+        return data
+
+    def seek(self, offset, whence=0):
+        """
+        Move the pointer to a specific position.
+        
+        Args:
+            offset (int): Offset to move the pointer to.
+            whence (int): Reference point (0=beginning, 1=current, 2=end).
+        """
+        if whence == 0:  # From start of the file
+            self.position = offset
+        elif whence == 1:  # From current position
+            self.position += offset
+        elif whence == 2:  # From end of the file
+            self.position = self.file_size + offset
+        else:
+            raise ValueError("Invalid value for whence.")
+        
+        # Ensure position stays within bounds
+        self.position = max(0, min(self.position, self.file_size))
+
+    def tell(self):
+        """
+        Get the current pointer position.
+        
+        Returns:
+            int: Current position in the file.
+        """
+        return self.position
+
+    def close(self):
+        """
+        Close the wrapper (noop for this case).
+        """
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+        
 class BaseFile(ABC):
     """
     Base class for file management.
