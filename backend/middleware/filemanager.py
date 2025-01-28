@@ -310,18 +310,37 @@ class ImageFile(BaseFile):
             raise ValueError("Unsupported content type: " + file.content_type)
         super().__init__(file, path)
 
-    def save(self, path: str, size: tuple = (256, 256)):
+    def save(self, path: str, bucket_name=BUCKET_NAME, size: tuple = (256, 256)):
         """
-        Saves the image file with optional resizing.
+        Saves the image file to S3 with resizing.
 
         Args:
-            path (str): The path to save the image file.
+            path (str): The S3 key (path) to save the image file.
+            bucket_name (str): The name of the S3 bucket.
             size (tuple, optional): The desired size of the image. Defaults to (256, 256).
         """
-        super().save(path)
-        with Image.open(self.path) as img: # resize to the given size
-            img.thumbnail(size)
-            img.save(self.path)
+        if not self.file:
+            raise ValueError("No file provided to save.")
+
+        if check_object_exists(bucket_name, path):
+            raise FileExistsError(f"The file '{path}' already exists in bucket '{bucket_name}'.")
+
+
+        try:
+            with Image.open(self.file.file) as img:
+                img.thumbnail(size)  
+                
+                buffer = BytesIO()  # Buffer to store the resized image
+                
+                img.save(buffer, format=img.format)  
+                buffer.seek(0)  # Reset buffer pointer
+                
+                self.file = buffer
+                super().save(path=path)
+            
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to process or save the image: {e}")
 
     def content(self):
         """
