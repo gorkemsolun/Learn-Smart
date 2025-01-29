@@ -1,11 +1,10 @@
+from typing import BinaryIO
 import base64
 
-
-def encode_base64(image_path: str):
+def encode_base64(file: BinaryIO) -> str:
     """
     Encode an image file as a base64 string.
     Args:
-        - image_path: The path to the image file.
+    - file (BinaryIO): The file object to encode.
     """
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
+    return base64.b64encode(file.read()).decode("utf-8")

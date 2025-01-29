@@ -1,5 +1,5 @@
-from typing import List, Dict
-import base64
+from typing import List, BinaryIO
+import pickle
 
 import google.generativeai as genai
 import openai, anthropic
@@ -7,9 +7,22 @@ import openai, anthropic
 from util import encode_base64
 from . import ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
 
-class File:
-    mimetype = None # MIME type of the file
-    url = None # URL where the file is stored
+# TODO: Implement system prompt logic
+
+class ChatFile:
+    mimetype: str = None  # MIME type of the file
+    binary: BinaryIO = None  # Binary file data
+
+    def __init__(self, mimetype: str, binary: BinaryIO):
+        """
+        Initialize a File object.
+
+        Args:
+            mimetype (str): The MIME type of the file.
+            binary (BinaryIO): The binary file data.
+        """
+        self.mimetype = mimetype
+        self.binary = binary
 
 
 class ChatHistory:
@@ -20,12 +33,14 @@ class ChatHistory:
     def __init__(self):
         self.history = []
 
-    def add_message(self, role: str, content: str, files: List = None):   
+
+    def add_message(self, role: str, content: str, files: List[ChatFile] = None):   
         self.history.append({
             "role": role,
             "content": content,
             "files": files or []
         })
+
 
     def openai(self):
         openai_history = []
@@ -33,22 +48,23 @@ class ChatHistory:
             text = message["content"]
             
             file_data = []
-            for file in message["files"]:
-                if file.mimetype.startswith("image"):
-                    data = {
+            for file in message["files"]: 
+                if file.mimetype.startswith("image/"):
+                    data = [{
                         "type": "image_url", 
-                        "image_url": f"data:{file.mimetype};base64,{encode_base64(file.url)}"
-                    }
+                        "image_url": f"data:{file.mimetype};base64,{encode_base64(file.binary)}"
+                    }]
                 elif file.mimetype.startswith("application/pdf"):
-                    # convert PDF pages to images, encode them as base64
+                    # For OpenAI, convert PDF pages to images, then encode them as base64
                     # TODO: Revisit after S3 and FileManager are implemented
                     import pymupdf
-                    pdf = pymupdf.open(file.url)
+                    pdf = pymupdf.open(stream=file.binary, filetype="pdf")
                     data = []
                     for page in pdf:
+                        pix = page.get_pixmap()
                         data.append({
                             "type": "image_url",
-                            "image_url": f"data:image/png;base64,{encode_base64(page.render())}"
+                            "image_url": f"data:image/png;base64,{encode_base64(pix.tobytes())}"
                         })
                     pdf.close()
                 else:
@@ -82,7 +98,7 @@ class ChatHistory:
                 else:
                     raise ValueError(f"Unsupported file type: {file.mimetype}")
 
-                data = encode_base64(file.url)
+                data = encode_base64(file.binary)
 
                 file_data.append({
                     "type": type,
@@ -110,7 +126,7 @@ class ChatHistory:
 
             parts = [message["content"]]
             for file in message["files"]:
-                data = encode_base64(file.url)
+                data = encode_base64(file.binary)
                 parts.append({
                     "file_data": {
                         "mime_type": file.mimetype, 
@@ -122,8 +138,19 @@ class ChatHistory:
             gemini_history.append({"role": role, "parts": parts})
 
         return gemini_history
+    
 
-class ChatClient:
+    @staticmethod
+    def from_binary(file: BinaryIO) -> "ChatHistory":
+        """
+        Load a chat history from a binary file object.
+        Args:
+            - file (BinaryIO): The file object to load the chat history from.
+        """
+        return pickle.load(file)
+
+
+class ChatClientBase:
     """
     Wrapper class with memory (history) for various API clients.
     """
@@ -132,23 +159,39 @@ class ChatClient:
         self.model = model
         self.system_prompt = system_prompt
 
-    def invoke(self, query: str, max_tokens: int) -> str:
+    def invoke(self, history: ChatHistory, query: str,
+               files: List[ChatFile] = None, max_tokens: int = 2500) -> str:
         raise NotImplementedError
 
 
-class AnthropicChatClient(ChatClient):
+class AnthropicChatClient(ChatClientBase):
     """
     Wrapper class with memory for the Anthropic API client.
     """
-    def __init__(self, model: str, system_prompt: str):
+    def __init__(self, model: str, system_prompt: str = None):
+        """
+        Initialize the client with the API key.
+        Args:
+            - model (str): The model to use.
+            - system_prompt (str): The system prompt to use.
+        """
         super().__init__(model, system_prompt)
         self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     def invoke(self, history: ChatHistory, query: str, 
-               files: List[File] = None, max_tokens: int = 2500) -> str:
-        # Anthropic has native support for PDF files
-        # https://docs.anthropic.com/en/docs/build-with-claude/pdf-support#process-pdfs-with-claude
+               files: List[ChatFile] = None, max_tokens: int = 2500) -> str:
+        """
+        Send a message to the Anthropic API and return the response.
+        Args:
+            - history (ChatHistory): The chat history.
+            - query (str): The message to send.
+            - files (List[File]): The files to send.
+            - max_tokens (int): The maximum number of tokens to generate.
         
+        Returns:
+            - content (str): The response from the API.
+            - history (ChatHistory): The updated chat history.
+        """      
         history.add_message(role="user", content=query, files=files)
         response = self.client.messages.create(
             model=self.model,
@@ -161,16 +204,34 @@ class AnthropicChatClient(ChatClient):
         return content, history
 
 
-class OpenAIChatClient(ChatClient):
+class OpenAIChatClient(ChatClientBase):
     """
     Wrapper class with memory for the OpenAI API client.
     """
-    def __init__(self, model: str, system_prompt: str):
+    def __init__(self, model: str, system_prompt: str = None):
+        """
+        Initialize the client with the API key.
+        Args:
+            - model (str): The model to use.
+            - system_prompt (str): The system prompt to use.
+        """
         super().__init__(model, system_prompt)
         self.client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
     def invoke(self, history: ChatHistory, query: str, 
-               files: List[File] = None, max_tokens: int = 2500) -> str:
+               files: List[ChatFile] = None, max_tokens: int = 2500) -> str:
+        """
+        Send a message to the OpenAI API and return the response.
+        Args:
+            - history (ChatHistory): The chat history.
+            - query (str): The message to send.
+            - files (List[File]): The files to send.
+            - max_tokens (int): The maximum number of tokens to generate.
+        
+        Returns:
+            - content (str): The response from the API.
+            - history (ChatHistory): The updated chat history
+        """
         history.add_message(role="user", content=query, files=files)
         response = self.client.chat.completions.create(
             model=self.model,
@@ -183,20 +244,38 @@ class OpenAIChatClient(ChatClient):
         return content, history
     
 
-class GoogleChatClient(ChatClient):
+class GoogleChatClient(ChatClientBase):
     """
     Wrapper class with memory for the Google API client.
     """
-    def __init__(self, model: str, system_prompt: str):
+    def __init__(self, model: str, system_prompt: str = None):
+        """
+        Initialize the client with the API key.
+        Args:
+            - model (str): The model to use.
+            - system_prompt (str): The system prompt to use.
+        """
         super().__init__(model, system_prompt)
         genai.configure(api_key=GOOGLE_API_KEY)
         self.client = genai.GenerativeModel(model_name=model)
 
-    def invoke(self, history: ChatHistory, query: str, files: List[File] = None, 
-               max_tokens: int = 2500) -> str:
+    def invoke(self, history: ChatHistory, query: str, 
+               files: List[ChatFile] = None, max_tokens: int = 2500) -> str:
+        """
+        Send a message to the Google API and return the response.
+        Args:
+            - history (ChatHistory): The chat history.
+            - query (str): The message to send.
+            - files (List[File]): The files to send.
+            - max_tokens (int): The maximum number of tokens to generate.
+
+        Returns:
+            - content (str): The response from the API.
+            - history (ChatHistory): The updated chat history.
+        """
         parts = [query]
         for file in files:
-            data = encode_base64(file.url)
+            data = encode_base64(file.binary)
             parts.append({
                 "file_data": {
                     "mime_type": file.mimetype, 
@@ -212,3 +291,25 @@ class GoogleChatClient(ChatClient):
 
         history.add_message(role="assistant", content=content)
         return content, history
+
+
+class ChatClient:
+    """
+    Factory class to create chat clients based on the model.
+    """
+    @staticmethod
+    def create(model: str, system_prompt: str = None) -> ChatClientBase:
+        """
+        Create a chat client based on the model.
+        Args:
+            - model (str): The model to use. Supported models are "anthropic", "openai", and "google".
+            - system_prompt (str): The system prompt to use.
+        """
+        if model == "anthropic":
+            return AnthropicChatClient(model, system_prompt)
+        elif model == "openai":
+            return OpenAIChatClient(model, system_prompt)
+        elif model == "google":
+            return GoogleChatClient(model, system_prompt)
+        else:
+            raise ValueError(f"Unsupported model: {model}")

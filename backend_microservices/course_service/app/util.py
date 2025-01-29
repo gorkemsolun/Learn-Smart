@@ -1,7 +1,26 @@
 # TODO: Placeholder file, most of these function calls are to be converted into gRPC calls
 
-import google.generativeai as genai
 import json
+
+from database.session import get_db, Base
+
+def init(restart: bool = False):
+    gen = get_db()
+    db = next(gen)
+
+    try:
+        if restart:
+            # drop "users" table
+            print("Dropping tables...")
+            db.execute("DROP TABLE IF EXISTS users;")
+            
+        # create "users" table
+        print("Creating tables...")
+        Base.metadata.create_all(bind=db.bind)
+        
+    finally:
+        gen.close() # closes the session
+
 
 from middleware import FILES_DIR
 from . import WEEKLY_STUDY_PLAN_PROMPT, FLASHCARD_PROMPT
