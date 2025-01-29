@@ -355,7 +355,8 @@ class ImageFile(BaseFile):
         if not self.path and not self.file:
             raise ValueError("No file provided.")
         if self.path:            
-            return Image.open(self.path)
+            s3_wrapper = S3StreamWrapper(key=self.path)
+            return Image.open(s3_wrapper)
         
         return Image.open(self.file.file)
     
@@ -366,7 +367,9 @@ class ImageFile(BaseFile):
         Returns:
             ResourceWrapper: The image file wrapped in a ResourceWrapper object.
         """
-        img = Image.open(self.path)
+        
+        s3_wrapper = S3StreamWrapper(key=self.path)
+        img = Image.open(s3_wrapper)
         return self.ResourceWrapper(img)
     
 
@@ -439,13 +442,41 @@ class PresentationFile(BaseFile):
             path (str): The path to save the presentation file.
 
         """
-        super().save(path)
-        new_path = convert_pptx_to_pdf(path)
-        self.file.filename = os.path.basename(new_path)
-        self.path = new_path
+        
+        # save it to local
+        try:
+            with open(path, "wb") as file:
+                file.write(self.file.file.read())
 
-        with open(new_path, "rb") as file:
-            self.file.file = file 
+            # Convert PPTX to PDF
+            new_path = convert_pptx_to_pdf(path)
+
+            # Update file metadata to reflect the converted PDF
+            self.file.filename = os.path.basename(new_path)
+            self.path = new_path
+
+            with open(new_path, "rb") as file:
+                self.file.file = file
+
+            # Upload to S3
+            super().save(self.path)
+
+            # Mark as converted
+            self.converted_to_pdf = True
+
+        except Exception as e:
+            raise RuntimeError(f"An error occurred during the save process: {e}")
+
+        finally:
+            # Clean up local files (delete both original PPTX and converted PDF)
+            if os.path.exists(path):
+                os.remove(path)
+                print(f"Deleted local file: {path}")
+            
+            if os.path.exists(new_path):
+                os.remove(new_path)
+                print(f"Deleted converted PDF: {new_path}")
+
         
         self.converted_to_pdf = True
     
@@ -497,7 +528,8 @@ class PDFFile(BaseFile):
         # TODO: we may also need OCR here, for scanned PDFs
         # TODO: Do testing with contents
         if self.path:
-            with pymupdf.open(self.path) as doc:
+            s3_wrapper = S3StreamWrapper(key=self.path)
+            with pymupdf.open(stream=s3_wrapper, filetype="pdf") as doc:
                 return chr(12).join([page.get_text() for page in doc])
         
         # TODO: find a solution for large pdf files such as books
@@ -512,7 +544,8 @@ class PDFFile(BaseFile):
             ResourceWrapper: A resource wrapper for the PDF file.
 
         """
-        doc = pymupdf.open(self.path)
+        s3_wrapper = S3StreamWrapper(key=self.path)
+        doc = pymupdf.open(stream=s3_wrapper, filetype="pdf")
         return self.ResourceWrapper(doc)
     
 
@@ -559,7 +592,8 @@ class WordFile(BaseFile):
             raise ValueError("No file provided.")
         
         if self.path:
-            doc = Document(self.path)
+            s3_wrapper = S3StreamWrapper(key=self.path)
+            doc = Document(s3_wrapper)
         else:
             doc = Document(BytesIO(self.file.file.read()))
         # TODO: Do testing
@@ -572,7 +606,8 @@ class WordFile(BaseFile):
         Returns:
             ResourceWrapper: The resource wrapper for the Word file.
         """
-        doc = Document(self.path)
+        s3_wrapper = S3StreamWrapper(key=self.path)
+        doc = Document(s3_wrapper)
         return self.ResourceWrapper(doc)
     
 
