@@ -54,16 +54,16 @@ export interface Notification {
 }
 
 export interface ChatInterfaceProps {
-  messages: Message[]
-  input: string
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  handleInputFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
-  isChatLoading: boolean
-  chatContainerRef: React.RefObject<HTMLDivElement>
-  activeChat: Chat | null
-  showToggleSidebarButton: boolean
-  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>
+  messages: Message[];
+  input: string;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleInputFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  isChatLoading: boolean;
+  chatContainerRef: React.RefObject<HTMLDivElement>;
+  activeChat: Chat | null;
+  showToggleSidebarButton: boolean;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface CourseCreateDialogProps {
@@ -103,6 +103,7 @@ export interface NodeData {
   id: string;
   label: string;
   group: number;
+  completed: boolean;
 }
 
 export interface LinkData {
@@ -117,4 +118,3 @@ export interface CustomSimulationNode
   label: string;
   group: number;
 }
-
