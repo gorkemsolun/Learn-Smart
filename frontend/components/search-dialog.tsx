@@ -17,8 +17,8 @@ export function SearchDialogModal({ isOpen, onClose }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const handleNavigation = async (path) => {
-    setOpen(false); // Close the dialog
-    onClose?.(false); // Ensure the parent state is updated
+    setOpen(false);
+    onClose?.(false);
     await router.replace(path);
   };
 
