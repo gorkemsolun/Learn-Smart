@@ -117,3 +117,43 @@ export interface CustomSimulationNode
   group: number;
 }
 
+export interface SkillTree {
+  id: string;
+  title: string;
+  nodes: NodeData[];
+  nodeLinks: LinkData[];
+}
+
+export interface SkillTreeCard {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface SkillTreeListProps {
+  skillTrees: SkillTreeCard[];
+}
+
+export interface SkillTreeCreateDialogProps {
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onSkillTreeCreation: () => void;
+}
+
+export interface SkillTreeCreateProps {
+  onSkillTreeUpdate: () => void;
+}
+
+export interface SkillTreeCardProps {
+  id: string;
+  title: string;
+  description: string;
+  onSkillTreeDelete: (id: string) => void;
+}
+
+export interface SkillTreeEditDialogProps {
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onSkillTreeUpdate: () => void;
+  skillTree: SkillTreeCard;
+}

@@ -5,6 +5,7 @@ from database.connection import db_connection
 from middleware import authentication as auth
 
 from modules.user.model import User
+from modules.analytics.model import Analytics
 from modules.chat.model import Chat, Slide
 from modules.course.model import Course
 from modules.notification.model import Notification
@@ -241,6 +242,124 @@ class UserDB(DatabaseInterface):
 
         """
         pass
+
+
+class AnalyticsDB:
+    """
+    Database interface for analytics tracking.
+    Tracks and stores daily usage time for each user in the application.
+    """
+
+    @staticmethod
+    def log_usage(**kwargs):
+        """
+        Logs the usage time for a specific user on a specific date.
+
+        Args:
+        - user_id (int): The ID of the user.
+        - date (str): The date of the usage in 'YYYY-MM-DD' format.
+        - time_spent (int): Time spent in seconds to be added to the log.
+
+        Returns:
+        - dict: A dictionary representing the updated analytics log.
+        """
+        user_id = kwargs.get("user_id")
+        date = kwargs.get("date")
+        time_spent = kwargs.get("time_spent")
+
+        with db_connection as db:
+            analytics_entry = Analytics(user_id=user_id, date=date, time_spent=time_spent)
+            db.add(analytics_entry)
+
+            db.commit()
+            db.refresh(analytics_entry)
+
+            return analytics_entry.to_dict()
+
+    @staticmethod
+    def get_usage(**kwargs):
+        """
+        Gets usage analytics for a user. Optionally, fetch for a specific date.
+
+        Args:
+        - user_id (int): The ID of the user.
+        - date (str, optional): The date in 'YYYY-MM-DD' format. If None, fetches all logs for the user.
+
+        Returns:
+        - list[dict]: A list of dictionaries representing analytics logs, or a single dictionary if date is specified.
+        """
+        user_id = kwargs.get("user_id")
+        date = kwargs.get("date")
+
+        with db_connection as db:
+            if date:
+                analytics_entry = (
+                    db.query(Analytics)
+                    .filter(Analytics.user_id == user_id, Analytics.date == date)
+                    .first()
+                )
+                return analytics_entry.to_dict() if analytics_entry else None
+
+            analytics_entries = db.query(Analytics).filter(Analytics.user_id == user_id).all()
+            return [entry.to_dict() for entry in analytics_entries]
+
+    @staticmethod
+    def delete_usage(**kwargs):
+        """
+        Deletes usage analytics for a user. Optionally, delete for a specific date.
+
+        Args:
+        - user_id (int): The ID of the user.
+        - date (str, optional): The date in 'YYYY-MM-DD' format. If None, deletes all logs for the user.
+
+        Returns:
+        - None
+        """
+        user_id = kwargs.get("user_id")
+        date = kwargs.get("date")
+
+        with db_connection as db:
+            query = db.query(Analytics).filter(Analytics.user_id == user_id)
+
+            if date:
+                query = query.filter(Analytics.date == date)
+
+            query.delete()
+            db.commit()
+
+    @staticmethod
+    def update_usage(**kwargs):
+        """
+        Updates the usage time for a specific user on a specific date.
+
+        Args:
+        - user_id (int): The ID of the user.
+        - date (str): The date of the usage in 'YYYY-MM-DD' format.
+        - time_spent (int): New time spent value in seconds.
+
+        Returns:
+        - dict: A dictionary representing the updated analytics log.
+        """
+        user_id = kwargs.get("user_id")
+        date = kwargs.get("date")
+        time_spent = kwargs.get("time_spent")
+
+        with db_connection as db:
+            analytics_entry = (
+                db.query(Analytics)
+                .filter(Analytics.user_id == user_id, Analytics.date == date)
+                .first()
+            )
+
+            if not analytics_entry:
+                raise ValueError("Analytics entry not found for the specified user and date")
+
+            analytics_entry.time_spent = time_spent
+
+            db.commit()
+            db.refresh(analytics_entry)
+
+            return analytics_entry.to_dict()
 
 
 class ChatDB(DatabaseInterface):

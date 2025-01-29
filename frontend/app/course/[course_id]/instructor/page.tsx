@@ -1,18 +1,18 @@
-"use client"
+"use client";
 import { useParams, useRouter } from "next/navigation";
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react';
 import Cookies from "js-cookie";
-import { Button } from "@/components/ui/button"
-import { Menu, ArrowLeft, ArrowRight } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
-import { Course, Chat, Slide, Message } from '@/app/types'
-import { backend, backendAPI } from '@/environment/backend_api'
+import { Button } from "@/components/ui/button";
+import { Menu, ArrowLeft, ArrowRight } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { Course, Chat, Slide, Message } from '@/app/types';
+import { backend, backendAPI } from '@/environment/backend_api';
 import ChatInterface from "@/components/chat-interface";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/components/ui/resizable"
+} from "@/components/ui/resizable";
 import { 
   Select, 
   SelectTrigger, 
@@ -200,7 +200,7 @@ export default function InstructorPage() {
       .catch((error) => {
         console.error("Error fetching course:", error);
       });
-  }
+  };
 
   const fetchAllChats = async () => {
     if (!token || !courseID) {
@@ -233,7 +233,7 @@ export default function InstructorPage() {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       },
-    })
+    });
   };  
 
   const fetchSlideInfo = (slideID: string) => {
@@ -246,8 +246,8 @@ export default function InstructorPage() {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       },
-    })
-  }
+    });
+  };
 
   const handlePreviousSlide = () => {
     if (!activeChat || !activeChat.last_opened_slide_id) {
@@ -319,7 +319,7 @@ export default function InstructorPage() {
       .catch((error) => {
         console.error("Error fetching chat:", error);
       });
-  }
+  };
   
   const handleSendMessage = () => {
     if (!inputMessage.trim()) return;
@@ -371,7 +371,7 @@ export default function InstructorPage() {
         setIsLoading(false);
       });
 
-  }
+  };
 
   const handleFileChange = (slide_id: string) => {
     const selectedFile = presentationFiles.find(file => file.slide_id === slide_id);
@@ -380,8 +380,8 @@ export default function InstructorPage() {
     }
     setActiveChat((prevActiveChat) => {
       return {...prevActiveChat, last_opened_slide_id: slide_id};
-    })
-  }
+    });
+  };
 
   const handleNewChat = (newChat: Chat) => {
     if (!newChat) {
@@ -391,7 +391,7 @@ export default function InstructorPage() {
     setActiveChat(newChat);
     setIsSheetOpen(false);
     setActiveMessages([]);
-  }
+  };
 
   const handleChatAction = (action: string, chatID: string) => {
     switch (action) {
@@ -408,7 +408,7 @@ export default function InstructorPage() {
       default:
         console.error("Invalid action");
     }
-  }
+  };
 
   const confirmDeleteChat = () => {
     if (chatIDToDelete) {
@@ -467,9 +467,9 @@ export default function InstructorPage() {
               {activeChat.slides_mode ? (
                 <ResizablePanelGroup direction="horizontal">
                   <ResizablePanel defaultSize={50} minSize={30}>
-                    <div className="h-full flex flex-col">
+                    <div className="flex h-full flex-col">
                       {/* Toggle sidebar button and file selection dropdown */}
-                      <div className="p-4 flex justify-between items-center">
+                      <div className="flex items-center justify-between p-4">
                         {/* Toggle sidebar button - Only shown in slides mode */}
                         <Button
                           variant="ghost"
@@ -477,7 +477,7 @@ export default function InstructorPage() {
                           onClick={() => setIsSidebarOpen((prev) => !prev)}
                           aria-label="Toggle sidebar"
                         >
-                          <Menu className="h-6 w-6" />
+                          <Menu className="size-6" />
                         </Button>
 
                         <Select onValueChange={handleFileChange} value={currentSlide.slide_id}>
@@ -495,23 +495,23 @@ export default function InstructorPage() {
                       </div>
 
                       {/* Slide content */}
-                      <div className="flex-1 p-4 flex flex-col items-center">
+                      <div className="flex flex-1 flex-col items-center p-4">
                         {/* Centered page number */}
-                        <h2 className="text-2xl font-bold mb-4">Slide {currentSlidePage}</h2>
+                        <h2 className="mb-4 text-2xl font-bold">Slide {currentSlidePage}</h2>
 
-                        <div className="bg-muted rounded-lg shadow-lg overflow-hidden max-w-full max-h-full mb-4 flex-1">
+                        <div className="mb-4 max-h-full max-w-full flex-1 overflow-hidden rounded-lg bg-muted shadow-lg">
                           <img 
                             src={imgSrc}
                             alt={`Presentation Slide ${currentSlide}`}
-                            className="w-full h-full object-contain"
+                            className="size-full object-contain"
                           />
                         </div>
                         <div className="flex gap-4">
                           <Button onClick={handlePreviousSlide} disabled={isLoading || currentSlidePage === 1}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+                            <ArrowLeft className="mr-2 size-4" /> Previous
                           </Button>
                           <Button onClick={handleNextSlide} disabled={isLoading || currentSlidePage === currentSlide.pages_count}>
-                            Next <ArrowRight className="ml-2 h-4 w-4" />
+                            Next <ArrowRight className="ml-2 size-4" />
                           </Button>
                         </div>
                       </div>
@@ -555,9 +555,9 @@ export default function InstructorPage() {
             </>
           ) : (
             /* Placeholder part, when initially no chat is clicked */
-            <div className="h-full flex items-center justify-center">
+            <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h2 className="text-2xl font-bold mb-4">Welcome to Presentation Chat</h2>
+                <h2 className="mb-4 text-2xl font-bold">Welcome to Presentation Chat</h2>
                 <p className="text-muted-foreground">Select a chat from the sidebar or create a new one to get started.</p>
               </div>
             </div>

@@ -27,24 +27,29 @@ export default function SignIn() {
   const [role, setRole] = useState<string>("" || null);
   const router = useRouter();
   const {toast} = useToast();
+  const [signTime, setSignTime] = useState("");
 
   useEffect(() => {
-    const emailCookie = Cookies.get("emailCookie");
-    if (emailCookie) {
-      setEmail(emailCookie);
-    }
-
-    const authToken = Cookies.get("authToken");
-    if (authToken) {
-      fetchUserRole();
-      if (role == null) {
-        router.push("/role-card");
-      } else if (role === "User") {
-        router.push("/edux-homepage");
-      } else if (role === "Instructor") {
-        router.push("/edux-homepage-instructor");
+    const fetchAndRedirect = async () => {
+      const emailCookie = Cookies.get("emailCookie");
+      if (emailCookie) {
+        setEmail(emailCookie);
       }
-    }
+
+      const authToken = Cookies.get("authToken");
+      if (authToken) {
+        await fetchUserRole();
+        if (!role) {
+          router.push("/role-card");
+        } else if (role === "User") {
+          router.push("/edux-homepage");
+        } else if (role === "Instructor") {
+          router.push("/edux-homepage-instructor");
+        }
+      }
+    };
+
+    fetchAndRedirect();
   }, [router, role]);
 
   async function fetchUserRole() {
@@ -84,6 +89,10 @@ export default function SignIn() {
           const data = response.data;
           // Store the token in a cookie
           Cookies.set("authToken", data["access_token"], {expires: 3});
+
+          // Store the current date and time in local storage
+          const currentDateTime = new Date().toISOString();
+          localStorage.setItem("signInTime", currentDateTime);
 
           fetchUserRole();
 
