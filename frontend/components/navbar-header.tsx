@@ -56,13 +56,12 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
     }
 
     const signInDate = new Date(signInTime);
-    const currentDate = new Date();
     const timeDifferenceInSeconds = Math.floor((Date.now() - signInDate.getTime()) / 1000);
 
-    // Prepare the data to send
     const data = {
-      date: currentDate.toISOString().split("T")[0], // Extract date in 'YYYY-MM-DD' format
-      time_spent: timeDifferenceInSeconds,
+        date: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
+        time_spent: timeDifferenceInSeconds,
+        timestamp: new Date(signInTime).toISOString(),
     };
     try {
       const response = await backendAPI.post(`/analytics/log`, data,{

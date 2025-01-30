@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional, Union
-from datetime import date
+from typing import Optional
+from datetime import datetime, date
 
 
 class AnalyticsRequest(BaseModel):
@@ -11,8 +11,10 @@ class AnalyticsRequest(BaseModel):
         date (date): The date of the usage in 'YYYY-MM-DD' format.
         time_spent (int): The time spent in seconds.
     """
-    date: date
+    date: datetime
     time_spent: int
+    timestamp: datetime
+
 
 class AnalyticsResponse(BaseModel):
     """
@@ -24,3 +26,4 @@ class AnalyticsResponse(BaseModel):
     """
     date: Optional[date]
     time_spent: Optional[int]
+    timestamp: Optional[datetime]

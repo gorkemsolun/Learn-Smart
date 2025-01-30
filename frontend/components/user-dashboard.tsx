@@ -73,9 +73,10 @@ export default function UserDashboard() {
       });
 
       // Process analytics data
-      const formattedData = analyticsResponse.data.map((item: { date: string; time_spent: number }) => ({
+      const formattedData = analyticsResponse.data.map((item: { date: string; time_spent: number; timestamp: string }) => ({
         day: mapDateToDay(item.date),
         timeSpent: item.time_spent,
+        timestamp: item.timestamp,
       }));
 
       setChartData((prevChartData) =>

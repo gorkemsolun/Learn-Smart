@@ -21,12 +21,12 @@ export default function useExitTracker() {
         return;
       }
 
-      const exitTime = new Date().toISOString();
-      const timeDifferenceInSeconds = Math.floor((new Date(exitTime) - signInDate.getTime()) / 1000);
+      const timeDifferenceInSeconds = Math.floor((Date.now() - signInDate.getTime()) / 1000);
 
       const data = {
         date: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
         time_spent: timeDifferenceInSeconds,
+        timestamp: new Date(signInTime).toISOString(),
       };
 
       try {
@@ -34,12 +34,13 @@ export default function useExitTracker() {
           const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
           navigator.sendBeacon(`${backendAPI.defaults.baseURL}/analytics/log`, blob);
         } else {
-          await backendAPI.post(`/analytics/log`, data, {
+          const response = await backendAPI.post(`/analytics/log`, data, {
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
           });
+          console.log(response);
         }
         Cookies.set("signin_time", new Date().toISOString(), { path: "/" });
       } catch (error) {

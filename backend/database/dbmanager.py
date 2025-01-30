@@ -265,10 +265,11 @@ class AnalyticsDB:
         """
         user_id = kwargs.get("user_id")
         date = kwargs.get("date")
+        timestamp = kwargs.get("timestamp")
         time_spent = kwargs.get("time_spent")
 
         with db_connection as db:
-            analytics_entry = Analytics(user_id=user_id, date=date, time_spent=time_spent)
+            analytics_entry = Analytics(user_id=user_id, date=date, time_spent=time_spent, timestamp = timestamp)
             db.add(analytics_entry)
 
             db.commit()
@@ -343,6 +344,7 @@ class AnalyticsDB:
         user_id = kwargs.get("user_id")
         date = kwargs.get("date")
         time_spent = kwargs.get("time_spent")
+        timestamp = kwargs.get("timestamp")
 
         with db_connection as db:
             analytics_entry = (
@@ -355,6 +357,7 @@ class AnalyticsDB:
                 raise ValueError("Analytics entry not found for the specified user and date")
 
             analytics_entry.time_spent = time_spent
+            analytics_entry.timestamp = timestamp
 
             db.commit()
             db.refresh(analytics_entry)
