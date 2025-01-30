@@ -90,6 +90,7 @@ export interface CourseCardProps {
 }
 
 export interface CourseDialogProps {
+  isCreate: boolean;
   isOpen: boolean;
   onClose: (value: boolean) => void;
   onCourseUpdate: () => void;

@@ -20,25 +20,33 @@ import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { LuUpload } from "react-icons/lu";
 
-export function CourseEditDialogModal(modalParameters: CourseDialogProps) {
+export function CourseDialogModal(props: CourseDialogProps) {
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
-  const [disableSubmitButton, setdisableSubmitButton] = useState<boolean>(false);
+  const [disableSubmitButton, setDisableSubmitButton] =
+    useState<boolean>(false);
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const [originalCourseData, setOriginalCourseData] = useState<Course>();
 
   const { toast } = useToast();
 
   const resetFields = () => {
-    if (originalCourseData) {
+    if (!props.isCreate && originalCourseData) {
       setCourseName(originalCourseData.course_name);
       setCourseCode(originalCourseData.course_code);
       setCourseDescription(originalCourseData.course_description);
       setSyllabus(originalCourseData.course_syllabus || null);
       setIcon(originalCourseData.course_icon || null);
+    }
+    if (props.isCreate) {
+      setCourseCode("");
+      setCourseName("");
+      setCourseDescription("");
+      setSyllabus(null);
+      setIcon(null);
     }
   };
 
@@ -50,7 +58,7 @@ export function CourseEditDialogModal(modalParameters: CourseDialogProps) {
         course_description = "",
         course_syllabus_url = "",
         course_icon_url = "",
-      }: Course = modalParameters.course as Course;
+      }: Course = props.course as Course;
 
       setCourseName(course_name);
       setCourseCode(course_code);
@@ -122,13 +130,13 @@ export function CourseEditDialogModal(modalParameters: CourseDialogProps) {
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
     }
-  }, [modalParameters.course, toast]);
+  }, [props.course, toast]);
 
   useEffect(() => {
-    if (modalParameters.isOpen) {
+    if (!props.isCreate && props.isOpen) {
       fetchCourseDetails();
     }
-  }, [fetchCourseDetails, modalParameters.isOpen]);
+  }, [fetchCourseDetails, props.isOpen, props.isCreate]);
 
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -179,7 +187,7 @@ export function CourseEditDialogModal(modalParameters: CourseDialogProps) {
 
   function handleOpenChange() {
     resetFields();
-    modalParameters.onClose(false);
+    props.onClose(false);
   }
 
   async function handleSubmit(
@@ -196,21 +204,27 @@ export function CourseEditDialogModal(modalParameters: CourseDialogProps) {
     formData.append("course_code", courseCode);
     if (courseDescription) {
       formData.append("course_description", courseDescription);
-      formData.append("update_description", "true");
+      if (!props.isCreate) {
+        formData.append("update_description", "true");
+      }
     }
 
     if (syllabus) {
       formData.append("course_syllabus_file", syllabus);
-      formData.append("course_update_syllabus", "true");
+      if (!props.isCreate) {
+        formData.append("course_update_syllabus", "true");
+      }
     }
     if (icon) {
       formData.append("course_icon_file", icon);
-      formData.append("update_icon", "true");
+      if (!props.isCreate) {
+        formData.append("update_icon", "true");
+      }
     }
 
-    setdisableSubmitButton(true);
+    setDisableSubmitButton(true);
 
-    if (!modalParameters.course) {
+    if (!props.isCreate && !props.course) {
       toast({
         title: "Error",
         description: "Course data is missing",
@@ -220,41 +234,87 @@ export function CourseEditDialogModal(modalParameters: CourseDialogProps) {
       return;
     }
 
-    await backendAPI
-      .put(`/course/${modalParameters.course.course_id}`, formData, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      .then(() => {
-        modalParameters.onCourseUpdate();
-      })
-      .catch((error) => {
-        console.log(error.response);
-        toast({
-          title: "Error",
-          description: "Error creating course" + error,
-          variant: "destructive",
-          action: <ToastAction altText="Try again">Try again</ToastAction>,
+    if (!props.isCreate) {
+      await backendAPI
+        .put(`/course/${props.course.course_id}`, formData, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then(() => {
+          props.onCourseUpdate();
+        })
+        .catch((error) => {
+          console.log(error.response);
+          toast({
+            title: "Error",
+            description: "Error creating course" + error,
+            variant: "destructive",
+            action: <ToastAction altText="Try again">Try again</ToastAction>,
+          });
+        })
+        .finally(() => {
+          setDisableSubmitButton(false);
+          props.onClose(false);
         });
-      })
-      .finally(() => {
-        setdisableSubmitButton(false);
-        modalParameters.onClose(false);
-      });
+    } else {
+      // Send the form data to the backend
+      await backendAPI
+        .post(`/course/create`, formData, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then(() => {
+          // Call the onCourseCreation callback to update the course list
+          if (props.onCourseCreation) {
+            props.onCourseCreation();
+          }
+          toast({
+            title: "Success",
+            description: "Course successfully created",
+            variant: "default",
+            action: (
+              <ToastAction altText="Dismiss" className="hover:bg-background/20">
+                Dismiss
+              </ToastAction>
+            ),
+            className: "bg-green-500 text-background",
+          });
+        })
+        .catch((error) => {
+          console.log(error.response);
+          toast({
+            title: "Error",
+            description: "Error creating course",
+            variant: "destructive",
+            action: <ToastAction altText="Try again">Try again</ToastAction>,
+          });
+        })
+        .finally(() => {
+          // Reset form fields and close the modal
+          setDisableSubmitButton(false);
+          resetFields();
+          props.onClose(false);
+        });
+    }
   }
 
   return (
     <Dialog
-      open={modalParameters.isOpen}
+      open={props.isOpen}
       onOpenChange={handleOpenChange}
       className="w-3/5"
     >
       <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
         <div className="space-y-1">
-          <DialogTitle className="mb-2">Edit Individual Study</DialogTitle>
+          <DialogTitle className="mb-2">
+            {props.isCreate ? "Create" : "Edit"} Individual Study
+          </DialogTitle>
           <DialogDescription></DialogDescription>
           <label className="text-foreground/70 text-xs font-semibold">
             Name
