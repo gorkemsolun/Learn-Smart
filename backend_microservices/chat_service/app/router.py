@@ -230,11 +230,12 @@ def update_chat_title(chat_id: int, chat_title: str,
 
 # TODO: The entire logic of this endpoint is to be implemented by LLMService
 # What this endpoint should do is solely making a call to LLMService and returning the response
-""" @router.post("/{chat_id}/send_message")
+@router.post("/{chat_id}/send_message")
 async def send_message(chat_id: int, slide_id: int = None, page_number: int = None,
                        text: str = Form(...), file: UploadFile = File(None),
                        current_user: dict = Depends(auth.get_current_user),
                        db: Session = Depends(get_db)):
+    """
     Send a message in a chat and generate a response.
 
     Args:
@@ -244,9 +245,10 @@ async def send_message(chat_id: int, slide_id: int = None, page_number: int = No
         text (str): The user message to send.
         file (UploadFile, optional): The file to send. Defaults to None.
         current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
-
+        db (Session): The database session. 
     Returns:
         dict: The generated response in dictionary format.
+    """
 
     # TODO: streaming response
     # TODO: prompt engineering in slides mode
@@ -262,7 +264,7 @@ async def send_message(chat_id: int, slide_id: int = None, page_number: int = No
         if page_number is None:
             raise HTTPException(status_code=400, detail="Slide page number is required.")
         
-        slide = SlideDB.fetch(slide_id=slide_id)
+        slide = SlideDB.fetch(db, slide_id=slide_id)
         if not slide:
             raise HTTPException(status_code=404, detail="Slides not found.")
         
@@ -279,14 +281,18 @@ async def send_message(chat_id: int, slide_id: int = None, page_number: int = No
         model = init_chat(raw_history_content)
         slide_content = get_slide_content(slide_id, page_number)
 
-        if file:
+        # TODO: LLM Service calls
+        """ TODO:
+        history + message + any files uploaded => LLMService => response + new history
+        """
+        """ if file:
             path, file_content = handle_file_upload_for_message(file, chat_id, slide_id, page_number)
             new_metadata = {"message_id": len(model.history), "media_url": path}
             update_metadata(slide_metadata_path, new_metadata)
             response = model.send_message([text, file_content, slide_content])
 
         else:
-            response = model.send_message([text, slide_content])
+            response = model.send_message([text, slide_content]) """
 
         history = jsonpickle.encode(model.history, True) 
         save_history(slide_history_path, history)
@@ -317,7 +323,7 @@ async def send_message(chat_id: int, slide_id: int = None, page_number: int = No
         ChatDB.update(chat_id=chat_id, history_url=history_path)
 
     ChatDB.update(chat_id=chat_id, last_opened_slide_id=slide_id)
-    return {"text": response.text, "role": "model"} """
+    return {"text": response.text, "role": "model"}
 
 
 @router.get("/slides/{slide_id}")

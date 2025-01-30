@@ -6,13 +6,6 @@ import os
 from database.dbmanager import CourseDB
 from schemas import CourseCreationRequest, CourseUpdateRequest
 
-from middleware.filemanager import FileFactory
-from modules.course.schemas import CourseCreationRequest, CourseUpdateRequest
-from modules.chat.router import delete_chat
-from modules.chat.util import *
-from modules.course.util import *
-from tools import validate_file_extension
-
 from database.session import get_db
 
 router = APIRouter(prefix="/course", tags=["Course"])

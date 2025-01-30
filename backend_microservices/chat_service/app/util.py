@@ -276,6 +276,7 @@ def get_formatted_history(history_path, history_metadata_path):
 
     return messages
 
+
 def image_to_base64(image: Image.Image) -> str:
     """
     Convert a PIL Image to a base64 encoded string.

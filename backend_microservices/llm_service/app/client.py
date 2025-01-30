@@ -5,24 +5,28 @@ import google.generativeai as genai
 import openai, anthropic
 
 from util import encode_base64
-from . import ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
-
-# TODO: Implement system prompt logic
+from . import (
+    ANTHROPIC_API_KEY, OPENAI_API_KEY, 
+    GOOGLE_MODEL_VERSION, ANTHROPIC_MODEL_VERSION, OPENAI_MODEL_VERSION
+)
 
 class ChatFile:
     mimetype: str = None  # MIME type of the file
     binary: BinaryIO = None  # Binary file data
+    url: str = None  # URL of the file
 
-    def __init__(self, mimetype: str, binary: BinaryIO):
+    def __init__(self, mimetype: str, binary: BinaryIO, url: str = None):
         """
         Initialize a File object.
 
         Args:
             mimetype (str): The MIME type of the file.
             binary (BinaryIO): The binary file data.
+            url (str): The URL to the file.
         """
         self.mimetype = mimetype
         self.binary = binary
+        self.url = url
 
 
 class ChatHistory:
@@ -30,12 +34,19 @@ class ChatHistory:
     Class to store chat history and prepare it for various API clients.
     """
 
-    def __init__(self):
-        self.history = []
+    def __init__(self, messages: List[dict] = None):
+        self.messages = messages or []
 
 
-    def add_message(self, role: str, content: str, files: List[ChatFile] = None):   
-        self.history.append({
+    def add_message(self, role: str, content: str, files: List[ChatFile] = None):
+        """
+        Add a message to the chat history.
+        Args:
+            - role (str): The role of the message sender.
+            - content (str): The message content.
+            - files (List[File]): The files sent with the message.
+        """
+        self.messages.append({
             "role": role,
             "content": content,
             "files": files or []
@@ -43,8 +54,11 @@ class ChatHistory:
 
 
     def openai(self):
+        """
+        Convert the generic chat history into OpenAI API format.
+        """
         openai_history = []
-        for message in self.history:
+        for message in self.messages:
             text = message["content"]
             
             file_data = []
@@ -85,8 +99,14 @@ class ChatHistory:
 
 
     def anthropic(self):
+        """
+        Convert the generic chat history into Anthropic API format.
+        """
         anthropic_history = []
-        for message in self.history:
+        for message in self.messages:
+            if message["role"] == "developer":
+                continue
+
             text = message["content"]
 
             file_data = []
@@ -121,8 +141,13 @@ class ChatHistory:
     
 
     def google(self):
+        """
+        Convert the generic chat history into Google API format.
+        """
         gemini_history = []
-        for message in self.history:
+        for message in self.messages:
+            if message["role"] == "developer":
+                continue
 
             parts = [message["content"]]
             for file in message["files"]:
@@ -154,13 +179,18 @@ class ChatClientBase:
     """
     Wrapper class with memory (history) for various API clients.
     """
-    def __init__(self, model: str, system_prompt: str):
+    def __init__(self, model: str, system_prompt: str = None):
         self.client = None
         self.model = model
         self.system_prompt = system_prompt
 
-    def invoke(self, history: ChatHistory, query: str,
-               files: List[ChatFile] = None, max_tokens: int = 2500) -> str:
+
+    def invoke(self, query: str, history: ChatHistory = None, 
+               files: List[ChatFile] = None, max_tokens: int = 2500,
+               generation_config = None) -> tuple[str, ChatHistory]:
+        """
+        Send a message to the API and return the response.
+        """
         raise NotImplementedError
 
 
@@ -178,7 +208,7 @@ class AnthropicChatClient(ChatClientBase):
         super().__init__(model, system_prompt)
         self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
-    def invoke(self, history: ChatHistory, query: str, 
+    def invoke(self, query: str, history: ChatHistory = None, 
                files: List[ChatFile] = None, max_tokens: int = 2500) -> str:
         """
         Send a message to the Anthropic API and return the response.
@@ -191,10 +221,16 @@ class AnthropicChatClient(ChatClientBase):
         Returns:
             - content (str): The response from the API.
             - history (ChatHistory): The updated chat history.
-        """      
+        """ 
+        if history is None:
+            history = ChatHistory()
+            # For OpenAI compatibility we name system prompt as "developer" although Anthropic doesn't use it
+            history.add_message(role="developer", content=self.system_prompt)
+
         history.add_message(role="user", content=query, files=files)
         response = self.client.messages.create(
             model=self.model,
+            system=self.system_prompt,
             messages=history.anthropic(),
             max_tokens=max_tokens
         )
@@ -218,7 +254,7 @@ class OpenAIChatClient(ChatClientBase):
         super().__init__(model, system_prompt)
         self.client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-    def invoke(self, history: ChatHistory, query: str, 
+    def invoke(self, query: str, history: ChatHistory = None, 
                files: List[ChatFile] = None, max_tokens: int = 2500) -> str:
         """
         Send a message to the OpenAI API and return the response.
@@ -232,6 +268,10 @@ class OpenAIChatClient(ChatClientBase):
             - content (str): The response from the API.
             - history (ChatHistory): The updated chat history
         """
+        if history is None:
+            history = ChatHistory()
+            history.add_message(role="developer", content=self.system_prompt)
+
         history.add_message(role="user", content=query, files=files)
         response = self.client.chat.completions.create(
             model=self.model,
@@ -256,11 +296,10 @@ class GoogleChatClient(ChatClientBase):
             - system_prompt (str): The system prompt to use.
         """
         super().__init__(model, system_prompt)
-        genai.configure(api_key=GOOGLE_API_KEY)
-        self.client = genai.GenerativeModel(model_name=model)
 
-    def invoke(self, history: ChatHistory, query: str, 
-               files: List[ChatFile] = None, max_tokens: int = 2500) -> str:
+    def invoke(self, query: str, history: ChatHistory = None, 
+               files: List[ChatFile] = None, generation_config = None, 
+               max_tokens: int = 2500) -> str:
         """
         Send a message to the Google API and return the response.
         Args:
@@ -273,6 +312,17 @@ class GoogleChatClient(ChatClientBase):
             - content (str): The response from the API.
             - history (ChatHistory): The updated chat history.
         """
+        model = genai.GenerativeModel(
+            model_name=self.model,
+            system_instruction=self.system_prompt,
+            generation_config=generation_config
+        )
+
+        if history is None:
+            history = ChatHistory()
+            # For OpenAI compatibility we name system prompt as "developer" although Google doesn't use it
+            history.add_message(role="developer", content=self.system_prompt)
+
         parts = [query]
         for file in files:
             data = encode_base64(file.binary)
@@ -282,14 +332,15 @@ class GoogleChatClient(ChatClientBase):
                     "data": data
                 }
             })
-        response = self.client.start_chat(
+
+        response = model.start_chat(
             history=history.google()
         ).send_message({"role": "user", "parts": parts}, max_tokens=max_tokens)
 
         history.add_message(role="user", content=query, files=files)
         content = response.text
 
-        history.add_message(role="assistant", content=content)
+        history.add_message(role="model", content=content)
         return content, history
 
 
@@ -306,10 +357,10 @@ class ChatClient:
             - system_prompt (str): The system prompt to use.
         """
         if model == "anthropic":
-            return AnthropicChatClient(model, system_prompt)
+            return AnthropicChatClient(ANTHROPIC_MODEL_VERSION, system_prompt)
         elif model == "openai":
-            return OpenAIChatClient(model, system_prompt)
+            return OpenAIChatClient(OPENAI_MODEL_VERSION, system_prompt)
         elif model == "google":
-            return GoogleChatClient(model, system_prompt)
+            return GoogleChatClient(GOOGLE_MODEL_VERSION, system_prompt)
         else:
             raise ValueError(f"Unsupported model: {model}")
