@@ -7,7 +7,7 @@ from PIL import Image
 from tools import generate_hash, splitext
 from database.dbmanager import SlideDB, ChatDB, CourseDB
 from middleware import FILES_DIR, CHATS_DIR
-from middleware.filemanager import FileFactory
+from middleware.filemanager import FileFactory, download_from_s3
 
 from . import MODEL_VERSION, SYSTEM_PROMPT
 
@@ -126,7 +126,7 @@ def get_slide_content(slide_id: int, page_number: int):
         return None
     
     slide_path = slide["slides_file_url"]
-    doc = pymupdf.open(slide_path)
+    doc = pymupdf.open(stream=download_from_s3(slide_path), filetype="pdf")
     page = doc.load_page(page_number - 1) # page_number is 1-based on UI side
     pix = page.get_pixmap()
     
