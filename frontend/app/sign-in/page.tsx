@@ -27,7 +27,6 @@ export default function SignIn() {
   const [role, setRole] = useState<string>("" || null);
   const router = useRouter();
   const {toast} = useToast();
-  const [signTime, setSignTime] = useState("");
 
   useEffect(() => {
     const fetchAndRedirect = async () => {
@@ -89,10 +88,7 @@ export default function SignIn() {
           const data = response.data;
           // Store the token in a cookie
           Cookies.set("authToken", data["access_token"], {expires: 3});
-
-          // Store the current date and time in local storage
-          const currentDateTime = new Date().toISOString();
-          localStorage.setItem("signInTime", currentDateTime);
+          Cookies.set("signin_time", new Date().toISOString(), {path: "/" });
 
           fetchUserRole();
 

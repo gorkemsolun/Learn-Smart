@@ -48,16 +48,16 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
   const updateUsageData = async () => {
     if (!token) return;
 
-    const signInTime = localStorage.getItem("signInTime");
+    const signInTime = Cookies.get("signin_time");
 
     if (!signInTime) {
-      console.error("Sign-in time not found in local storage.");
+      console.error("Sign-in time not found.");
       return;
     }
 
     const signInDate = new Date(signInTime);
     const currentDate = new Date();
-    const timeDifferenceInSeconds = Math.floor((currentDate - signInDate) / 1000);
+    const timeDifferenceInSeconds = Math.floor((Date.now() - signInDate.getTime()) / 1000);
 
     // Prepare the data to send
     const data = {
@@ -85,6 +85,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
   const handleLogout = () => {
     updateUsageData();
     Cookies.remove("authToken");
+    Cookies.remove("signin_time");
     router.replace("/sign-in");
   };
 

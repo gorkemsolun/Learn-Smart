@@ -62,7 +62,7 @@ export default function UserDashboard() {
       setCourses(coursesResponse.data?.courses || []);
 
       // Ensure no overlapping requests before analytics fetch
-      await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Fetch analytics
       const analyticsResponse = await backendAPI.get("/analytics/", {

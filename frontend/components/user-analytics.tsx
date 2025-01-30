@@ -44,7 +44,7 @@ export function UserChart({ chartData }: { chartData: { day: string; timeSpent: 
             <BarChart data={chartData}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="day" tickLine={true} axisLine={false} />
-              <YAxis tickFormatter={(value) => formatTime(value)} width={60} />
+              <YAxis tickFormatter={(value) => formatTime(value)} width={70} />
               <ChartTooltip cursor={{ fill: "rgba(0,0,0,0.1)" }} content={<CustomTooltip />} />
               <Bar dataKey="timeSpent" fill="var(--color-desktop)" radius={8} />
             </BarChart>
