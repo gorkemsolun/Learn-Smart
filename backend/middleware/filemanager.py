@@ -3,10 +3,10 @@ TODO:
 After migration to AWS S3, modify the save and delete methods in the FileManager 
 classes to interact with the S3 bucket instead of the local file system.
 """
-
+import pymupdf
 from io import BytesIO
 import os
-import pymupdf
+from pypdf import PdfReader
 from docx import Document
 from fastapi import File, UploadFile
 from abc import ABC, abstractmethod
@@ -29,7 +29,7 @@ def check_object_exists(bucket_name, object_key):
 
 def upload_to_s3(path: str, file: UploadFile = File(...), bucket_name=BUCKET_NAME):
     """
-    Uploads an UploadFile to an S3 bucket.
+    Uploads an UploadFile or BytesIO to an S3 bucket.
 
     Args:
         path (str): S3 Object key 
@@ -41,9 +41,21 @@ def upload_to_s3(path: str, file: UploadFile = File(...), bucket_name=BUCKET_NAM
     """
     try:
         s3_key = path
+        
+        # Ensure file is in the correct format
+        if str(type(file)) == "<class 'starlette.datastructures.UploadFile'>":
+            file_obj = file.file  # Extract the actual file object
+        elif isinstance(file, BytesIO):
+            file_obj = file  # Already a file-like object
+        else:
+            raise TypeError(f"Unsupported type. Must be UploadFile or BytesIO but it is {type(file)}.")
+
+        # Reset stream position
+        file_obj.seek(0)
 
         # Upload the file to S3
-        s3_client.upload_fileobj(file.file, bucket_name, s3_key)
+        s3_client = boto3.client('s3')
+        s3_client.upload_fileobj(file_obj, bucket_name, s3_key)
 
     except:
         raise
@@ -54,92 +66,13 @@ def delete_object(path, bucket_name=BUCKET_NAME):
     except Exception as e:
         raise
 
-class S3StreamWrapper:
-    def __init__(self, key, s3_client=s3_client, bucket_name=BUCKET_NAME):
-        """
-        Wrap an S3 object for random-access reading.
-        
-        Args:
-            bucket_name (str): Name of the S3 bucket.
-            key (str): Object key in the bucket.
-            s3_client: Boto3 S3 client instance.
-        """
-        self.bucket_name = bucket_name
-        self.key = key
-        self.s3_client = s3_client
-        self.position = 0  # Current pointer position
-        
-        # Get the total size of the object
-        response = s3_client.head_object(Bucket=bucket_name, Key=key)
-        self.file_size = response['ContentLength']
 
-    def read(self, size=-1):
-        """
-        Read data from the S3 object.
-        
-        Args:
-            size (int): Number of bytes to read. Default is -1 (read all).
-        
-        Returns:
-            bytes: The data read.
-        """
-        if size == -1:  # Read all remaining data
-            size = self.file_size - self.position
-        
-        # Ensure we don't read beyond the file
-        end_byte = min(self.position + size - 1, self.file_size - 1)
-        
-        # Fetch the specified byte range from S3
-        response = self.s3_client.get_object(
-            Bucket=self.bucket_name,
-            Key=self.key,
-            Range=f"bytes={self.position}-{end_byte}"
-        )
-        
-        data = response['Body'].read()
-        self.position += len(data)  # Update the position
-        return data
-
-    def seek(self, offset, whence=0):
-        """
-        Move the pointer to a specific position.
-        
-        Args:
-            offset (int): Offset to move the pointer to.
-            whence (int): Reference point (0=beginning, 1=current, 2=end).
-        """
-        if whence == 0:  # From start of the file
-            self.position = offset
-        elif whence == 1:  # From current position
-            self.position += offset
-        elif whence == 2:  # From end of the file
-            self.position = self.file_size + offset
-        else:
-            raise ValueError("Invalid value for whence.")
-        
-        # Ensure position stays within bounds
-        self.position = max(0, min(self.position, self.file_size))
-
-    def tell(self):
-        """
-        Get the current pointer position.
-        
-        Returns:
-            int: Current position in the file.
-        """
-        return self.position
-
-    def close(self):
-        """
-        Close the wrapper (noop for this case).
-        """
-        pass
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
+def download_from_s3(path, bucket_name=BUCKET_NAME):
+    try:
+        response = s3_client.get_object(Bucket=bucket_name, Key=path)
+        return BytesIO(response['Body'].read())
+    except Exception as e:
+        raise RuntimeError(f"Failed to download from S3: {e}")
         
 class BaseFile(ABC):
     """
@@ -355,8 +288,7 @@ class ImageFile(BaseFile):
         if not self.path and not self.file:
             raise ValueError("No file provided.")
         if self.path:            
-            s3_wrapper = S3StreamWrapper(key=self.path)
-            return Image.open(s3_wrapper)
+            return Image.open(download_from_s3(self.path))
         
         return Image.open(self.file.file)
     
@@ -368,8 +300,7 @@ class ImageFile(BaseFile):
             ResourceWrapper: The image file wrapped in a ResourceWrapper object.
         """
         
-        s3_wrapper = S3StreamWrapper(key=self.path)
-        img = Image.open(s3_wrapper)
+        img = Image.open(download_from_s3(self.path))
         return self.ResourceWrapper(img)
     
 
@@ -419,7 +350,7 @@ class PresentationFile(BaseFile):
             raise ValueError("No file provided.")
 
         assert self.converted_to_pdf, "The presentation file must be converted to PDF with .save() first."
-        with pymupdf.open(self.path) as doc:
+        with pymupdf.open(stream=download_from_s3(self.path), filetype="pdf") as doc:
             return chr(12).join([page.get_text() for page in doc])
     
     def get(self):
@@ -431,7 +362,7 @@ class PresentationFile(BaseFile):
 
         """
         assert self.converted_to_pdf, "The presentation file must be converted to PDF with .save() first."
-        doc = pymupdf.open(self.path)
+        doc = pymupdf.open(stream=download_from_s3(self.path), filetype="pdf")
         return self.ResourceWrapper(doc)
     
     def save(self, path: str):
@@ -528,8 +459,7 @@ class PDFFile(BaseFile):
         # TODO: we may also need OCR here, for scanned PDFs
         # TODO: Do testing with contents
         if self.path:
-            s3_wrapper = S3StreamWrapper(key=self.path)
-            with pymupdf.open(stream=s3_wrapper, filetype="pdf") as doc:
+            with pymupdf.open(stream=download_from_s3(self.path), filetype="pdf") as doc:
                 return chr(12).join([page.get_text() for page in doc])
         
         # TODO: find a solution for large pdf files such as books
@@ -544,8 +474,7 @@ class PDFFile(BaseFile):
             ResourceWrapper: A resource wrapper for the PDF file.
 
         """
-        s3_wrapper = S3StreamWrapper(key=self.path)
-        doc = pymupdf.open(stream=s3_wrapper, filetype="pdf")
+        doc = pymupdf.open(stream=download_from_s3(self.path), filetype="pdf")
         return self.ResourceWrapper(doc)
     
 
@@ -592,8 +521,7 @@ class WordFile(BaseFile):
             raise ValueError("No file provided.")
         
         if self.path:
-            s3_wrapper = S3StreamWrapper(key=self.path)
-            doc = Document(s3_wrapper)
+            doc = Document(download_from_s3(self.path))
         else:
             doc = Document(BytesIO(self.file.file.read()))
         # TODO: Do testing
@@ -606,8 +534,7 @@ class WordFile(BaseFile):
         Returns:
             ResourceWrapper: The resource wrapper for the Word file.
         """
-        s3_wrapper = S3StreamWrapper(key=self.path)
-        doc = Document(s3_wrapper)
+        doc = Document(download_from_s3(self.path))
         return self.ResourceWrapper(doc)
     
 
