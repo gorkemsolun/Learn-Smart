@@ -1,7 +1,7 @@
 "use client";
 
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
-import { CourseEditDialogProps } from "@/app/types";
+import { Course, CourseDialogProps } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,42 +17,29 @@ import { useToast } from "@/hooks/use-toast";
 import { FileIcon, FileTextIcon, ImageIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
 import * as React from "react";
-import { useCallback, useEffect, useState } from 'react';
-import { LuUpload } from 'react-icons/lu';
+import { useCallback, useEffect, useState } from "react";
+import { LuUpload } from "react-icons/lu";
 
-export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) {
-
+export function CourseEditDialogModal(modalParameters: CourseDialogProps) {
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
-  const [disableSaveButton, setDisableSaveButton] = useState<boolean>(false);
-  const [token] = useState<string>(
-    Cookies.get("authToken") as string
-  );
-  const [originalCourseData, setOriginalCourseData] = useState<{
-    name: string;
-    code: string;
-    description: string;
-    syllabus: File | null;
-    icon: File | null;
-  }>({
-    name: "",
-    code: "",
-    description: "",
-    syllabus: null,
-    icon: null,
-  });
+  const [disableSubmitButton, setdisableSubmitButton] = useState<boolean>(false);
+  const [token] = useState<string>(Cookies.get("authToken") as string);
+  const [originalCourseData, setOriginalCourseData] = useState<Course>();
 
-  const {toast} = useToast();
+  const { toast } = useToast();
 
   const resetFields = () => {
-    setCourseName(originalCourseData.name);
-    setCourseCode(originalCourseData.code);
-    setCourseDescription(originalCourseData.description);
-    setSyllabus(originalCourseData.syllabus);
-    setIcon(originalCourseData.icon);
+    if (originalCourseData) {
+      setCourseName(originalCourseData.course_name);
+      setCourseCode(originalCourseData.course_code);
+      setCourseDescription(originalCourseData.course_description);
+      setSyllabus(originalCourseData.course_syllabus || null);
+      setIcon(originalCourseData.course_icon || null);
+    }
   };
 
   const fetchCourseDetails = useCallback(async () => {
@@ -61,20 +48,20 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
         course_name = "",
         course_code = "",
         course_description = "",
-        course_syllabus_url = null,
-        course_icon_url = null,
-      } = modalParameters.course;
+        course_syllabus_url = "",
+        course_icon_url = "",
+      }: Course = modalParameters.course as Course;
 
       setCourseName(course_name);
       setCourseCode(course_code);
       setCourseDescription(course_description);
 
       setOriginalCourseData({
-        name: course_name,
-        code: course_code,
-        description: course_description,
-        syllabus: null,
-        icon: null,
+        course_name: course_name,
+        course_code: course_code,
+        course_description: course_description,
+        course_syllabus: undefined,
+        course_icon: undefined,
       });
 
       if (course_syllabus_url) {
@@ -90,7 +77,13 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
           { type: syllabusType }
         );
         setSyllabus(syllabusFile);
-        setOriginalCourseData((prev) => ({ ...prev, syllabus: syllabusFile }));
+        setOriginalCourseData((prev) => ({
+          ...prev,
+          course_name: prev?.course_name || "",
+          course_code: prev?.course_code || "",
+          course_description: prev?.course_description || "",
+          syllabus: syllabusFile,
+        }));
       }
 
       if (course_icon_url) {
@@ -98,6 +91,14 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
           `${backend.getUri()}/${course_icon_url}`
         );
         const iconBlob = await iconResponse.blob();
+        setOriginalCourseData((prev) => ({
+          ...prev,
+          course_name: prev?.course_name || "",
+          course_code: prev?.course_code || "",
+          course_description: prev?.course_description || "",
+          course_syllabus: prev?.course_syllabus,
+          course_icon: iconFile,
+        }));
         const iconType = iconBlob.type;
         const iconExtension = iconType.split("/")[1];
         const iconFile = new File([iconBlob], `icon.${iconExtension}`, {
@@ -108,9 +109,9 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
       }
       setOriginalCourseData((prev) => ({
         ...prev,
-        name: course_name,
-        code: course_code,
-        description: course_description,
+        course_name: course_name,
+        course_code: course_code,
+        course_description: course_description,
       }));
     } catch (error) {
       console.log(error);
@@ -128,7 +129,6 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
       fetchCourseDetails();
     }
   }, [fetchCourseDetails, modalParameters.isOpen]);
-
 
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -161,17 +161,17 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
       setter(null);
       if (fileType === "document") {
         toast({
-            title: "Invalid File Type",
-            description: "Allowed types are: PDF, DOCX",
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
+          title: "Invalid File Type",
+          description: "Allowed types are: PDF, DOCX",
+          variant: "destructive",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
       } else {
         toast({
-            title: "Invalid File Type",
-            description: "Allowed types are: JPG, JPEG, PNG",
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
+          title: "Invalid File Type",
+          description: "Allowed types are: JPG, JPEG, PNG",
+          variant: "destructive",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
       }
     }
@@ -181,7 +181,6 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
     resetFields();
     modalParameters.onClose(false);
   }
-
 
   async function handleSubmit(
     event:
@@ -196,186 +195,196 @@ export function CourseEditDialogModal( modalParameters: CourseEditDialogProps ) 
     formData.append("course_name", courseName);
     formData.append("course_code", courseCode);
     if (courseDescription) {
-     formData.append("course_description", courseDescription);
-     formData.append("update_description", true);
+      formData.append("course_description", courseDescription);
+      formData.append("update_description", "true");
     }
 
     if (syllabus) {
       formData.append("course_syllabus_file", syllabus);
-      formData.append("course_update_syllabus", true);
+      formData.append("course_update_syllabus", "true");
     }
     if (icon) {
       formData.append("course_icon_file", icon);
-      formData.append("update_icon", true);
+      formData.append("update_icon", "true");
     }
 
-    setDisableSaveButton(true);
+    setdisableSubmitButton(true);
+
+    if (!modalParameters.course) {
+      toast({
+        title: "Error",
+        description: "Course data is missing",
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
+      return;
+    }
 
     await backendAPI
-        .put(`/course/${modalParameters.course.course_id}`, formData, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        .then(() => {
-          modalParameters.onCourseUpdate();
-        })
-        .catch((error) => {
-          console.log(error.response);
-          toast({
-            title: "Error",
-            description: "Error creating course" + error,
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
-          });
-        })
-        .finally(() => {
-          setDisableSaveButton(false);
-          modalParameters.onClose(false);
+      .put(`/course/${modalParameters.course.course_id}`, formData, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then(() => {
+        modalParameters.onCourseUpdate();
+      })
+      .catch((error) => {
+        console.log(error.response);
+        toast({
+          title: "Error",
+          description: "Error creating course" + error,
+          variant: "destructive",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
+      })
+      .finally(() => {
+        setdisableSubmitButton(false);
+        modalParameters.onClose(false);
+      });
   }
 
   return (
-      <Dialog open={modalParameters.isOpen} onOpenChange={handleOpenChange} className="w-3/5">
-        <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
-          <div className="space-y-1">
-            <DialogTitle className="mb-2">Edit Individual Study</DialogTitle>
-            <DialogDescription></DialogDescription>
-            <label className="text-xs font-semibold text-foreground/70">
-              Name
-            </label>
-            <Input
-                id="courseName"
-                type="text"
-                value={courseName}
-                onChange={(event) => setCourseName(event.target.value)}
-                required
-            />
-            <label className="text-xs font-semibold text-foreground/70">
-              Code
-            </label>
-            <Input
-                id="courseCode"
-                type="text"
-                value={courseCode}
-                onChange={(event) => setCourseCode(event.target.value)}
-                required
-            />
-            <label className="text-xs font-semibold text-foreground/70">
-              Description
-            </label>
-            <Textarea
-              id="description"
-              value={courseDescription || ""}
-              onChange={(event) => setCourseDescription(event.target.value)}
-            />
-          </div>
-          <div className="flex items-center space-x-4">
-            <div
-                className="flex w-1/2 flex-col items-center justify-center"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  handleFile(file, setSyllabus, "document");
-                }}
+    <Dialog
+      open={modalParameters.isOpen}
+      onOpenChange={handleOpenChange}
+      className="w-3/5"
+    >
+      <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
+        <div className="space-y-1">
+          <DialogTitle className="mb-2">Edit Individual Study</DialogTitle>
+          <DialogDescription></DialogDescription>
+          <label className="text-foreground/70 text-xs font-semibold">
+            Name
+          </label>
+          <Input
+            id="courseName"
+            type="text"
+            value={courseName}
+            onChange={(event) => setCourseName(event.target.value)}
+            required
+          />
+          <label className="text-foreground/70 text-xs font-semibold">
+            Code
+          </label>
+          <Input
+            id="courseCode"
+            type="text"
+            value={courseCode}
+            onChange={(event) => setCourseCode(event.target.value)}
+            required
+          />
+          <label className="text-foreground/70 text-xs font-semibold">
+            Description
+          </label>
+          <Textarea
+            id="description"
+            value={courseDescription || ""}
+            onChange={(event) => setCourseDescription(event.target.value)}
+          />
+        </div>
+        <div className="flex items-center space-x-4">
+          <div
+            className="flex w-1/2 flex-col items-center justify-center"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files[0];
+              handleFile(file, setSyllabus, "document");
+            }}
+          >
+            <label
+              htmlFor="syllabus"
+              className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
             >
-              <label
-                  htmlFor="syllabus"
-                  className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
-              >
-                <div className="flex flex-col items-center justify-center">
-                  {syllabus ? (
-                      <div className="space-y-4">
-                        {syllabus.name.endsWith(".pdf") && (
-                            <FileIcon className="size-[6vh]"/>
-                        )}
-                        {syllabus.name.endsWith(".docx") && (
-                            <FileTextIcon className="size-[6vh]"/>
-                        )}
-                        <p>{syllabus.name}</p>
-                      </div>
-                  ) : (
-                      <div>
-                        <LuUpload className="mb-4 size-[6vh] text-foreground/70"/>
-                        <p className="text-sm text-foreground/70">
-                          <span className="font-semibold">Click to upload</span>{" "}
-                          or drag and drop
-                        </p>
-                        <p className="text-base text-foreground/70">PDF or DOCX</p>
-                      </div>
-                  )}
-                </div>
-                <input
-                    id="syllabus"
-                    type="file"
-                    accept=".pdf,.docx"
-                    onChange={(event) =>
-                        handleFileChange(
-                            event,
-                            setSyllabus,
-                            "document"
-                        )
-                    }
-                    className="hidden"
-                />
-              </label>
-            </div>
-            <div
-                className="flex w-1/2 flex-col items-center justify-center"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  handleFile(file, setIcon, "image");
-                }}
-            >
-              <label
-                  htmlFor="image"
-                  className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
-              >
-                <div className="flex flex-col items-center justify-center">
-                  {icon ? (
-                      <div className="space-y-4">
-                        {<ImageIcon className="mb-4 size-[6vh]"/>}
-                        <p>{icon.name}</p>
-                      </div>
-                  ) : (
-                      <div>
-                        <LuUpload className="mb-4 size-[6vh] text-foreground/70"/>
-                        <p className="text-sm text-foreground/70">
-                          <span className="font-semibold">Click to upload</span>{" "}
-                          or drag and drop
-                        </p>
-                        <p className="text-base text-foreground/70">JPG, JPEG or PNG</p>
-                      </div>
-                  )}
-                </div>
-                <input
-                    id="image"
-                    type="file"
-                    accept=".jpg,.jpeg,.png"
-                    onChange={(event) =>
-                        handleFileChange(event, setIcon, "image")
-                    }
-                    className="hidden"
-                />
-              </label>
-            </div>
+              <div className="flex flex-col items-center justify-center">
+                {syllabus ? (
+                  <div className="space-y-4">
+                    {syllabus.name.endsWith(".pdf") && (
+                      <FileIcon className="size-[6vh]" />
+                    )}
+                    {syllabus.name.endsWith(".docx") && (
+                      <FileTextIcon className="size-[6vh]" />
+                    )}
+                    <p>{syllabus.name}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
+                    <p className="text-foreground/70 text-sm">
+                      <span className="font-semibold">Click to upload</span> or
+                      drag and drop
+                    </p>
+                    <p className="text-foreground/70 text-base">PDF or DOCX</p>
+                  </div>
+                )}
+              </div>
+              <input
+                id="syllabus"
+                type="file"
+                accept=".pdf,.docx"
+                onChange={(event) =>
+                  handleFileChange(event, setSyllabus, "document")
+                }
+                className="hidden"
+              />
+            </label>
           </div>
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSubmit}
-              type="submit"
-              className="w-1/5"
-              disabled={!courseName || !courseCode || disableSaveButton}
+          <div
+            className="flex w-1/2 flex-col items-center justify-center"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files[0];
+              handleFile(file, setIcon, "image");
+            }}
+          >
+            <label
+              htmlFor="image"
+              className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
             >
-              Save
-            </Button>
+              <div className="flex flex-col items-center justify-center">
+                {icon ? (
+                  <div className="space-y-4">
+                    {<ImageIcon className="mb-4 size-[6vh]" />}
+                    <p>{icon.name}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <LuUpload className="size-[6vh] mb-4 text-foreground/70" />
+                    <p className="text-foreground/70 text-sm">
+                      <span className="font-semibold">Click to upload</span> or
+                      drag and drop
+                    </p>
+                    <p className="text-foreground/70 text-base">
+                      JPG, JPEG or PNG
+                    </p>
+                  </div>
+                )}
+              </div>
+              <input
+                id="image"
+                type="file"
+                accept=".jpg,.jpeg,.png"
+                onChange={(event) => handleFileChange(event, setIcon, "image")}
+                className="hidden"
+              />
+            </label>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSubmit}
+            type="submit"
+            className="w-1/5"
+            disabled={!courseName || !courseCode || disableSubmitButton}
+          >
+            Save
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

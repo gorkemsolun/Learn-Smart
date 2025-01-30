@@ -11,11 +11,14 @@ export interface User {
 }
 
 export interface Course {
-  course_id: string;
+  course_id?: string;
   course_name: string;
   course_code: string;
   course_description: string;
-  course_icon_url: string;
+  course_icon_url?: string;
+  course_syllabus_url?: string;
+  course_syllabus?: File;
+  course_icon?: File;
 }
 
 export interface Message {
@@ -54,22 +57,16 @@ export interface Notification {
 }
 
 export interface ChatInterfaceProps {
-  messages: Message[]
-  input: string
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  handleInputFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
-  isChatLoading: boolean
-  chatContainerRef: React.RefObject<HTMLDivElement>
-  activeChat: Chat | null
-  showToggleSidebarButton: boolean
-  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>
-}
-
-export interface CourseCreateDialogProps {
-  isOpen: boolean;
-  onClose: (value: boolean) => void;
-  onCourseCreation: () => void;
+  messages: Message[];
+  input: string;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleInputFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  isChatLoading: boolean;
+  chatContainerRef: React.RefObject<HTMLDivElement>;
+  activeChat: Chat | null;
+  showToggleSidebarButton: boolean;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface CoursesListProps {
@@ -92,11 +89,12 @@ export interface CourseCardProps {
   onCourseUpdate: () => void;
 }
 
-export interface CourseEditDialogProps {
+export interface CourseDialogProps {
   isOpen: boolean;
   onClose: (value: boolean) => void;
   onCourseUpdate: () => void;
-  course: Course;
+  onCourseCreation?: () => void;
+  course?: Course;
 }
 
 export interface NodeData {

@@ -1,7 +1,7 @@
 "use client";
 
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
-import { CourseCreateDialogProps } from "@/app/types";
+import { CourseDialogProps } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,13 +20,13 @@ import * as React from "react";
 import { useState } from "react";
 import { LuUpload } from "react-icons/lu";
 
-export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
+export function CourseCreateDialog(dialogParameters: CourseDialogProps) {
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
-  const [disableCreateButton, setDisableCreateButton] =
+  const [disableSubmitButton, setDisableSubmitButton] =
     useState<boolean>(false);
   const [token] = useState<string>(Cookies.get("authToken") as string);
 
@@ -104,7 +104,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
       formData.append("course_icon_file", icon);
     }
 
-    setDisableCreateButton(true);
+    setDisableSubmitButton(true);
 
     // Send the form data to the backend
     await backendAPI
@@ -117,7 +117,9 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
       })
       .then(() => {
         // Call the onCourseCreation callback to update the course list
-        dialogParameters.onCourseCreation();
+        if (dialogParameters.onCourseCreation) {
+          dialogParameters.onCourseCreation();
+        }
         toast({
           title: "Success",
           description: "Course successfully created",
@@ -141,7 +143,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
       })
       .finally(() => {
         // Reset form fields and close the modal
-        setDisableCreateButton(false);
+        setDisableSubmitButton(false);
         resetFields();
         dialogParameters.onClose(false);
       });
@@ -162,7 +164,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
         <div className="space-y-1">
           <DialogTitle className="mb-2">Create Individual Study</DialogTitle>
           <DialogDescription></DialogDescription>
-          <label className="text-xs font-semibold text-foreground/70">
+          <label className="text-foreground/70 text-xs font-semibold">
             Name
           </label>
           <Input
@@ -172,7 +174,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
             onChange={(event) => setCourseName(event.target.value)}
             required
           />
-          <label className="text-xs font-semibold text-foreground/70">
+          <label className="text-foreground/70 text-xs font-semibold">
             Code
           </label>
           <Input
@@ -182,7 +184,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
             onChange={(event) => setCourseCode(event.target.value)}
             required
           />
-          <label className="text-xs font-semibold text-foreground/70">
+          <label className="text-foreground/70 text-xs font-semibold">
             Description
           </label>
           <Textarea
@@ -218,12 +220,12 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
                   </div>
                 ) : (
                   <div>
-                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
-                    <p className="text-sm text-foreground/70">
+                    <LuUpload className="size-[6vh] mb-4 text-foreground/70" />
+                    <p className="text-foreground/70 text-sm">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-base text-foreground/70">PDF or DOCX</p>
+                    <p className="text-foreground/70 text-base">PDF or DOCX</p>
                   </div>
                 )}
               </div>
@@ -259,12 +261,12 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
                   </div>
                 ) : (
                   <div>
-                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
-                    <p className="text-sm text-foreground/70">
+                    <LuUpload className="size-[6vh] mb-4 text-foreground/70" />
+                    <p className="text-foreground/70 text-sm">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-base text-foreground/70">
+                    <p className="text-foreground/70 text-base">
                       JPG, JPEG or PNG
                     </p>
                   </div>
@@ -285,7 +287,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
             onClick={handleSubmit}
             type="submit"
             className="w-1/5"
-            disabled={!courseName || !courseCode || disableCreateButton}
+            disabled={!courseName || !courseCode || disableSubmitButton}
           >
             Create
           </Button>
