@@ -17,6 +17,7 @@ class User(Base):
         hashed_password (str): The hashed password of the user.
         created_at (datetime): The timestamp when the user was created.
         courses (list): The list of courses associated with the user.
+        analytics (list): The list of analytics entries associated with the user.
     """
 
     __tablename__ = "users"
@@ -30,6 +31,8 @@ class User(Base):
     user_icon_url = Column(String(100), nullable=True)
 
     courses = relationship("Course", back_populates="user") # one-to-many relationship with Course
+    analytics = relationship("Analytics", back_populates="user",
+                             cascade="all, delete-orphan")  # one-to-many with Analytics
 
     def to_dict(self):
         """

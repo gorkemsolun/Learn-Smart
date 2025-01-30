@@ -15,6 +15,8 @@ import { ExitIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import {backendAPI} from "@/environment/backend_api";
+import {useState} from "react";
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -40,13 +42,50 @@ interface NavbarHeaderParameters {
 
 export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
   const router = useRouter();
+  const [token] = useState<string>(
+        Cookies.get("authToken") as string
+  );
+  const updateUsageData = async () => {
+    if (!token) return;
+
+    const signInTime = Cookies.get("signin_time");
+
+    if (!signInTime) {
+      console.error("Sign-in time not found.");
+      return;
+    }
+
+    const signInDate = new Date(signInTime);
+    const currentDate = new Date();
+    const timeDifferenceInSeconds = Math.floor((Date.now() - signInDate.getTime()) / 1000);
+
+    // Prepare the data to send
+    const data = {
+      date: currentDate.toISOString().split("T")[0], // Extract date in 'YYYY-MM-DD' format
+      time_spent: timeDifferenceInSeconds,
+    };
+    try {
+      const response = await backendAPI.post(`/analytics/log`, data,{
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log(response.data);
+    } catch (error) {
+      console.error(error.response);
+    }
+  };
 
   const handleHomePageClick = async () => {
     router.replace("/edux-homepage");
   };
 
   const handleLogout = () => {
+    updateUsageData();
     Cookies.remove("authToken");
+    Cookies.remove("signin_time");
     router.replace("/sign-in");
   };
 

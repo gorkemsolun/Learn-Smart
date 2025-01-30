@@ -29,22 +29,26 @@ export default function SignIn() {
   const {toast} = useToast();
 
   useEffect(() => {
-    const emailCookie = Cookies.get("emailCookie");
-    if (emailCookie) {
-      setEmail(emailCookie);
-    }
-
-    const authToken = Cookies.get("authToken");
-    if (authToken) {
-      fetchUserRole();
-      if (role == null) {
-        router.push("/role-card");
-      } else if (role === "User") {
-        router.push("/edux-homepage");
-      } else if (role === "Instructor") {
-        router.push("/edux-homepage-instructor");
+    const fetchAndRedirect = async () => {
+      const emailCookie = Cookies.get("emailCookie");
+      if (emailCookie) {
+        setEmail(emailCookie);
       }
-    }
+
+      const authToken = Cookies.get("authToken");
+      if (authToken) {
+        await fetchUserRole();
+        if (!role) {
+          router.push("/role-card");
+        } else if (role === "User") {
+          router.push("/edux-homepage");
+        } else if (role === "Instructor") {
+          router.push("/edux-homepage-instructor");
+        }
+      }
+    };
+
+    fetchAndRedirect();
   }, [router, role]);
 
   async function fetchUserRole() {
@@ -84,6 +88,7 @@ export default function SignIn() {
           const data = response.data;
           // Store the token in a cookie
           Cookies.set("authToken", data["access_token"], {expires: 3});
+          Cookies.set("signin_time", new Date().toISOString(), {path: "/" });
 
           fetchUserRole();
 

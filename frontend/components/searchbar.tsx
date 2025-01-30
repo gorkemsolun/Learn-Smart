@@ -1,21 +1,8 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 
 export function Searchbar({ onSearchButtonClick }) {
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      // For Mac (⌘K) or Windows/Linux (Ctrl+K)
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
-        event.preventDefault();
-        onSearchButtonClick();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onSearchButtonClick]);
 
   return (
     <div className="relative">

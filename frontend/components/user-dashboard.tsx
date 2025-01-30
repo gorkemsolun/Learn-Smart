@@ -1,145 +1,196 @@
 "use client";
 
 import * as React from "react";
+import { useCallback, useEffect, useState } from "react";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
+
 import { Course } from "@/app/types";
 import { CourseCreateDialog } from "@/components/course-create-dialog";
 import { CoursesList } from "@/components/courses-list";
+import { UserChart } from "@/components/user-analytics";
 import {
-    Card,
-    CardHeader,
-    CardFooter,
-    CardTitle,
-    CardDescription,
-    CardContent } from "@/components/ui/card";
-import {useCallback, useEffect, useState} from "react";
-import Cookies from "js-cookie";
-import {backendAPI} from "@/environment/backend_api";
-import {useToast} from "@/hooks/use-toast";
-import {ToastAction} from "@/components/ui/toast";
-import HubIcon from '@mui/icons-material/Hub';
-import {useRouter} from "next/navigation";
+  Card,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { backendAPI } from "@/environment/backend_api";
+
+import HubIcon from "@mui/icons-material/Hub";
+import ChatIcon from "@mui/icons-material/Chat";
+import PersonIcon from "@mui/icons-material/Person";
+import { AutoGraph } from "@mui/icons-material";
+
+// Helper function to map dates to weekdays
+const mapDateToDay = (dateString: string): string => {
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const date = new Date(dateString);
+  return days[date.getDay()];
+};
 
 export default function UserDashboard() {
+  const [chartData, setChartData] = useState([
+    { day: "Mon", timeSpent: 0 },
+    { day: "Tue", timeSpent: 0 },
+    { day: "Wed", timeSpent: 0 },
+    { day: "Thu", timeSpent: 0 },
+    { day: "Fri", timeSpent: 0 },
+    { day: "Sat", timeSpent: 0 },
+    { day: "Sun", timeSpent: 0 },
+  ]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseDialog, setCourseDialog] = useState<boolean>(false);
-  const [token] = useState<string>(Cookies.get("authToken") as string);
+  const token = Cookies.get("authToken") as string;
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
 
-  const fetchCourses = useCallback(async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!token) return;
 
+    setLoading(true);
     try {
-      const response = await backendAPI.get(`/users/me`, {
+      // Fetch courses first
+      const coursesResponse = await backendAPI.get("/users/me", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setCourses(coursesResponse.data?.courses || []);
+
+      // Ensure no overlapping requests before analytics fetch
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Fetch analytics
+      const analyticsResponse = await backendAPI.get("/analytics/", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
 
-      setCourses(response.data?.courses || []);
+      // Process analytics data
+      const formattedData = analyticsResponse.data.map((item: { date: string; time_spent: number }) => ({
+        day: mapDateToDay(item.date),
+        timeSpent: item.time_spent,
+      }));
+
+      setChartData((prevChartData) =>
+        prevChartData.map((entry) => {
+          const match = formattedData.find((item) => item.day === entry.day);
+          return match ? { ...entry, timeSpent: match.timeSpent } : entry;
+        })
+      );
     } catch (error) {
-      console.error(error.response);
+      console.error("Error fetching dashboard data:", error);
       toast({
         title: "Error",
-        description: `Error fetching course data: ${error.message}`,
+        description: `Failed to fetch dashboard data: ${error.message}`,
         variant: "destructive",
-        action: <ToastAction altText="Try again">Try again</ToastAction>,
+        action: <ToastAction altText="Retry">Retry</ToastAction>,
       });
+    } finally {
+      setLoading(false);
     }
   }, [token, toast]);
 
   useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
+    if (token) {
+      fetchDashboardData();
+    }
+  }, [token]);
 
   const cardData = [
     {
       title: "Skill Tree",
-      content: "Conquer each skill, reveal new branches and quizzes.",
-      icon: <HubIcon />,
-      link: "/skill-tree"
+      content: "Conquer each skill.",
+      icon: <HubIcon className="text-3xl md:text-4xl" />,
+      link: "/skill-tree",
     },
     {
-      title: "Card 2",
-      content: "Content for card 2.",
-      icon: null,
-      link: ""
+      title: "Chat",
+      content: "Ask, learn using chatbot.",
+      icon: <ChatIcon className="text-3xl md:text-4xl" />,
+      link: "",
     },
     {
-      title: "Card 3",
-      content: "Content for card 3.",
-      icon: null,
-      link: ""
+      title: "Engagement Metrics",
+      content: "Track your engagement.",
+      icon: <AutoGraph className="text-3xl md:text-4xl" />,
+      link: "",
     },
     {
-      title: "Card 4",
-      content: "Content for card 4.",
-      icon: null,
-      link: ""
-    }
+      title: "Profile",
+      content: "Adjust your preferences.",
+      icon: <PersonIcon className="text-3xl md:text-4xl" />,
+      link: "",
+    },
   ];
 
   const handleCardClick = (link: string) => {
-    router.push(link);
+    if (link) router.push(link);
   };
 
   return (
-      <div className="space-y-6 p-6">
-        <div className="grid h-[25vh] grid-cols-4 gap-4">
-          {cardData.map((card, index) => (
-              <Card
-                  key={index}
-                  onClick={() => handleCardClick(card.link)}
-                  className="h-full cursor-pointer transition-shadow duration-300
-                  hover:shadow-lg"
+    <div className="mx-auto space-y-6 p-4 sm:p-6 lg:p-4">
+      {/* Cards Section */}
+      <div className="grid grid-cols-4 gap-4">
+        {cardData.map((card, index) => (
+          <Card
+            key={index}
+            onClick={() => handleCardClick(card.link)}
+            className="h-full cursor-pointer transition-shadow duration-300 hover:shadow-lg"
+          >
+            <div className="flex h-[24vh] items-center rounded-xl bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-3 sm:p-4 lg:p-6">
+              <div className="min-w-0 grow space-y-2">
+                <CardTitle className="max-w-[90%] truncate text-base font-bold md:text-lg lg:text-xl">
+                  {card.title}
+                </CardTitle>
+                <CardDescription className="max-w-[95%] truncate text-sm text-muted-foreground md:text-base">
+                  {card.content}
+                </CardDescription>
+              </div>
+              <div
+                className="ml-2 flex size-[6vh] shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary md:size-[7vh]"
+                aria-hidden="true"
               >
-                <div
-                    className="flex h-full items-center rounded-xl bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-6"
-                >
-                  <div className="grow space-y-2">
-                    <CardTitle className="text-xl font-bold">{card.title}</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground">{card.content}</CardDescription>
-                  </div>
-                  <div
-                      className="ml-4 flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-                      aria-hidden="true"
-                  >
-                    {card.icon}
-                  </div>
-                </div>
-              </Card>
-          ))}
-        </div>
+                {card.icon}
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
 
-        <div className="grid h-[55vh] grid-cols-7 gap-4">
-          <div className="col-span-4">
-            <Card className="h-full bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
-              <CardHeader>
-                <CardTitle>Big Card</CardTitle>
-                <CardDescription>This is the big card on the left.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p>Content for the big card.</p>
-              </CardContent>
-              <CardFooter>
-                <p>Footer for the big card</p>
-              </CardFooter>
-            </Card>
+      {/* Chart and Courses Section */}
+      {loading ? (
+        <div className="flex h-[50vh] items-center justify-center">
+          <span className="text-gray-500">Loading...</span>
+        </div>
+      ) : (
+        <div className="grid h-[50vh] grid-cols-1 gap-4 lg:grid-cols-7">
+          <div className="lg:col-span-4">
+            <UserChart chartData={chartData} />
           </div>
-          <div className="col-span-3">
-            <CoursesList courses={courses}
-                       onCourseDelete={fetchCourses}
-                       setCourseDialog={setCourseDialog}
-                       onCourseUpdate={fetchCourses}
+          <div className="lg:col-span-3">
+            <CoursesList
+              courses={courses}
+              onCourseDelete={fetchDashboardData}
+              setCourseDialog={setCourseDialog}
+              onCourseUpdate={fetchDashboardData}
             />
           </div>
         </div>
-        <CourseCreateDialog
-            isOpen={courseDialog}
-            onClose={setCourseDialog}
-            onCourseCreation={fetchCourses}
-        />
-      </div>
+      )}
+
+      {/* Course Creation Dialog */}
+      <CourseCreateDialog
+        isOpen={courseDialog}
+        onClose={setCourseDialog}
+        onCourseCreation={fetchDashboardData} // Refresh all data
+      />
+    </div>
   );
 }
