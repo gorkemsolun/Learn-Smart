@@ -1,3 +1,6 @@
+import httpx
+from fastapi import HTTPException, Header
+
 from database.session import get_db, Base
 
 def init(restart: bool = False):
@@ -16,3 +19,4 @@ def init(restart: bool = False):
         
     finally:
         gen.close() # closes the session
+

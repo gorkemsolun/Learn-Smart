@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 
 from fastapi import Depends, HTTPException, APIRouter
-from fastapi.security import OAuth2PasswordRequestForm
 
 from schemas import *
+from util import get_authenticated_email
 from database.session import get_db
-from database.dbmanager import UserDB, CourseDB
+from database.dbmanager import UserDB
 
 router = APIRouter(prefix="/users", tags=["User"])
 
@@ -34,7 +34,7 @@ def create_user(user: UserCreationRequest, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=UserResponse)
 def get_user(nickname: str = None, id: int = None, 
-             current_user: dict = Depends(auth.get_current_user), 
+             current_user_email: str = Depends(auth.get_current_user), 
              db: Session = Depends(get_db)):
     """
     Retrieve a user by their nickname or user ID.

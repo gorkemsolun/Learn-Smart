@@ -1,5 +1,4 @@
 from sqlalchemy import Column, DateTime, Integer, String, func
-from sqlalchemy.orm import relationship
 
 from database.session import Base
 

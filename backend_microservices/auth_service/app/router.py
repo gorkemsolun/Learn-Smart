@@ -27,13 +27,13 @@ def hash_password(password):
 @router.post("/authenticate")
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     """
-    Retrieves the current user based on the provided JWT token.
+    Retrieves the current user's email based on the provided JWT token.
 
     Args:
     - token (str): The JWT token used for authentication.
 
     Returns:
-    - The user dictionary associated with the provided token.
+    - dict: A dictionary containing the email of the user.
 
     Raises:
     - HTTPException: If the token is invalid or the user is not found.
@@ -55,13 +55,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except InvalidTokenError:
         raise credentials_exception # raise an exception if the token is not genuine
     
-    # TODO: convert into gRPC call
-    user = UserDB.fetch(email=email) # fetch the user from the database using the email
-
-    if user is None:
-        raise credentials_exception # raise an exception if the user with the email is not found
-
-    return user
+    return {"email": email} # return the email of the user
 
 
 @router.post("/login", response_model=Token)
