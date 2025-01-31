@@ -9,21 +9,20 @@ class FileDB:
     """
 
     @staticmethod
-    def create(db: Session, user_id: int, file_url: str, file_name: str, mime_type: str):
+    def create(db: Session, user_id: int, file_name: str, mime_type: str):
         """
         Creates a new file in the database.
 
         Args:
             db (Session): The database session.
             user_id (int): The user ID of the file owner.
-            file_url (str): The URL of the file.
             file_name (str): The name of the file.
             mime_type (str): The MIME type of the file.
 
         Returns:
             dict: A dictionary containing the file information.
         """
-        file = File(user_id=user_id, file_url=file_url, file_name=file_name, mime_type=mime_type)
+        file = File(user_id=user_id, file_name=file_name, mime_type=mime_type)
         db.add(file)
         db.commit()
         db.refresh(file)
@@ -40,7 +39,6 @@ class FileDB:
             **kwargs: Keyword arguments representing the query parameters.
                 Possible query parameters include:
                 - user_id (int): The ID of the user who owns the file.
-                - file_url (str): The URL of the file.
                 - file_id (int): The ID of the file.
                 - all (bool): Flag indicating whether to fetch all files or just the first one. Default is False.
 
@@ -52,11 +50,10 @@ class FileDB:
             ValueError: If no query parameters are provided.
         """
         user_id = kwargs.get("user_id", None)
-        file_url = kwargs.get("file_url", None)
         file_id = kwargs.get("file_id", None)
         all = kwargs.get("all", False)
 
-        if not any([user_id, file_url, file_id]):
+        if not any([user_id, file_id]):
             raise ValueError("No query parameters provided")
 
         # Create a list of filters based on the provided query parameters
@@ -64,8 +61,6 @@ class FileDB:
 
         if user_id:
             filters.append(File.user_id == user_id)
-        if file_url:
-            filters.append(File.file_url == file_url)
         if file_id:
             filters.append(File.file_id == file_id)
 
@@ -92,7 +87,6 @@ class FileDB:
             file_id (int): The ID of the file to update.
             **kwargs: Keyword arguments representing the query parameters.
                 Possible query parameters include:
-                - file_url (str): The new URL of the file.
                 - file_name (str): The new name of the file.
 
         Returns:
@@ -106,15 +100,11 @@ class FileDB:
         if not file:
             raise ValueError("File not found")
 
-        file_url = kwargs.get("file_url", None)
         file_name = kwargs.get("file_name", None)
 
-        if not any([file_url, file_name]):
+        if not file_name:
             raise ValueError("No update parameters provided")
-
-        if file_url:
-            file.file_url = file_url
-        if file_name:
+        else:
             file.file_name = file_name
 
         db.commit()
@@ -133,7 +123,6 @@ class FileDB:
             **kwargs: Keyword arguments representing the query parameters.
                 Possible query parameters include:
                 - user_id (int): The ID of the user who owns the file(s).
-                - file_url (str): The URL of the file.
                 - file_id (int): The ID of the file to delete.
                 - all (bool): Flag indicating whether to delete all files that match the query parameters. Default is False.
 
@@ -144,11 +133,10 @@ class FileDB:
             ValueError: If no query parameters are provided.
         """
         user_id = kwargs.get("user_id", None)
-        file_url = kwargs.get("file_url", None)
         file_id = kwargs.get("file_id", None)
         all = kwargs.get("all", False)
 
-        if not any([user_id, file_url, file_id]):
+        if not any([user_id, file_id]):
             raise ValueError("No query parameters provided")
 
         # Create a list of filters based on the provided query parameters
@@ -156,8 +144,7 @@ class FileDB:
 
         if user_id:
             filters.append(File.user_id == user_id)
-        if file_url:
-            filters.append(File.file_url == file_url)
+
         if file_id:
             filters.append(File.file_id == file_id)
 

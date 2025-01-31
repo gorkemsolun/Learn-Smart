@@ -115,6 +115,7 @@ def delete_file(file_id: int = None, db: FileDB = Depends(get_db)):
     
     try:
         fid = file_db["file_id"]
+        FileDB.delete(db, file_id=fid)
         s3lib.delete_object(fid)
         return {"status": "success", "file_id": fid}
 
