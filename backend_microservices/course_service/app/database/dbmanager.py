@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
-from model import Course
+from course_service.app.database.model import Course
 
 class CourseDB:
     """
@@ -10,7 +10,11 @@ class CourseDB:
 
     @staticmethod
     def create(
-        db: Session, course_name: str, course_code: str, course_description: str, user_id: int
+        db: Session, user_id: int, course_name: str, 
+        course_code: str, course_description: str = None,
+        course_syllabus_fid: int = None, 
+        course_study_plan_fid: int = None,
+        course_icon_fid: int = None
     ):
         """
         Create a new course in the database.
@@ -37,6 +41,9 @@ class CourseDB:
             course_code=course_code,
             course_description=course_description,
             user_id=user_id,
+            course_syllabus_fid=course_syllabus_fid,
+            course_study_plan_fid=course_study_plan_fid,
+            course_icon_fid=course_icon_fid
         )  # create a new course object
 
         # save the user object in the database
@@ -113,9 +120,9 @@ class CourseDB:
                 - course_name (str): The new name for the course.
                 - course_code (str): The new code for the course.
                 - course_description (str): The new course_description for the course.
-                - course_syllabus_url (str): The new syllabus URL for the course.
-                - course_icon_url (str): The new image URL for the course.
-                - course_study_plan_url (str): The new study plan URL for the course.
+                - course_syllabus_fid (int): The new syllabus FID (file ID) for the course.
+                - course_icon_fid (int): The new image FID for the course.
+                - course_study_plan_fid (int): The new study plan FID for the course.
 
         Returns:
             dict: A dictionary representing the updated course details.
@@ -126,9 +133,9 @@ class CourseDB:
         course_name: str = kwargs.get("course_name", None)
         course_code: str = kwargs.get("course_code", None)
         course_description: str = kwargs.get("course_description", None)
-        course_syllabus_url: str = kwargs.get("course_syllabus_url", None)
-        course_icon_url: str = kwargs.get("course_icon_url", None)
-        course_study_plan_url: str = kwargs.get("course_study_plan_url", None)
+        course_syllabus_fid: str = kwargs.get("course_syllabus_fid", None)
+        course_icon_fid: str = kwargs.get("course_icon_fid", None)
+        course_study_plan_fid: str = kwargs.get("course_study_plan_fid", None)
 
         course: Course = db.query(Course).filter(Course.course_id == course_id).first()
         if not course:
@@ -154,14 +161,14 @@ class CourseDB:
         if course_description is not None:
             course.course_description = course_description
 
-        if course_syllabus_url is not None:
-            course.course_syllabus_url = course_syllabus_url
+        if course_syllabus_fid is not None:
+            course.course_syllabus_fid = course_syllabus_fid
 
-        if course_icon_url is not None:
-            course.course_icon_url = course_icon_url
+        if course_icon_fid is not None:
+            course.course_icon_fid = course_icon_fid
 
-        if course_study_plan_url is not None:
-            course.course_study_plan_url = course_study_plan_url
+        if course_study_plan_fid is not None:
+            course.course_study_plan_fid = course_study_plan_fid
 
         db.commit()
         db.refresh(course)

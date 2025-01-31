@@ -1,0 +1,13 @@
+import dotenv
+import os
+
+dotenv.load_dotenv()
+
+USER_SERVICE_URL = os.getenv("USER_SERVICE_URL")
+USER_CLIENT_KEY = os.getenv("USER_CLIENT_KEY")
+
+FILEMANAGER_SERVICE_URL = os.getenv("FILEMANAGER_SERVICE_URL")
+FILEMANAGER_CLIENT_KEY = os.getenv("FILEMANAGER_CLIENT_KEY")
+
+GENAI_SERVICE_URL = os.getenv("GENAI_SERVICE_URL")
+GENAI_CLIENT_KEY = os.getenv("GENAI_CLIENT_KEY")

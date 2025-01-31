@@ -24,7 +24,7 @@ class User(Base):
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    user_icon_fid = Column(Integer, nullable=True, unique=True) # file id
+    user_icon_fid = Column(Integer, nullable=True) # file id
 
     def to_dict(self):
         """

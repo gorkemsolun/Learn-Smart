@@ -1,7 +1,7 @@
 from sqlalchemy.orm.session import Session
 from sqlalchemy import and_
 
-from model import File
+from filemanager_service.app.database.model import File
 
 class FileDB:
     """

@@ -2,7 +2,7 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy import and_
 
 from user_service.app.database.model import User 
-from user_service.app.clients import auth as auth_client
+from user_service.app.clients import auth as auth
 
 class UserDB:
     """
@@ -10,7 +10,7 @@ class UserDB:
     """
 
     @staticmethod
-    async def create(db: Session, nickname: str, email: str, password: str):
+    async def create(db: Session, nickname: str, email: str, password: str, user_icon_fid: int = None):
         """
         Create a new user with the provided credentials and save it in the database.
 
@@ -19,6 +19,7 @@ class UserDB:
         - nickname (str): The nickname of the user.
         - email (str): The email of the user.
         - password (str): The password of the user. 
+        - user_icon_fid (int): The file ID of the user's icon.
 
         Returns:
         - dict: A dictionary representation of the created user object.
@@ -32,13 +33,14 @@ class UserDB:
         if user_by_email or user_by_nickname:
             raise ValueError("User with provided credentials already registered")
 
-        hashed_password = await auth_client.hash_password(password) # communicate with the auth service
+        hashed_password = await auth.hash_password(password) # communicate with the auth service
 
         # Create a new user object
         user = User(
             nickname=nickname,
             email=email,
-            hashed_password=hashed_password
+            hashed_password=hashed_password,
+            user_icon_fid=user_icon_fid
         )
 
         # save the user object in the database
@@ -118,6 +120,7 @@ class UserDB:
             - nickname (str): The new nickname for the user.
             - email (str): The new email address for the user.
             - password (str): The new password for the user.
+            - user_icon_fid (int): The new file ID for the user's icon
 
         Returns:
         - dict: A dictionary representing the updated user details.
@@ -129,6 +132,7 @@ class UserDB:
         nickname = kwargs.get("nickname", None)
         email = kwargs.get("email", None)
         password = kwargs.get("password", None)
+        fid = kwargs.get("user_icon_fid", None)
         
         if not any([role, nickname, email, password]):
             raise ValueError("No fields to update provided")
@@ -144,7 +148,9 @@ class UserDB:
         if email:
             user.email = email
         if password:
-            user.hashed_password = await auth_client.hash_password(password) # communicate with the auth service
+            user.hashed_password = await auth.hash_password(password) # communicate with the auth service
+        if fid:
+            user.user_icon_fid = fid
 
         db.commit()
         db.refresh(user)

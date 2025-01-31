@@ -1,7 +1,7 @@
 from fastapi import HTTPException, Header
 from sqlalchemy import text
 
-from user_service.app.clients import auth as auth_client
+from user_service.app.clients import auth
 from user_service.app.database.session import get_db, Base, engine
 
 from user_service.app.database.model import User # registers all tables in SQLAlchemy, required for table creation
@@ -35,7 +35,7 @@ async def get_authenticated_user(authorization: str = Header(None)):
     Returns:
         dict: A dictionary containing the user's data.
     """
-    email = await auth_client.get_authenticated_email(authorization)
+    email = await auth.get_authenticated_email(authorization)
     if not email:
         raise HTTPException(status_code=401, detail="Invalid authentication token")
     

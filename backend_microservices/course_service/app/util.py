@@ -1,8 +1,11 @@
-import httpx
-from fastapi import HTTPException, Header
+import os
+import io
+from PIL import Image
+from sqlalchemy import text
+from fastapi import UploadFile
 
-from database.session import get_db, Base
-from . import USER_SERVICE_URL
+from course_service.app.database.session import get_db, Base
+from course_service.app.database.model import Course # required for table creation
 
 def init(restart: bool = False):
     gen = get_db()
@@ -12,7 +15,7 @@ def init(restart: bool = False):
         if restart:
             # drop "users" table
             print("Dropping tables...")
-            db.execute("DROP TABLE IF EXISTS users;")
+            db.execute(text("DROP TABLE IF EXISTS users;"))
             
         # create "users" table
         print("Creating tables...")
@@ -22,40 +25,58 @@ def init(restart: bool = False):
         gen.close() # closes the session
 
 
-from . import WEEKLY_STUDY_PLAN_PROMPT, FLASHCARD_PROMPT
-
-def get_course_icon_path(course_id):
-    return f"{FILES_DIR}/course_{course_id}/course_img.png"
-
-def get_course_syllabus_path(course_id):
-    return f"{FILES_DIR}/course_{course_id}/syllabus.pdf"
-
-def get_study_plan_path(course_id):
-    return f"{FILES_DIR}/course_{course_id}/study_plan.md"
-
-def create_study_plan(course_syllabus_file_content, course_id):
-    # TODO: Call to LLM service
-    # call to filemanager to save the returned study plan
-    pass
-
-
-async def get_current_user(authorization: str = Header(None)):
+def splitext(filename: str) -> tuple[str, str]:
     """
-    Retrieves the current user based on the provided JWT token.
+    Splits the filename and extension of a file.
+    input: "file.pdf" | output: ("file", "pdf")
+    """
+    base_name = os.path.splitext(filename)[0]
+    extension = os.path.splitext(filename)[-1][1:]
+    return base_name, extension
+
+
+def validate_file_extension(filename, valid_extensions: list[str]):
+    """
+    Validates the extension of a file by checking it against a list of valid extensions.
 
     Args:
-    - authorization (str): The JWT token used for authentication.
+        - filename (str): The name of the file.
+        - valid_extensions (list): A list of valid extensions.
 
     Returns:
-    - dict: A dictionary containing the user's data.
+        - bool: Whether the extension is valid.
     """
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header missing")
+    ext = splitext(filename)[1].lower()
+    return (ext in [extension.lower() for extension in valid_extensions]) # whether the extension is in the list
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{USER_SERVICE_URL}/authenticate", headers={"Authorization": authorization})
 
-    if response.status_code != 200:
-        raise HTTPException(status_code=401, detail="Invalid authentication token")
+async def resize_image(file: UploadFile, size=(256, 256)) -> UploadFile:
+    """
+    Resizes an image to the specified size.
 
-    return response.json()
+    Args:
+        - file (UploadFile): The image file to resize.
+        - size (tuple): The new size of the image.
+
+    Returns:
+        - UploadFile: The resized image file.
+    """
+    # Read the file into memory
+    contents = await file.read()
+    
+    # Open image with PIL
+    image = Image.open(io.BytesIO(contents))
+    
+    # Convert to RGB (to ensure compatibility with JPEG and other formats)
+    image = image.convert("RGB")
+    
+    # Resize the image
+    image = image.resize(size, Image.ANTIALIAS)
+    
+    # Save to a BytesIO buffer
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")  # Change format if needed
+    buffer.seek(0)
+    
+    # Create a new UploadFile object
+    return UploadFile(filename=file.filename, file=buffer, content_type=file.content_type)

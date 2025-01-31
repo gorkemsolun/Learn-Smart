@@ -11,7 +11,7 @@ from user_service.app.security.auth import verify_api_key
 router = APIRouter(
     prefix="/private", 
     tags=["User - Private API"],
-    dependencies=[Depends(verify_api_key)]  # Move dependencies to router level
+    dependencies=[Depends(verify_api_key)] 
 )
 
 @router.get("/")

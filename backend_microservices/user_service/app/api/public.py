@@ -7,7 +7,7 @@ from user_service.app.util import get_authenticated_user
 from user_service.app.database.session import get_db
 from user_service.app.database.dbmanager import UserDB
 
-from user_service.app.clients import course as course_client
+from user_service.app.clients import course
 
 router = APIRouter(prefix="/public", tags=["User - Public API"])
 
@@ -61,7 +61,7 @@ async def get_user_and_courses(current_user: dict = Depends(get_authenticated_us
     Returns:
         dict: A dictionary containing the user's data and courses.
     """
-    courses = await course_client.get_courses(current_user["user_id"]) # get the user's courses
+    courses = await course.get_courses(current_user["user_id"]) # get the user's courses
 
     current_user["courses"] = courses # add the user's courses to response
     current_user.pop("hashed_password") # remove the hashed password from the response

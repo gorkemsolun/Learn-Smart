@@ -1,20 +1,23 @@
-from sqlalchemy.orm import Session
 from typing import Optional
-from fastapi import APIRouter, Depends, Form, HTTPException, File, UploadFile
+from sqlalchemy.orm import Session
+from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, File, Header
 import os
+import uuid
 
-from database.dbmanager import CourseDB
-from schemas import CourseCreationRequest, CourseUpdateRequest
+from course_service.app.database.dbmanager import CourseDB
+from course_service.app.database.session import get_db
 
-from database.session import get_db
+from course_service.app.util import validate_file_extension, resize_image
+from course_service.app.schemas import CourseCreationRequest, CourseUpdateRequest
 
-from util import get_current_user
+from course_service.app.clients import user, genai, filemanager
 
-router = APIRouter(prefix="/course", tags=["Course"])
+
+router = APIRouter(prefix="/public", tags=["Course - Public API"])
 
 @router.get("/{course_id}")
 async def get_course(course_id: int, 
-                     current_user: dict = Depends(get_current_user),
+                     current_user: dict = Depends(user.get_current_user),
                      db: Session = Depends(get_db)):
     """
     Get course details by course ID.
@@ -37,13 +40,14 @@ async def get_course(course_id: int,
     return course
 
 
-# TODO: depends on the implementation of LLM service, file manager, and chat service etc. TO BE REVISITED
+# TODO: depends on the implementation of GenAI service, file manager, and chat service etc. TO BE REVISITED
 @router.post("/create")
-async def create_course(course_name: str = Form(...), course_code: str = Form(...),
+async def create_course(course_name: str = Form(...), 
+                        course_code: str = Form(...),
                         course_description: Optional[str] = Form(None),
                         course_syllabus_file: UploadFile = File(None),
                         course_icon_file: UploadFile = File(None),
-                        current_user: dict = Depends(get_current_user),
+                        current_user: dict = Depends(user.get_current_user),
                         db: Session = Depends(get_db)):
     """
     Create a new course.
@@ -61,56 +65,79 @@ async def create_course(course_name: str = Form(...), course_code: str = Form(..
     Raises:
         HTTPException: If there is an error creating the course.
     """
+    CourseCreationRequest(
+        course_name=course_name, course_code=course_code, course_description=course_description
+    ) # pydantic input validation
 
-    # pydantic input validation
-    _ = CourseCreationRequest(course_name=course_name, course_code=course_code, course_description=course_description)
-
-    course_icon_path, syllabus_path, study_plan_path = None, None, None
-    course = None
     try:
         valid_image_formats, valid_syllabus_formats = ["png", "jpg", "jpeg"], ["pdf", "docx"]
+
         if course_icon_file and not validate_file_extension(course_icon_file.filename, valid_image_formats):
             raise ValueError(f"Invalid image format. Available formats: {', '.join(valid_image_formats)}")
+        
         if course_syllabus_file and not validate_file_extension(course_syllabus_file.filename, valid_syllabus_formats):
             raise ValueError(f"Invalid syllabus format. Available formats: {', '.join(valid_syllabus_formats)}")
 
-        course = CourseDB.create(course_name=course_name, course_description=course_description,
-                                 course_code=course_code, user_id=current_user["user_id"])
         if course_icon_file:
-            course_icon_path = get_course_icon_path(course["course_id"])
-            course_icon_file = FileFactory()(file=course_icon_file).save(course_icon_path, size=(256, 256))
-            course["course_icon_url"] = course_icon_path  # update response dict. with the image URL
+            course_icon_file = await resize_image(course_icon_file)
+            course_icon_fid = await filemanager.upload(
+                file=course_icon_file, user_id=current_user["user_id"]
+            )
 
         if course_syllabus_file:
-            syllabus_path = get_course_syllabus_path(course["course_id"])
-            course_syllabus_file = FileFactory()(file=course_syllabus_file)
-            course_syllabus_file.save(syllabus_path)
-            course["course_syllabus_url"] = syllabus_path  # update response dict. with the syllabus URL
+            course_syllabus_fid = await filemanager.upload(
+                file=course_syllabus_file, user_id=current_user["user_id"]
+            )
 
-            # send the syllabus to LLM for weekly study plan generation
-            success, study_plan_path = create_study_plan(course_syllabus_file.content(), course["course_id"])
-            course["course_study_plan_url"] = study_plan_path  # update response dict. with the study plan URL
+            # send the syllabus to GenAI service for weekly study plan generation
+            study_plan_text = await genai.create_study_plan(course_syllabus_file)
 
-        CourseDB.update(
-            db, course_id=course["course_id"], course_icon_url=course_icon_path,
-            course_syllabus_url=syllabus_path, course_study_plan_url=study_plan_path
+            # Create an .md file out of the returned study plan
+            temp_file_path = f"/tmp/{str(uuid.uuid4())}.md"
+            with open(temp_file_path, "w", encoding="utf-8") as f:
+                f.write(study_plan_text)
+
+            # Upload the study plan file to the FileManager
+            with open(temp_file_path, "rb") as f:
+                course_study_plan_fid = await filemanager.upload(
+                    file=f, user_id=current_user["user_id"]
+                )
+
+            # Delete the temporary file after upload
+            os.remove(temp_file_path)
+
+        course = CourseDB.create(
+            db, user_id=current_user["user_id"], course_name=course_name, 
+            course_code=course_code, course_description=course_description,
+            course_syllabus_fid=course_syllabus_fid, 
+            course_study_plan_fid=course_study_plan_fid,
+            course_icon_fid=course_icon_fid
         )
+
         return course
     
     except Exception as e:
-        # Rollback changes
-        if course_icon_path: FileFactory()(path=course_icon_path).delete()
-        if syllabus_path: FileFactory()(path=syllabus_path).delete()
-        if study_plan_path: FileFactory()(path=study_plan_path).delete()
-        if course: CourseDB.delete(course_id=course["course_id"])
+        # TODO: Rollback changes
 
-        raise HTTPException(status_code=400, detail=str(e))
+        # if course_icon_file:
+        #     await filemanager.delete(course_icon_fid)
+
+        # if course_syllabus_file:
+        #     await filemanager.delete(course_syllabus_fid)
+        #     await filemanager.delete(course_study_plan_fid)
+
+        # if course_icon_path: FileFactory()(path=course_icon_path).delete()
+        # if syllabus_path: FileFactory()(path=syllabus_path).delete()
+        # if study_plan_path: FileFactory()(path=study_plan_path).delete()
+        # if course: CourseDB.delete(course_id=course["course_id"])
+
+        raise HTTPException(status_code=500, detail="Unknown error occurred while creating the course.")
 
 
 # TODO: depends on the implementation of file manager, and chat service etc. TO BE REVISITED
 @router.delete("/{course_id}")
 async def delete_course(course_id: int,
-                        current_user: dict = Depends(auth.get_current_user),
+                        current_user: dict = Depends(user.get_current_user),
                         db: Session = Depends(get_db)):
     """
     Delete a course.
@@ -162,7 +189,7 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
                         course_update_syllabus: bool = Form(False),  # flag variable indicating whether to update the syllabus
                         course_icon_file: UploadFile = File(None),
                         update_icon: bool = Form(False),  # flag variable indicating whether to update the image
-                        current_user: dict = Depends(auth.get_current_user),
+                        current_user: dict = Depends(user.get_current_user),
                         db: Session = Depends(get_db)):
     """
     Update a course with the given course_id.
@@ -225,8 +252,24 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         course_syllabus_file = FileFactory()(course_syllabus_file)
         course_syllabus_file.save(new_syllabus_path)
 
-        # send the new syllabus to LLM for weekly study plan generation
-        success, new_study_plan_path = create_study_plan(course_syllabus_file.content(), course_id)
+        # success, new_study_plan_path = create_study_plan(course_syllabus_file.content(), course_id)
+        
+        # send the syllabus to GenAI service for weekly study plan generation
+        study_plan_text = await genai.create_study_plan(course_syllabus_file)
+
+        # Create an .md file out of the returned study plan
+        temp_file_path = f"/tmp/{str(uuid.uuid4())}.md"
+        with open(temp_file_path, "w", encoding="utf-8") as f:
+            f.write(study_plan_text)
+
+        # Upload the study plan file to the FileManager
+        with open(temp_file_path, "rb") as f:
+            course_study_plan_fid = await filemanager.upload(
+                file=f, user_id=current_user["user_id"]
+            )
+
+        # Delete the temporary file after upload
+        os.remove(temp_file_path)
 
     try:
         course = CourseDB.update(
@@ -251,7 +294,7 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
 
 @router.get("/{course_id}/chats")
 async def get_chats(course_id: int, 
-                    current_user: dict = Depends(auth.get_current_user),
+                    current_user: dict = Depends(user.get_current_user),
                     db: Session = Depends(get_db)):
     """
     Get all chats for a course.
@@ -287,7 +330,7 @@ async def get_chats(course_id: int,
 
 @router.get("/{course_id}/quizzes")
 async def get_quizzes(course_id: int, 
-                      current_user: dict = Depends(auth.get_current_user),
+                      current_user: dict = Depends(user.get_current_user),
                       db: Session = Depends(get_db)):
     """
     Get all quizzes for a course.
@@ -323,7 +366,7 @@ async def get_quizzes(course_id: int,
 # Quizzes don't have entries in DB and don't have IDs, which makes this function inefficient
 @router.put("/{course_id}/quizzes/{quiz_name}")
 async def rename_quiz(course_id: int, quiz_name: str, new_quiz_name: str,
-                      current_user: dict = Depends(auth.get_current_user),
+                      current_user: dict = Depends(user.get_current_user),
                       db: Session = Depends(get_db)):
     """
     Rename a quiz.
@@ -372,7 +415,7 @@ async def rename_quiz(course_id: int, quiz_name: str, new_quiz_name: str,
 # TODO: In chat_service, we will have DB entries for quizzes, which will have IDs -- rendering this function wrong and unnecessary
 @router.get("/{course_id}/quizzes/{quiz_name}")
 async def get_quiz(course_id: int, quiz_name: str,
-                   current_user: dict = Depends(auth.get_current_user),
+                   current_user: dict = Depends(user.get_current_user),
                    db: Session = Depends(get_db)):
     """
     Get a quiz.
@@ -412,7 +455,7 @@ async def get_quiz(course_id: int, quiz_name: str,
 # TODO: In chat_service, we will have DB entries for quizzes, which will have IDs -- rendering this function wrong and unnecessary
 @router.delete("/{course_id}/quizzes/{quiz_name}")
 async def delete_quiz(course_id: int, quiz_name: str,
-                      current_user: dict = Depends(auth.get_current_user),
+                      current_user: dict = Depends(user.get_current_user),
                       db: Session = Depends(get_db)):
     """
     Delete a quiz.
@@ -450,7 +493,7 @@ async def delete_quiz(course_id: int, quiz_name: str,
 # TODO: In chat_service, we will have DB entries for flashcards, which will have IDs -- rendering this function wrong and unnecessary
 # Also filemanager implementation is needed
 @router.get("/{course_id}/flashcards")
-async def get_flashcards_list(course_id: int, current_user: dict = Depends(auth.get_current_user)):
+async def get_flashcards_list(course_id: int, current_user: dict = Depends(user.get_current_user)):
     """
     Get all flashcards for a course.
 

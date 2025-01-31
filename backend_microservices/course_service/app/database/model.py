@@ -1,7 +1,6 @@
-from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, func, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, DateTime, func, UniqueConstraint
 
-from database.session import Base
+from course_service.app.database.session import Base
 
 class Course(Base):
     """
@@ -11,12 +10,12 @@ class Course(Base):
     __tablename__ = 'courses'
 
     course_id = Column(Integer, primary_key=True, index=True)
-    course_name = Column(String(255), nullable=False) # e.g. Operating Systems
+    course_name = Column(String(256), nullable=False) # e.g. Operating Systems
     course_code = Column(String(16), nullable=False) # e.g. CS 342
     course_description = Column(String(1024), nullable=True)
-    course_syllabus_url = Column(String(255), nullable=True)
-    course_study_plan_url = Column(String(255), nullable=True)
-    course_icon_url = Column(String(255), nullable=True) # nullable for now (generate an image for the course in the future)
+    course_syllabus_fid = Column(Integer, nullable=True) # file id
+    course_study_plan_fid = Column(Integer, nullable=True)
+    course_icon_fid = Column(Integer, nullable=True) # nullable for now (generate an image for the course in the future)
     user_id = Column(Integer, nullable=False) # the ID of the user who owns the course
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -37,8 +36,8 @@ class Course(Base):
             "course_description": self.course_description,
             "course_code": self.course_code,
             "user_id": self.user_id,
-            "course_syllabus_url": self.course_syllabus_url,
-            "course_study_plan_url": self.course_study_plan_url,
-            "course_icon_url": self.course_icon_url,
+            "course_syllabus_fid": self.course_syllabus_fid,
+            "course_study_plan_fid": self.course_study_plan_fid,
+            "course_icon_fid": self.course_icon_fid,
             "created_at": self.created_at
         }

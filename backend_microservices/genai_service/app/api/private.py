@@ -1,63 +1,23 @@
-from fastapi import APIRouter, Depends, Form, File, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, Form, UploadFile, HTTPException
 from typing import List
-
 import json
 
-from client import ChatHistory, ChatClient, ChatFile
-from util import validate_quiz_format
-from . import WEEKLY_STUDY_PLAN_PROMPT, QUIZZES_PROMPT, FLASHCARD_PROMPT
+from genai_service.app.clients import user
+from genai_service.app.genai_client import ChatHistory, ChatClient, ChatFile
 
-router = APIRouter(prefix="/genai", tags=["Generative AI"])
+from genai_service.app.util import validate_quiz_format
+from genai_service.app.security.auth import verify_api_key
+from genai_service.app import WEEKLY_STUDY_PLAN_PROMPT, QUIZZES_PROMPT, FLASHCARD_PROMPT
 
-@router.post("/send_message")
-async def send_message(
-    message: str = Form(...), 
-    history_url: str = Form(None),
-    system_prompt: str = Form(None),
-    files: List[UploadFile] = File(None),
-    file_urls: List[str] = Form(None),
-    model: str = Form("google"), 
-    current_user: dict = Depends(auth.get_current_user)):
-    """
-    Send a message in a chat and generate a response.
 
-    Args:
-        history_url (str): The URL of the chat history.
-        message (str): The message to send.
-        files (List[UploadFile]): The files to send.
-        file_urls (List[str]): The URLs to the uploaded files.
-        model (str): The generative AI model to use.
-        current_user (dict): The current user.
-    """
-    assert len(files) == len(file_urls), "The number of files and file URLs must match."
+router = APIRouter(
+    prefix="/private", 
+    tags=["Generative AI - Private API"],
+    dependencies=[Depends(verify_api_key)]
+)
 
-    # TODO: fetch from S3/FileManager
-    if history_url is not None:
-        with open(history_url, "rb") as file:
-            history = ChatHistory.from_binary(file) 
-    else:
-        history = None
-
-    client = ChatClient.create(model=model, system_prompt=system_prompt)
-
-    # TODO: Check file sizes and reject if too large
-    chat_files = []
-    if files:
-        for file, url in zip(files, file_urls):
-            chat_files.append(ChatFile(mimetype=file.content_type, data=file.file, url=url))
-
-    response, history = client.invoke(message, history=history, files=chat_files)
-    
-    # S3 and FileManager call
-    # history.save(history_url)
-
-    return {"response": response, "history": history.messages}
-    
-
-@router.post("/create/weekly_study_plan")
-async def create_weekly_study_plan(
-    syllabus: UploadFile = Form(...),
-    current_user: dict = Depends(auth.get_current_user)):
+@router.post("/generate/weekly_study_plan")
+async def create_weekly_study_plan(syllabus: UploadFile = Form(...)):
     """
     Create a weekly study plan for a course.
 
@@ -72,15 +32,13 @@ async def create_weekly_study_plan(
         generation_config={"response_mime_type": "application/json"}
     )
     
-    response_dict = json.loads(response) # TODO: Handle JSON parsing errors, i.e. implement validation logic
+    response_dict = json.loads(response)
         
-    return response_dict["success"], response_dict["data"]
+    return {"success": response_dict["success"], "data": response_dict["data"]}
 
 
-@router.post("/create/quiz")
-async def create_quiz(
-    history_urls: List[str] = Form(...),
-    current_user: dict = Depends(auth.get_current_user)):
+@router.post("/generate/quiz")
+async def create_quiz(history_urls: List[str] = Form(...)):
     """
     Create a quiz based on a chat history.
 
@@ -112,10 +70,8 @@ async def create_quiz(
     return {"success": True, "quiz": data}
 
 
-@router.post("/create/flashcards")
-async def create_flashcards(
-    history_urls: List[str] = Form(...),
-    current_user: dict = Depends(auth.get_current_user)):
+@router.post("/generate/flashcards")
+async def create_flashcards(history_urls: List[str] = Form(...)):
     """
     Create flashcards based on a chat history.
 

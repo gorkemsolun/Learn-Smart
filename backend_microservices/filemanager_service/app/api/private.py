@@ -1,64 +1,71 @@
-import uuid, os
 from typing import List
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 
-from database.session import get_db
-from database.dbmanager import FileDB
+from filemanager_service.app.database.session import get_db
+from filemanager_service.app.database.dbmanager import FileDB
+
+from filemanager_service.app.security.auth import verify_api_key
 
 import s3lib
 
-router = APIRouter(prefix="/files", tags=["File Management"])
+router = APIRouter(
+    prefix="/private", 
+    tags=["File Management - Private API"],
+    dependencies=[Depends(verify_api_key)]
+)
 
-@router.post("/upload")
-def upload_file(file: UploadFile = File(...), 
-                current_user: dict = Depends(get_current_user),
+@router.post("/")
+def upload_file(user_id: int,
+                file: UploadFile = File(...), 
                 db: FileDB = Depends(get_db)):
     """
     Upload a file to the server.
 
     Args:
+        user_id (int): The ID of the user uploading the file.
         file (UploadFile): The file to be uploaded.
 
     Returns:
-        FileResponse: The response model containing the file's information.
+        dict: A dictionary of success information and the file's ID.
 
     Raises:
         HTTPException: If there is an error uploading the file.
     """
 
-    file_db = FileDB.create(db, current_user["user_id"], file.filename, file.content_type)
+    file_db = FileDB.create(db, user_id, file.filename, file.content_type)
     s3lib.upload_to_s3(file_db["file_id"], file)
 
     return {"status": "success", "file_id": file_db["file_id"]}
 
 
-@router.post("/batch_upload")
-def batch_upload_files(files: List[UploadFile] = File(...),
-                       current_user: dict = Depends(get_current_user),
+@router.post("/batch")
+def batch_upload_files(user_id: int,
+                       files: List[UploadFile] = File(...),
                        db: FileDB = Depends(get_db)):
     """
     Upload multiple files to the server.
 
     Args:
+        user_id (int): The ID of the user uploading the files.
         files (List[UploadFile]): The files to be uploaded.
 
     Returns:
-        FileResponse: The response model containing the file's information.
+        dict: A dictionary of success information and the file IDs.
 
     Raises:
         HTTPException: If there is an error uploading the files.
     """
     file_ids = []
     for file in files:
-        file_db = FileDB.create(db, current_user["user_id"], file.filename, file.content_type)
+        file_db = FileDB.create(db, user_id, file.filename, file.content_type)
         s3lib.upload_to_s3(file_db["file_id"], file)
         file_ids.append(file_db["file_id"])
 
     return {"status": "success", "file_ids": file_ids}
 
 
-@router.get("/download")
+@router.get("/")
 def fetch_file(file_id: int = None, db: FileDB = Depends(get_db)):
     """
     Retrieve a file by its ID.
@@ -89,7 +96,7 @@ def fetch_file(file_id: int = None, db: FileDB = Depends(get_db)):
 
 
 @router.delete("/")
-def delete_file(file_id: int = None):
+def delete_file(file_id: int = None, db: FileDB = Depends(get_db)):
     """
     Delete a file by its ID.
 

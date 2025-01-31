@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from router import router
-from util import init
+from course_service.app.api.public import router as public_router
+from course_service.app.api.private import router as private_router
+from course_service.app.util import init
 
 # create the FastAPI app
 app = FastAPI()
 
 # re/create the database tables
-init(restart=False)
+init(restart=True)
 
 # Add CORS middleware to allow cross-origin requests
 # TODO: Disable this in production and specify the frontend URL
@@ -20,6 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api")
+app.include_router(public_router, prefix="/api")
+app.include_router(private_router, prefix="/api")
 
 print("FastAPI Course service started successfully")
