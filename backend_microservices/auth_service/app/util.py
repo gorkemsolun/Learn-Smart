@@ -1,9 +1,10 @@
 import jwt
 from datetime import datetime, timedelta
 
-from . import SECRET_KEY, ALGORITHM, pwd_context
+from auth_service.app.clients import user as user_client
+from auth_service.app import SECRET_KEY, ALGORITHM, pwd_context
 
-def authenticate_user(password, **kwargs):
+async def authenticate_user(password, **kwargs):
     """
     Authenticates a user based on the provided password and user information.
 
@@ -24,8 +25,8 @@ def authenticate_user(password, **kwargs):
     email = kwargs.get("email", None)
     user_id = kwargs.get("user_id", None)
 
-    # TODO: convert into gRPC call
-    user = UserDB.fetch(nickname=nickname, email=email, user_id=user_id) # fetch the user from the database
+    # get the user from the user service
+    user = user_client.get_user(nickname=nickname, email=email, user_id=user_id)
     
     # user not found or password does not match
     if not user or not _verify_password(password, user["hashed_password"]):

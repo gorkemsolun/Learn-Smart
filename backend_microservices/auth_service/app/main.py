@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from router import router
+from auth_service.app.api.public import router as public_router
+from auth_service.app.api.private import router as private_router
 
 # create the FastAPI app
 app = FastAPI()
 
 # Add CORS middleware to allow cross-origin requests
-# TODO: Disable this in production and specify the frontend URL
+# TODO: Disable this in production and specify the API gateway URL
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,6 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api")
+app.include_router(public_router, prefix="/api")
+app.include_router(private_router, prefix="/api")
 
 print("FastAPI Authentication service started successfully")
