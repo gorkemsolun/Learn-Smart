@@ -9,10 +9,14 @@ from auth_service.app import (
 from auth_service.app.security.auth import verify_api_key
 from auth_service.app.schemas import *
 
-router = APIRouter(prefix="/private", tags=["Authentication - Private API"])
+router = APIRouter(
+    prefix="/private", 
+    tags=["Authentication - Private API"],
+    dependencies=[Depends(verify_api_key)]
+)
 
 @router.post("/hash")
-def hash_password(password, dependencies=[Depends(verify_api_key)]):
+def hash_password(password):
     """
     Hashes the given password using the pwd_context.
 
@@ -26,7 +30,7 @@ def hash_password(password, dependencies=[Depends(verify_api_key)]):
 
 
 @router.post("/verify")
-async def verify_email(token: str = Depends(oauth2_scheme), dependencies=[Depends(verify_api_key)]):
+async def verify_email(token: str = Depends(oauth2_scheme)):
     """
     Retrieves the current user's email based on the provided JWT token.
 

@@ -23,4 +23,4 @@ app.add_middleware(
 app.include_router(public_router, prefix="/api")
 app.include_router(private_router, prefix="/api")
 
-print("FastAPI User service started successfully")
+print("FastAPI User service started successfully!")

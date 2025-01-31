@@ -10,7 +10,7 @@ from user_service.app.database.dbmanager import UserDB
 from user_service.app.clients import auth as auth_client
 from user_service.app.clients import course as course_client
 
-router = APIRouter(prefix="/public/users", tags=["User - Public API"])
+router = APIRouter(prefix="/public", tags=["User - Public API"])
 
 @router.post("/create", response_model=UserResponse)
 async def create_user(user: UserCreationRequest, db: Session = Depends(get_db)):
@@ -31,6 +31,8 @@ async def create_user(user: UserCreationRequest, db: Session = Depends(get_db)):
         user_dict = await UserDB.create(db, **user.model_dump()) # create the user given the user data
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Unknown error occured. Please try again later.")
     
     return UserResponse(**user_dict)
 

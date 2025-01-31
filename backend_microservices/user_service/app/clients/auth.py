@@ -47,7 +47,9 @@ async def hash_password(password: str) -> str:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{AUTH_SERVICE_URL}/private/hash",
-            json={"password": password}, headers={"X-API-Key": AUTH_CLIENT_KEY}
+            params={"password": password}, 
+            headers={"X-API-Key": AUTH_CLIENT_KEY}
         )
+        response.raise_for_status()
 
-    return response.text
+    return response.json()

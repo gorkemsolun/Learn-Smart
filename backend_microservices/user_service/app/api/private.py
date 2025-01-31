@@ -8,11 +8,15 @@ from user_service.app.database.dbmanager import UserDB
 
 from user_service.app.security.auth import verify_api_key
 
-router = APIRouter(prefix="/private/users", tags=["User - Private API"])
+router = APIRouter(
+    prefix="/private", 
+    tags=["User - Private API"],
+    dependencies=[Depends(verify_api_key)]  # Move dependencies to router level
+)
 
 @router.get("/")
-def get_user(nickname: str = None, id: int = None, email: str = None,
-             db: Session = Depends(get_db), dependencies=[Depends(verify_api_key)]):
+def get_user(nickname: str = None, id: int = None, 
+             email: str = None, db: Session = Depends(get_db)):
     """
     Retrieve a user by their nickname or user ID.
 

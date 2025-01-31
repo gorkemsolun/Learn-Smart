@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 
-
 class UserCreationRequest(BaseModel):
     """
     Represents a request to create a new user.
@@ -14,7 +13,6 @@ class UserCreationRequest(BaseModel):
     nickname: str
     email: EmailStr  # EmailStr is a Pydantic email validator
     password: str
-
 
 class UserResponse(BaseModel):
     """
@@ -30,7 +28,6 @@ class UserResponse(BaseModel):
     role: Optional[str] = None
     nickname: Optional[str] = None
     email: Optional[EmailStr] = None  # EmailStr is a Pydantic email validator
-
 
 class UserUpdateRequest(BaseModel):
     """

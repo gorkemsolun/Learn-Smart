@@ -1,8 +1,11 @@
-import httpx
 from fastapi import HTTPException, Header
+from sqlalchemy import text
 
 from user_service.app.clients import auth as auth_client
-from user_service.app.database.session import get_db, Base
+from user_service.app.database.session import get_db, Base, engine
+
+# This registers all tables in SQLAlchemy Base.metadata, required for table creation
+from user_service.app.model import User 
 
 def init(restart: bool = False):
     gen = get_db()
@@ -12,11 +15,12 @@ def init(restart: bool = False):
         if restart:
             # drop "users" table
             print("Dropping tables...")
-            db.execute("DROP TABLE IF EXISTS users;")
+            db.execute(text("DROP TABLE IF EXISTS users;"))
+            db.commit()
             
         # create "users" table
         print("Creating tables...")
-        Base.metadata.create_all(bind=db.bind)
+        Base.metadata.create_all(bind=engine)
         
     finally:
         gen.close() # closes the session
