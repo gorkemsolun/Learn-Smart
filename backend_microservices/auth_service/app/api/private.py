@@ -9,7 +9,7 @@ from auth_service.app import (
 from auth_service.app.security.auth import verify_api_key
 from auth_service.app.schemas import *
 
-router = APIRouter(prefix="/private/auth", tags=["Authentication - Private API"])
+router = APIRouter(prefix="/private", tags=["Authentication - Private API"])
 
 @router.post("/hash")
 def hash_password(password, dependencies=[Depends(verify_api_key)]):

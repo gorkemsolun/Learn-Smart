@@ -8,11 +8,13 @@ from schemas import CourseCreationRequest, CourseUpdateRequest
 
 from database.session import get_db
 
+from util import get_current_user
+
 router = APIRouter(prefix="/course", tags=["Course"])
 
 @router.get("/{course_id}")
 async def get_course(course_id: int, 
-                     current_user: dict = Depends(auth.get_current_user),
+                     current_user: dict = Depends(get_current_user),
                      db: Session = Depends(get_db)):
     """
     Get course details by course ID.
@@ -29,7 +31,6 @@ async def get_course(course_id: int,
         raise HTTPException(status_code=404, detail="Course not found.")
 
     # Check if the user is authorized to view the course
-    # This can happen if the user tries to view a course they don't own
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
 
@@ -42,7 +43,7 @@ async def create_course(course_name: str = Form(...), course_code: str = Form(..
                         course_description: Optional[str] = Form(None),
                         course_syllabus_file: UploadFile = File(None),
                         course_icon_file: UploadFile = File(None),
-                        current_user: dict = Depends(auth.get_current_user),
+                        current_user: dict = Depends(get_current_user),
                         db: Session = Depends(get_db)):
     """
     Create a new course.

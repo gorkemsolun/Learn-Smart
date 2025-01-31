@@ -6,7 +6,7 @@ from auth_service.app import ACCESS_TOKEN_EXPIRE_MINUTES
 from auth_service.app.util import authenticate_user, create_access_token
 from auth_service.app.schemas import Token
 
-router = APIRouter(prefix="/public/auth", tags=["Authentication - Public API"])
+router = APIRouter(prefix="/public", tags=["Authentication - Public API"])
 
 
 @router.post("/login", response_model=Token)

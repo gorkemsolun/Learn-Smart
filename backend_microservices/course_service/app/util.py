@@ -1,6 +1,8 @@
-# TODO: Placeholder file, most of these function calls are to be converted into gRPC calls
+import httpx
+from fastapi import HTTPException, Header
 
 from database.session import get_db, Base
+from . import USER_SERVICE_URL
 
 def init(restart: bool = False):
     gen = get_db()
@@ -35,3 +37,25 @@ def create_study_plan(course_syllabus_file_content, course_id):
     # TODO: Call to LLM service
     # call to filemanager to save the returned study plan
     pass
+
+
+async def get_current_user(authorization: str = Header(None)):
+    """
+    Retrieves the current user based on the provided JWT token.
+
+    Args:
+    - authorization (str): The JWT token used for authentication.
+
+    Returns:
+    - dict: A dictionary containing the user's data.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{USER_SERVICE_URL}/authenticate", headers={"Authorization": authorization})
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid authentication token")
+
+    return response.json()

@@ -1,6 +1,6 @@
 import httpx
 
-from auth_service.app.clients import USER_SERVICE_URL
+from auth_service.app.clients import USER_SERVICE_URL, USER_CLIENT_KEY
 
 async def get_user(nickname=None, email=None, user_id=None):
     """
@@ -20,7 +20,8 @@ async def get_user(nickname=None, email=None, user_id=None):
             f"{USER_SERVICE_URL}/private/users", 
             params={
                 "nickname": nickname, "email": email, "id": user_id
-            })
+            }, headers={"X-API-Key": USER_CLIENT_KEY}
+        )
         response.raise_for_status()
 
     user = response.json()

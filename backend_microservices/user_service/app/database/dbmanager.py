@@ -2,14 +2,14 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy import and_
 
 from model import User
-
+from user_service.app.clients import auth as auth_client
 class UserDB:
     """
     Database interface for the User model.
     """
 
     @staticmethod
-    def create(db: Session, nickname: str, email: str, password: str):
+    async def create(db: Session, nickname: str, email: str, password: str):
         """
         Create a new user with the provided credentials and save it in the database.
 
@@ -25,17 +25,19 @@ class UserDB:
         - ValueError: If a user with the same email or nickname already exists.
         """
         # Check if a user with the same email or nickname already exists
-        user_by_email = UserDB.fetch(email=email)
-        user_by_nickname = UserDB.fetch(nickname=nickname)
+        user_by_email = UserDB.fetch(db, email=email)
+        user_by_nickname = UserDB.fetch(db, nickname=nickname)
 
         if user_by_email or user_by_nickname:
             raise ValueError("User with provided credentials already registered")
+
+        hashed_password = await auth_client.hash_password(password) # communicate with the auth service
 
         # Create a new user object
         user = User(
             nickname=nickname,
             email=email,
-            hashed_password=auth.hash_password(password), # communicate with the auth service
+            hashed_password=hashed_password
         )
 
         # save the user object in the database
@@ -103,7 +105,7 @@ class UserDB:
         )  # return a single user dict or None
 
     @staticmethod
-    def update(db: Session, user_id: int, **kwargs):
+    async def update(db: Session, user_id: int, **kwargs):
         """
         Update the user details in the database.
 
@@ -141,7 +143,7 @@ class UserDB:
         if email:
             user.email = email
         if password:
-            user.hashed_password = auth.hash_password(password) # communicate with the auth service
+            user.hashed_password = await auth_client.hash_password(password) # communicate with the auth service
 
         db.commit()
         db.refresh(user)

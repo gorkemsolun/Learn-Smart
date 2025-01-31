@@ -26,7 +26,7 @@ async def authenticate_user(password, **kwargs):
     user_id = kwargs.get("user_id", None)
 
     # get the user from the user service
-    user = user_client.get_user(nickname=nickname, email=email, user_id=user_id)
+    user = await user_client.get_user(nickname=nickname, email=email, user_id=user_id)
     
     # user not found or password does not match
     if not user or not _verify_password(password, user["hashed_password"]):
