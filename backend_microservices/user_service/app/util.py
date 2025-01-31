@@ -4,8 +4,7 @@ from sqlalchemy import text
 from user_service.app.clients import auth as auth_client
 from user_service.app.database.session import get_db, Base, engine
 
-# This registers all tables in SQLAlchemy Base.metadata, required for table creation
-from user_service.app.model import User 
+from user_service.app.database.model import User # registers all tables in SQLAlchemy, required for table creation
 
 def init(restart: bool = False):
     gen = get_db()

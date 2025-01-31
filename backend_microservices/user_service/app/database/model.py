@@ -24,7 +24,7 @@ class User(Base):
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    user_icon_url = Column(String(100), nullable=True)
+    user_icon_fid = Column(Integer, nullable=True, unique=True) # file id
 
     def to_dict(self):
         """
@@ -41,7 +41,7 @@ class User(Base):
             "email": self.email,
             "created_at": self.created_at,
             "hashed_password": self.hashed_password,
-            "user_icon_url": self.user_icon_url
+            "user_icon_fid": self.user_icon_fid
         }
 
     # attributes might be added

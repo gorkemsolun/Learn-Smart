@@ -1,7 +1,7 @@
 from sqlalchemy.orm.session import Session
 from sqlalchemy import and_
 
-from user_service.app.model import User  # ✅ This registers all tables
+from user_service.app.database.model import User 
 from user_service.app.clients import auth as auth_client
 
 class UserDB:

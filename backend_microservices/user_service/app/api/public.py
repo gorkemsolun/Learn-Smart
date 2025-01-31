@@ -7,7 +7,6 @@ from user_service.app.util import get_authenticated_user
 from user_service.app.database.session import get_db
 from user_service.app.database.dbmanager import UserDB
 
-from user_service.app.clients import auth as auth_client
 from user_service.app.clients import course as course_client
 
 router = APIRouter(prefix="/public", tags=["User - Public API"])
