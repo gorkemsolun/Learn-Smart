@@ -58,7 +58,7 @@ def upload_to_s3(fid: int, file: UploadFile | BytesIO, bucket_name=BUCKET_NAME):
         return False
 
 
-def delete_object(fid: int, bucket_name=BUCKET_NAME):
+def delete_s3_object(fid: int, bucket_name=BUCKET_NAME):
     """
     Deletes an object from an S3 bucket.
 

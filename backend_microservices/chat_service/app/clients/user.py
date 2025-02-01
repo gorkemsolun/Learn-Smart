@@ -1,7 +1,7 @@
 import httpx
 from fastapi import HTTPException, Header
 
-from course_service.app.clients import USER_SERVICE_URL
+from chat_service.app.clients import USER_SERVICE_URL
 
 async def get_current_user(authorization: str = Header(None)):
     """
@@ -16,7 +16,7 @@ async def get_current_user(authorization: str = Header(None)):
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header missing")
 
-    try: 
+    try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{USER_SERVICE_URL}/authenticate", 

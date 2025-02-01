@@ -1,4 +1,5 @@
 import httpx
+from fastapi import HTTPException
 
 from auth_service.app.clients import USER_SERVICE_URL, USER_CLIENT_KEY
 
@@ -15,14 +16,21 @@ async def get_user(nickname=None, email=None, user_id=None):
         User dictionary: The user's dict. if found.
         None: If the user is not found.
     """
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            f"{USER_SERVICE_URL}/private/users", 
-            params={
-                "nickname": nickname, "email": email, "id": user_id
-            }, headers={"X-API-Key": USER_CLIENT_KEY}
-        )
-        response.raise_for_status()
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{USER_SERVICE_URL}/private/users", 
+                params={
+                    "nickname": nickname, "email": email, "id": user_id
+                }, headers={"X-API-Key": USER_CLIENT_KEY}
+            )
+            response.raise_for_status()
 
-    user = response.json()
-    return user
+        user = response.json()
+        return user
+    
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"User service error: {str(e)}"
+        )

@@ -2,12 +2,10 @@ from typing import List
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 
+from filemanager_service.app.security.auth import verify_api_key
 from filemanager_service.app.database.session import get_db
 from filemanager_service.app.database.dbmanager import FileDB
-
-from filemanager_service.app.security.auth import verify_api_key
-
-import s3lib
+import filemanager_service.app.remote.s3lib as s3lib
 
 router = APIRouter(
     prefix="/private", 
@@ -66,7 +64,7 @@ def batch_upload_files(user_id: int,
 
 
 @router.get("/")
-def fetch_file(file_id: int = None, db: FileDB = Depends(get_db)):
+def fetch_file(file_id: int, db: FileDB = Depends(get_db)):
     """
     Retrieve a file by its ID.
 
@@ -96,7 +94,7 @@ def fetch_file(file_id: int = None, db: FileDB = Depends(get_db)):
 
 
 @router.delete("/")
-def delete_file(file_id: int = None, db: FileDB = Depends(get_db)):
+def delete_file(file_id: int, db: FileDB = Depends(get_db)):
     """
     Delete a file by its ID.
 
@@ -116,8 +114,39 @@ def delete_file(file_id: int = None, db: FileDB = Depends(get_db)):
     try:
         fid = file_db["file_id"]
         FileDB.delete(db, file_id=fid)
-        s3lib.delete_object(fid)
+        s3lib.delete_s3_object(fid)
         return {"status": "success", "file_id": fid}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to delete file")
+
+
+@router.delete("/batch")
+def batch_delete_files(file_ids: List[int], db: FileDB = Depends(get_db)):
+    """
+    Delete multiple files by their IDs.
+
+    Args:
+        file_ids (List[int]): The IDs of the files to delete.
+
+    Returns:
+        dict: A dictionary of success information and the file IDs.
+
+    Raises:
+        HTTPException: If there is an error deleting the files.
+    """
+    deleted_files = []
+    for fid in file_ids:
+        file_db = FileDB.fetch(db, file_id=fid)
+        if not file_db:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        try:
+            FileDB.delete(db, file_id=fid)
+            s3lib.delete_s3_object(fid)
+            deleted_files.append(fid)
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Failed to delete file")
+
+    return {"status": "success", "file_ids": deleted_files}

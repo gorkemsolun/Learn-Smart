@@ -1,7 +1,7 @@
 import httpx
 from fastapi import HTTPException
 
-from user_service.app.clients import COURSE_SERVICE_URL, COURSE_CLIENT_KEY
+from chat_service.app.clients import COURSE_SERVICE_URL, COURSE_CLIENT_KEY
 
 async def get_courses(user_id: int):
     """
@@ -23,10 +23,9 @@ async def get_courses(user_id: int):
         
         courses = response.json()
         return courses
-
+    
     except httpx.RequestError as e:
         raise HTTPException(
             status_code=500,
             detail=f"Course service error: {str(e)}"
         )
-    

@@ -14,10 +14,10 @@ router = APIRouter(
 @router.get("/courses/{user_id}")
 async def get_courses(user_id: int, db: Session = Depends(get_db)):
         """
-        Get current user's courses.
+        Get a user's courses.
     
         Args:
-            current_user (dict): The current user.
+            user_id (int): The user's ID.
     
         Returns:
             list: A list of courses.

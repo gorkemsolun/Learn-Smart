@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
-from model import Chat, Slide, Quiz, Flashcard
+from chat_service.app.database.model import Chat, Slide, SlidePage, Quiz, Flashcard
 
 class ChatDB:
     """
@@ -380,7 +380,158 @@ class SlideDB:
         db.commit()
 
         return ret
+    
 
+class SlidePageDB:
+    """
+    Database interface for the SlidePage model.
+    """
+
+    @staticmethod
+    def create(db: Session, slide_id: int, page_number: int, 
+               content_fid: int, chat_history_fid: int):
+        """
+        Create a new slide page object and save it in the database.
+
+        Args:
+        - db (Session): The database session.
+        - slide_id (int): The ID of the slide associated with the page.
+        - page_number (int): The page number of the slide.
+        - chat_history_fid (int): The chat history file ID.
+
+        Returns:
+        - dict: A dictionary representation of the created slide page object.
+        """
+        slide_page = SlidePage(
+            slide_id=slide_id,
+            page_number=page_number,
+            content_fid=content_fid,
+            chat_history_fid=chat_history_fid
+        )
+
+        db.add(slide_page)
+        db.commit()
+        db.refresh(slide_page)
+
+        return slide_page.to_dict()
+
+    @staticmethod
+    def fetch(db: Session, **kwargs):
+        """
+        Fetches slide page data from the database based on the provided query parameters.
+
+        Args:
+        - db (Session): The database session.
+        - page_id (int): The ID of the slide page.
+        - slide_id (int): The ID of the slide associated with the page.
+        - all (bool): Flag indicating whether to fetch all matching slide page records. Default is False.
+
+        Returns:
+        - dict or list: A dictionary representing the fetched slide page record if `all` is False and a matching record is found.
+                        A list of dictionaries representing all fetched slide page records if `all` is True and matching records are found.
+                        None if no matching record is found and `all` is False.
+                        An empty list if no matching records are found and `all` is True.
+        """
+        page_id = kwargs.get("page_id", None)
+        slide_id = kwargs.get("slide_id", None)
+        all = kwargs.get("all", False)
+
+        if not any([page_id, slide_id]):
+            raise ValueError("No query parameters provided")
+
+        filters = []
+        if page_id:
+            filters.append(SlidePage.page_id == page_id)
+        if slide_id:
+            filters.append(SlidePage.slide_id == slide_id)
+
+        query = db.query(SlidePage).filter(and_(*filters))
+        result = query.all() if all else query.first()
+
+        if all:
+            return [page.to_dict() for page in result] if result else []
+        
+        return result.to_dict() if result else None
+    
+
+    @staticmethod
+    def update(db: Session, page_id: int, **kwargs):
+        """
+        Update the slide page details in the database.
+
+        Args:
+        - db (Session): The database session.
+        - page_id (int): The ID of the slide page to update.
+        - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
+            - content_fid (int): The new content file ID.
+            - chat_history_fid (int): The new chat history file ID.
+
+        Returns:
+        - dict: A dictionary representing the updated slide page details.
+
+        Raises:
+        - ValueError: If the slide page with the specified ID is not found in the database.
+        """
+        content_fid = kwargs.get("content_fid", None)
+        chat_history_fid = kwargs.get("chat_history_fid", None)
+
+        page = db.query(SlidePage).filter(SlidePage.page_id == page_id).first()
+        if not page:
+            raise ValueError(f"No slide page with ID {page_id} found")
+
+        if content_fid:
+            page.content_fid = content_fid
+        if chat_history_fid:
+            page.chat_history_fid = chat_history_fid
+
+        db.commit()
+        db.refresh(page)
+
+        return page.to_dict()
+
+
+    @staticmethod
+    def delete(db: Session, **kwargs):
+        """
+        Deletes a slide page from the database.
+
+        Args:
+        - db (Session): The database session.
+        - **kwargs: Additional keyword arguments for specifying query parameters.
+            - page_id (int): The ID of the slide page to be deleted.
+            - slide_id (int): The ID of the slide associated with the page to be deleted.
+            - all (bool): Flag indicating whether to delete all matching slide pages or just the first one. Default is False.
+
+        Returns:
+        - list: A list of dictionaries representing the deleted slide pages.
+        """
+        page_id = kwargs.get("page_id", None)
+        slide_id = kwargs.get("slide_id", None)
+        all = kwargs.get("all", False)
+
+        if not any([page_id, slide_id]):
+            raise ValueError("No query parameters provided")
+
+        filters = []
+        if page_id:
+            filters.append(SlidePage.page_id == page_id)
+        if slide_id:
+            filters.append(SlidePage.slide_id == slide_id)
+
+        query = db.query(SlidePage).filter(and_(*filters))
+        result = query.all() if all else [query.first()]
+
+        if not result:
+            return []
+        
+        ret = []
+        for page in result:
+            ret.append(page.to_dict())
+            db.delete(page)
+
+        db.commit()
+
+        return ret
 
 class QuizDB:
     """

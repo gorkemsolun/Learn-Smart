@@ -10,7 +10,7 @@ from course_service.app.database.session import get_db
 from course_service.app.util import validate_file_extension, resize_image
 from course_service.app.schemas import CourseCreationRequest, CourseUpdateRequest
 
-from course_service.app.clients import user, genai, filemanager
+from course_service.app.clients import user, genai, filemanager, chat
 
 
 router = APIRouter(prefix="/public", tags=["Course - Public API"])
@@ -40,7 +40,6 @@ async def get_course(course_id: int,
     return course
 
 
-# TODO: depends on the implementation of GenAI service, file manager, and chat service etc. TO BE REVISITED
 @router.post("/create")
 async def create_course(course_name: str = Form(...), 
                         course_code: str = Form(...),
@@ -77,6 +76,8 @@ async def create_course(course_name: str = Form(...),
         
         if course_syllabus_file and not validate_file_extension(course_syllabus_file.filename, valid_syllabus_formats):
             raise ValueError(f"Invalid syllabus format. Available formats: {', '.join(valid_syllabus_formats)}")
+
+        course_icon_fid, course_syllabus_fid, course_study_plan_fid = None, None, None
 
         if course_icon_file:
             course_icon_file = await resize_image(course_icon_file)
@@ -117,27 +118,25 @@ async def create_course(course_name: str = Form(...),
         return course
     
     except Exception as e:
-        # TODO: Rollback changes
+        # TODO: We need a different mechanism. For example, if the exception is already caused by filemanager,
+        # then the below .delete() calls will likely fail too. Maybe something like garbage collection in S3 
+        # periodically.
+        if course_icon_fid:
+            await filemanager.delete(course_icon_fid)
 
-        # if course_icon_file:
-        #     await filemanager.delete(course_icon_fid)
-
-        # if course_syllabus_file:
-        #     await filemanager.delete(course_syllabus_fid)
-        #     await filemanager.delete(course_study_plan_fid)
-
-        # if course_icon_path: FileFactory()(path=course_icon_path).delete()
-        # if syllabus_path: FileFactory()(path=syllabus_path).delete()
-        # if study_plan_path: FileFactory()(path=study_plan_path).delete()
-        # if course: CourseDB.delete(course_id=course["course_id"])
+        if course_syllabus_fid:
+            await filemanager.delete(course_syllabus_fid)
+        
+        if course_study_plan_fid:
+            await filemanager.delete(course_study_plan_fid)
 
         raise HTTPException(status_code=500, detail="Unknown error occurred while creating the course.")
 
 
-# TODO: depends on the implementation of file manager, and chat service etc. TO BE REVISITED
 @router.delete("/{course_id}")
 async def delete_course(course_id: int,
                         current_user: dict = Depends(user.get_current_user),
+                        authorization: str = Header(None),
                         db: Session = Depends(get_db)):
     """
     Delete a course.
@@ -157,29 +156,26 @@ async def delete_course(course_id: int,
         raise HTTPException(status_code=404, detail="Course not found.")
 
     if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden. You are not authorized to delete this course.")
+        raise HTTPException(status_code=403, detail="Forbidden - Not authorized to delete this course.")
 
-    course_syllabus_url = course["course_syllabus_url"]
-    if course_syllabus_url: 
-        FileFactory()(path=course_syllabus_url).delete()
+    course_syllabus_fid = course["course_syllabus_fid"]
+    if course_syllabus_fid: 
+        await filemanager.delete(course_syllabus_fid)
     
-    course_icon_url = course["course_icon_url"]
-    if course_icon_url: 
-        FileFactory()(path=course_icon_url).delete()
+    course_icon_fid = course["course_icon_fid"]
+    if course_icon_fid: 
+        await filemanager.delete(course_icon_fid)
         
-    course_study_plan_url = course["course_study_plan_url"]
-    if course_study_plan_url: 
-        FileFactory()(path=course_study_plan_url).delete()
+    course_study_plan_fid = course["course_study_plan_fid"]
+    if course_study_plan_fid: 
+        await filemanager.delete(course_study_plan_fid)
 
-    chats = ChatDB.fetch(course_id=course_id, all=True)  # delete all chats associated with the course
-    for chat in chats:
-        await delete_chat(chat["chat_id"], current_user)  # delete the chat
+    await chat.delete_chats(course_id=course_id, authorization=authorization)
 
     CourseDB.delete(course_id=course_id)  # delete the course
-    return {"message": "Course deleted successfully."}
+    return {"status": "Success", "course": course}
 
 
-# TODO: depends on the implementation of file manager, and chat service etc. TO BE REVISITED
 @router.put("/{course_id}")
 async def update_course(course_id: int, course_name: Optional[str] = Form(None),
                         course_code: Optional[str] = Form(None),
@@ -218,41 +214,44 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         Syllabus updates must go to LLM. course_syllabus_url field would change too.
     """
 
-    # pydantic input validation
-    _ = CourseUpdateRequest(course_name=course_name, course_code=course_code, course_description=course_description)
+    CourseUpdateRequest(
+        course_name=course_name, course_code=course_code, course_description=course_description
+    ) # pydantic input validation
 
     course = CourseDB.fetch(course_id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
     if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
+        raise HTTPException(status_code=403, detail="Forbidden - Not authorized to update this course.")
 
-    new_icon_path, new_syllabus_path, new_study_plan_path = None, None, None
+    new_icon_fid, new_syllabus_fid, new_study_plan_fid = None, None, None
     if update_icon and course_icon_file is None:
-        FileFactory()(path=course["course_icon_url"]).delete()  # delete old image
+        filemanager.delete(course["course_icon_fid"])  # delete old image
+
     elif update_icon and course_icon_file:
         if not validate_file_extension(course_icon_file.filename, ["png", "jpg", "jpeg"]):
             raise HTTPException(status_code=400, detail="Invalid image format. Please upload a PNG, JPG, or JPEG file.")
-        FileFactory()(path=course["course_icon_url"]).delete()  # delete old image
-
-        new_icon_path = get_course_icon_path(course_id)
-        new_course_icon_file = FileFactory()(file=course_icon_file)
-        new_course_icon_file.save(new_icon_path, size=(256, 256))
+        
+        filemanager.delete(course["course_icon_fid"])  # delete old image
+        course_icon_file = await resize_image(course_icon_file)
+        new_icon_fid = await filemanager.upload(
+            file=course_icon_file, user_id=current_user["user_id"]
+        )
 
     if course_update_syllabus and course_syllabus_file is None:
-        FileFactory()(path=course["course_syllabus_url"]).delete()  # delete old syllabus
-        FileFactory()(path=course["course_study_plan_url"]).delete()  # delete old study plan
+        filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
+        filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
+        
     elif course_update_syllabus and course_syllabus_file:
         if not validate_file_extension(course_syllabus_file.filename, ["pdf", "docx"]):
             raise HTTPException(status_code=400, detail="Invalid syllabus format. Please upload a PDF or a DOCX file.")
-        FileFactory()(path=course["course_syllabus_url"]).delete()  # delete old syllabus
-        FileFactory()(path=course["course_study_plan_url"]).delete()  # delete old study plan
+        
+        filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
+        filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
 
-        new_syllabus_path = get_course_syllabus_path(course_id)
-        course_syllabus_file = FileFactory()(course_syllabus_file)
-        course_syllabus_file.save(new_syllabus_path)
-
-        # success, new_study_plan_path = create_study_plan(course_syllabus_file.content(), course_id)
+        new_syllabus_fid = await filemanager.upload(
+            file=course_syllabus_file, user_id=current_user["user_id"]
+        )
         
         # send the syllabus to GenAI service for weekly study plan generation
         study_plan_text = await genai.create_study_plan(course_syllabus_file)
@@ -264,7 +263,7 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
 
         # Upload the study plan file to the FileManager
         with open(temp_file_path, "rb") as f:
-            course_study_plan_fid = await filemanager.upload(
+            new_syllabus_fid = await filemanager.upload(
                 file=f, user_id=current_user["user_id"]
             )
 
@@ -277,15 +276,9 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
             course_description=(
                 "" if course_description is None and update_description else course_description
             ),
-            course_icon_url=(
-                "" if course_icon_file is None and update_icon else new_icon_path
-            ),
-            course_syllabus_url=(
-                "" if course_syllabus_file is None and course_update_syllabus else new_syllabus_path
-            ),
-            course_study_plan_url=(
-                "" if course_syllabus_file is None and course_update_syllabus else new_study_plan_path
-                )
+            course_icon_fid=new_icon_fid,
+            course_syllabus_fid=new_syllabus_fid,
+            course_study_plan_fid=new_study_plan_fid
         )
         return course
     except ValueError as e:
@@ -295,6 +288,7 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
 @router.get("/{course_id}/chats")
 async def get_chats(course_id: int, 
                     current_user: dict = Depends(user.get_current_user),
+                    authorization: str = Header(None),
                     db: Session = Depends(get_db)):
     """
     Get all chats for a course.
@@ -307,17 +301,14 @@ async def get_chats(course_id: int,
     """
 
     course = CourseDB.fetch(db, course_id=course_id)
-
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
 
     # Check if the user is authorized to view the course
-    # This can happen if the user tries to view a course they don't own
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
 
-    # TODO: Convert into gRPC call
-    chats = ChatDB.fetch(course_id=course_id, all=True)
+    chats = chat.get_chats(course_id=course_id, authorization=authorization)
 
     return [
         {"chat_id": chat["chat_id"],

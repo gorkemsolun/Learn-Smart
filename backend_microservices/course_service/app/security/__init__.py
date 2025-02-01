@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 USER_ALLOWED_KEY = os.getenv("USER_ALLOWED_KEY")
+CHAT_ALLOWED_KEY = os.getenv("CHAT_ALLOWED_KEY")
 
 ALLOWED_KEYS = {
-    "user_service": USER_ALLOWED_KEY
+    "user_service": USER_ALLOWED_KEY,
+    "chat_service": CHAT_ALLOWED_KEY
 }

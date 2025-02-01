@@ -19,19 +19,26 @@ async def get_authenticated_email(authorization: str = Header(None)) -> str:
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header missing")
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{AUTH_SERVICE_URL}/private/verify", 
-            headers={
-                "Authorization": authorization,
-                "X-API-Key": AUTH_CLIENT_KEY
-            }
+    try: 
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{AUTH_SERVICE_URL}/private/verify", 
+                headers={
+                    "Authorization": authorization,
+                    "X-API-Key": AUTH_CLIENT_KEY
+                }
+            )
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid authentication token")
+
+        return response.json().get("email", None)
+    
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Authentication service error: {str(e)}"
         )
-
-    if response.status_code != 200:
-        raise HTTPException(status_code=401, detail="Invalid authentication token")
-
-    return response.json().get("email", None)
 
 
 async def hash_password(password: str) -> str:
@@ -44,12 +51,20 @@ async def hash_password(password: str) -> str:
     Returns:
         str: The hashed password.
     """
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{AUTH_SERVICE_URL}/private/hash",
-            params={"password": password}, 
-            headers={"X-API-Key": AUTH_CLIENT_KEY}
-        )
-        response.raise_for_status()
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{AUTH_SERVICE_URL}/private/hash",
+                params={"password": password}, 
+                headers={"X-API-Key": AUTH_CLIENT_KEY}
+            )
+            response.raise_for_status()
 
-    return response.json()
+        return response.json()
+
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Authentication service error: {str(e)}"
+        )
+    
