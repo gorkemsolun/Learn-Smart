@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, File, Header
+from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, File
 import os
 import uuid
 
@@ -242,7 +242,6 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
 @router.delete("/{course_id}")
 async def delete_course(course_id: int,
                         current_user: dict = Depends(user.get_current_user),
-                        authorization: str = Header(None),
                         db: Session = Depends(get_db)):
     """
     Delete a course.
@@ -276,7 +275,7 @@ async def delete_course(course_id: int,
     if course_study_plan_fid: 
         await filemanager.delete(course_study_plan_fid)
 
-    await chat.delete_chats(course_id=course_id, authorization=authorization)
+    await chat.delete_chats(course_id=course_id)
 
     CourseDB.delete(course_id=course_id)  # delete the course
     return {"status": "Success", "course": course}
