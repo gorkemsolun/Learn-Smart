@@ -1,25 +1,19 @@
 "use client";
 
 import { backend, backendAPI } from "@/environment/backend_api";
-import { useAuthToken } from "@/hooks/useAuthToken";
-import { useParams, useRouter } from "next/navigation";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
+import { useLoading } from "@/hooks/useLoading"; // Import the custom hook
+import { LoadingSpinner } from "@/components/LoadingSpinner"; // Import the loading spinner
 
 export default function WeeklyStudyPlan() {
   // Hooks for authentication, routing, and state management
-  const token = useAuthToken();
-  const [loading, setLoading] = useState<boolean>(true);
+  const token = useAuthRedirect();
+  const { loading, startLoading, stopLoading } = useLoading(); // Use the custom hook
   const [studyPlan, setStudyPlan] = useState<string | null>(null);
   const { course_id } = useParams<{ course_id: string }>();
-  const router = useRouter();
-
-  // Redirect to login if no token is found
-  useEffect(() => {
-    if (!token) {
-      router.replace("/login");
-    }
-  }, [token, router]);
 
   // Fetch study plan data when the token or course_id changes
   useEffect(() => {
@@ -31,7 +25,7 @@ export default function WeeklyStudyPlan() {
   // Function to fetch study plan data from the backend
   const fetchStudyPlanData = async (course_id: string) => {
     try {
-      setLoading(true);
+      startLoading(); // Start loading
 
       // Fetch course details to get the study plan URL
       const courseResponse = await backendAPI.get(`/course/${course_id}`, {
@@ -55,16 +49,13 @@ export default function WeeklyStudyPlan() {
     } catch (error) {
       console.error("Oops! Something went wrong while fetching the study plan:", error);
     } finally {
-      setLoading(false);
+      stopLoading(); // Stop loading
     }
   };
 
+  // Show loading spinner while loading
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <span className="ml-2 text-blue-500">Loading your study plan...</span>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   // Handle case where no study plan is available
