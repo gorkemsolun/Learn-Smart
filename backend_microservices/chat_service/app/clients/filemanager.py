@@ -36,6 +36,34 @@ async def upload(file: UploadFile, user_id: int):
         )
 
 
+async def download(file_id: int):
+    """
+    Calls the FileManager service to download a file.
+
+    Args:
+        - file_id (int): The ID of the file to download.
+
+    Returns:
+        - tuple: A tuple containing the file name and file content.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                FILEMANAGER_SERVICE_URL,
+                params={"file_id": file_id},
+                headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
+            )
+            response.raise_for_status()  # Raise an exception for HTTP errors
+        
+        return response.content
+    
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"FileManager service error: {str(e)}"
+        )
+
+
 async def delete(file_id: int):
     """
     Calls the FileManager service to delete a file.

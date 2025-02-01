@@ -1,66 +1,70 @@
-import pymupdf, os, io, json, jsonpickle, base64
-import google.generativeai as genai
 from typing import Optional
-from fastapi import HTTPException, UploadFile
+import asyncio
+import tempfile
+import pymupdf, os, io, json, jsonpickle, base64
 from PIL import Image
 
-from database.dbmanager import SlideDB, ChatDB
+from fastapi import HTTPException, UploadFile
 
-from . import MODEL_VERSION, SYSTEM_PROMPT
+from chat_service.app.database.dbmanager import SlideDB, ChatDB
 
-"""
-TODO: ALL of these functions are to be converted into gRPC calls to LLM service & FileManager service.
-"""
-
-
-def get_chat_history_path(chat_id: int):
+async def convert_pptx_to_pdf(pptx_content: bytes) -> bytes:
     """
-    Returns the path to the chat history file for the given chat ID.
+    Converts a PPTX file to PDF using LibreOffice.
+    Args:
+        pptx_content (bytes): The content of the PPTX file to be converted.
+
+    Returns:
+        bytes: The content of the converted PDF file.
     """
-    return os.path.join(CHATS_DIR, f"chat_{chat_id}_history.txt")
+    pptx_temp_path: Optional[str] = None
+    pdf_path: Optional[str] = None
+    
+    try:
+        # Create temporary PPTX file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pptx') as pptx_temp:
+            pptx_temp.write(pptx_content)
+            pptx_temp_path = pptx_temp.name
+
+        output_dir = tempfile.gettempdir()
+        
+        # Convert using LibreOffice
+        process = await asyncio.create_subprocess_exec(
+            'libreoffice', '--headless', '--convert-to', 'pdf',
+            '--outdir', output_dir, pptx_temp_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        
+        if process.returncode != 0:
+            raise RuntimeError(f"PPTX to PDF conversion failed: {stderr.decode()}")
+
+        # Get path of converted PDF
+        pdf_path = splitext(pptx_temp_path)[0] + '.pdf'
+        if not os.path.exists(pdf_path):
+            raise RuntimeError("Converted PDF file not found")
+
+        # Read PDF content
+        with open(pdf_path, 'rb') as pdf_file:
+            return pdf_file.read()
+            
+    finally:
+        # Cleanup temporary files
+        if pptx_temp_path and os.path.exists(pptx_temp_path):
+            os.remove(pptx_temp_path)
+        if pdf_path and os.path.exists(pdf_path):
+            os.remove(pdf_path)
 
 
-def get_chat_history_metadata_path(chat_id: int):
+def splitext(filename: str) -> tuple[str, str]:
     """
-    Returns the path to the chat history metadata file for the given chat ID.
+    Splits the filename and extension of a file.
+    input: "file.pdf" | output: ("file", "pdf")
     """
-    return os.path.join(CHATS_DIR, f"chat_{chat_id}_history_metadata.json")
-
-
-def get_slide_history_path(slide_id: int, page_number: int):
-    """
-    Returns the path to history file for the given slide ID and page number.
-    """
-    return os.path.join(CHATS_DIR, f"slide_{slide_id}_page_{page_number}_history.txt")
-
-
-def get_slide_history_metadata_path(slide_id: int, page_number: int):
-    """
-    Returns the path to the history metadata file for the given slide ID and page number.
-    """
-    return os.path.join(CHATS_DIR, f"slide_{slide_id}_page_{page_number}_metadata.json")
-
-
-def get_chat_files_path(chat_id: int):
-    """
-    Returns the path to the directory containing uploaded files for the given chat ID.
-    """
-    return os.path.join(FILES_DIR, f"chat_{chat_id}")
-
-
-def get_slides_files_path(slide_id, page_number):
-    """
-    Returns the path to the directory containing the uploaded files for the given slide ID and page number.
-    """
-    return os.path.join(FILES_DIR, f"slide_{slide_id}_page_{page_number}")
-
-
-def get_quizzes_folder_path(chat_id: int):
-    return os.path.join(get_chat_files_path(chat_id), "quiz")
-
-
-def get_flashcards_folder_path(chat_id: int):
-    return os.path.join(get_chat_files_path(chat_id), "flashcards")
+    base_name = os.path.splitext(filename)[0]
+    extension = os.path.splitext(filename)[-1][1:]
+    return base_name, extension
 
 
 def fetch_chat_and_course(chat_id: int, user_id: int):
@@ -137,41 +141,6 @@ def get_slide_content(slide_id: int, page_number: int):
     
     img = Image.open(img_buffer)
     return img
-
-
-def validate_llm_quiz_response(data):
-    """
-    Validates the response structure for the generated quiz.
-    """
-    if not isinstance(data, list):
-        return False
-    
-    for item in data:
-        if not isinstance(item, dict):
-            return False
-
-        # Validate 'question' key
-        if 'question' not in item or not isinstance(item['question'], str):
-            return False
-
-        # Validate 'choices' key
-        if 'choices' not in item or not isinstance(item['choices'], list):
-            return False
-        
-        # Ensure 'choices' contains 5 elements
-        if len(item['choices']) != 5:
-            return False
-        
-        # Validate each choice in 'choices'
-        for choice in item['choices']:
-            if not isinstance(choice, str):
-                return False
-        
-        # Validate 'answer' key
-        if 'answer' not in item or not item['answer'].upper() in ['A', 'B', 'C', 'D', 'E']:
-            return False
-
-    return True
 
 
 def handle_file_upload_for_message(file: UploadFile, chat_id: int, slide_id: Optional[int] = None, page_number: Optional[int] = None):

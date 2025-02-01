@@ -16,7 +16,7 @@ async def get_courses(user_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{COURSE_SERVICE_URL}/private/{user_id}",
+                f"{COURSE_SERVICE_URL}/private/user/{user_id}",
                 headers={"X-API-Key": COURSE_CLIENT_KEY}
             )
             response.raise_for_status()  # Raise an exception for HTTP errors

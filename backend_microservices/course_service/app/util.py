@@ -35,6 +35,7 @@ def splitext(filename: str) -> tuple[str, str]:
     return base_name, extension
 
 
+# TODO: Might be a bad idea, instead check mimetypes
 def validate_file_extension(filename, valid_extensions: list[str]):
     """
     Validates the extension of a file by checking it against a list of valid extensions.

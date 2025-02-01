@@ -5,95 +5,132 @@ import shutil, os, glob, json, jsonpickle, itertools
 from chat_service.app.clients import user, course, filemanager
 from chat_service.app.database.session import get_db
 
-from chat_service.app.database.dbmanager import ChatDB, SlideDB, SlidePageDB
-from course_service.app.util import *
+from chat_service.app.database.dbmanager import (
+    ChatDB, SlideDB, SlidePageDB, QuizDB, FlashcardDB
+)
+from chat_service.app.util import *
 
-from course_service.app.schemas import RenameFlashcardRequest
-from course_service.app.database.session import get_db
+from chat_service.app.schemas import RenameFlashcardRequest
+from chat_service.app.database.session import get_db
 
 router = APIRouter(prefix="/public", tags=["Chat - Public API"])
 
-@router.delete("/course/{course_id}")
-async def delete_chats(course_id: int,
-                       current_user: dict = Depends(user.get_current_user),
-                       db: Session = Depends(get_db)):
+# Course
+@router.get("/course/{course_id}/chats")
+async def get_chats_of_course(course_id: int,
+                              current_user: dict = Depends(user.get_current_user),
+                              db: Session = Depends(get_db)):
+        """
+        Get all chats for a specific course.
+    
+        Args:
+            course_id (int): The ID of the course.
+    
+        Returns:
+            list: A list of dictionaries, each containing the chat details.
+    
+        Raises:
+            HTTPException: If the course is not found or the user is not authorized to access the chats.
+        """
+        courses = await course.get_user_courses(current_user["user_id"])
+        if course_id not in [course["course_id"] for course in courses]:
+            raise HTTPException(status_code=403, detail="Forbidden - not authorized to access the chats.")
+        
+        chats = ChatDB.fetch(db, course_id=course_id, all=True)
+        return chats
+
+
+@router.get("/course/{course_id}/quizzes")
+async def get_quizzes_of_course(course_id: int,
+                                current_user: dict = Depends(user.get_current_user),
+                                db: Session = Depends(get_db)):
     """
-    Delete all chats for a specific course.
+    Get all quizzes for a specific course.
 
     Args:
         course_id (int): The ID of the course.
 
     Returns:
-        dict: A message indicating all chats were successfully deleted.
+        list: A list of dictionaries, each containing the quiz details.
 
     Raises:
-        HTTPException: If the course is not found or the user is not authorized to delete the chats.
+        HTTPException: If the course is not found or the user is not authorized to access the quizzes.
     """
-    courses = await course.get_courses(current_user["user_id"])
+    courses = await course.get_user_courses(current_user["user_id"])
     if course_id not in [course["course_id"] for course in courses]:
         raise HTTPException(status_code=403, detail="Forbidden.")
     
     chats = ChatDB.fetch(db, course_id=course_id, all=True)
+
+    ret = []
     for chat in chats:
-        if chat["slides_mode"]:
-            fids_to_delete = [] # file IDs to delete
-
-            slides = SlideDB.fetch(db, chat_id=chat["chat_id"], all=True)
-            for slide in slides:
-                fids_to_delete.append(slide["slides_fid"])
-                SlideDB.delete(db, slide_id=slide["slide_id"])
-
-                pages = SlidePageDB.fetch(db, slide_id=slide["slide_id"], all=True)
-
-                # TODO: Can we parallelize this operation?
-                for page in pages:
-                    fids_to_delete.append(page["content_fid"])
-                    fids_to_delete.append(page["chat_history_fid"])
-                    SlidePageDB.delete(db, page_id=page["content_id"])
-
-            await filemanager.batch_delete(fids_to_delete)
-
-        elif chat["history_fid"]: # if it's in slides mode, history_fid is already null
-            await filemanager.delete(chat["history_fid"])
-
-    ChatDB.delete(db, course_id=course_id, all=True)
-    return {"status": "success"}
+        quizzes = QuizDB.fetch(db, chat_id=chat["chat_id"], all=True)
+        ret.append({
+            "chat_id": chat["chat_id"],
+            "chat_title": chat["chat_title"],
+            "quizzes": quizzes
+        })
+    
+    return ret
 
 
-@router.get("/course/{course_id}")
-async def get_chats(course_id: int,
-                    current_user: dict = Depends(user.get_current_user),
-                    db: Session = Depends(get_db)):
+# Chat
+@router.get("/chat/{chat_id}/info")
+async def get_chat_info(chat_id: int,
+                        current_user: dict = Depends(user.get_current_user),
+                        db: Session = Depends(get_db)):
     """
-    Get all chats for a specific course.
+    Get the details of a specific chat by its ID.
 
     Args:
-        course_id (int): The ID of the course.
+        chat_id (int): The ID of the chat to retrieve.
 
     Returns:
-        list: A list of dictionaries, each containing the chat details.
+        dict: A dictionary containing the chat details.
 
     Raises:
-        HTTPException: If the course is not found or the user is not authorized to access the chats.
+        HTTPException: If the chat is not found or the user is not authorized to access the chat.
     """
-    courses = await course.get_courses(current_user["user_id"])
-    if course_id not in [course["course_id"] for course in courses]:
+    chat = ChatDB.fetch(db, chat_id=chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found.")
+    
+    courses = await course.get_user_courses(current_user["user_id"])
+    if chat["course_id"] not in [course["course_id"] for course in courses]:
         raise HTTPException(status_code=403, detail="Forbidden.")
     
-    chats = ChatDB.fetch(db, course_id=course_id, all=True)
-
-    return chats
+    return chat
 
 
+@router.get("/chat/{chat_id}/quizzes")
+async def get_quizzes_of_chat(chat_id: int, 
+                              current_user: dict = Depends(user.get_current_user),
+                              db: Session = Depends(get_db)):
+    """
+    Get all quizzes for a specific chat.
+
+    Args:
+        chat_id (int): The ID of the chat.
+
+    Returns:
+        list: A list of dictionaries, each containing the quiz details.
+
+    Raises:
+        HTTPException: If the course is not found or the user is not authorized to access the quizzes.
+    """
+    chat = ChatDB.fetch(db, chat_id=chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found.")
+    
+    courses = await course.get_user_courses(current_user["user_id"])
+    if chat["course_id"] not in [course["course_id"] for course in courses]:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    
+    quizzes = QuizDB.fetch(db, chat_id=chat_id, all=True)
+    return quizzes
 
 
-
-
-
-
-
-
-@router.post("/create")
+@router.post("/chat/create")
 async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File(None),
                       current_user: dict = Depends(user.get_current_user),
                       db: Session = Depends(get_db)):
@@ -115,65 +152,171 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
 
     """
     
-    # TODO: convert this to gRPC call
-    course = CourseDB.fetch(course_id=course_id)
-    if not course:
+    course_dict = course.get_course(course_id)
+    if not course_dict:
         raise HTTPException(status_code=404, detail="Course not found.")
-    if course["user_id"] != current_user["user_id"]:
+    if course_dict["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
     
-    chats = ChatDB.fetch(db, course_id=course_id, chat_title=chat_title, all=True)
-    if len(chats) > 0:
-        raise HTTPException(status_code=400, detail="Chat with the same title already exists.")
-    
-    chat = ChatDB.create(db, course_id=course_id, chat_title=chat_title, slides_mode=bool(slides))
-
-    new_slide, slides_file_path, slides_file_name = None, None, None
-    if slides: # meaning we're creating a chat in slides mode
-        # TODO: much of this logic is to be implemented by FileManager service
-        """ slides_file_name = slides.filename
-        name, extension = splitext(slides_file_name) # split name and extension, e.g. myfile.pdf -> (myfile, pdf)
-        if extension not in ["pptx", "pdf"]: 
-            ChatDB.delete(chat["chat_id"]) # rolling back
-            raise HTTPException(status_code=400, detail=f"Invalid file extension: {extension}")
+    slides_fid, last_opened_slide_id = None, None
+    if slides: # we're creating a chat in slides mode
+        if slides.content_type not in ([
+            'application/pdf', 
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        ]):
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid file type. Only .pptx and .pdf files are allowed."
+            )
         
-        storage_dir = get_chat_files_path(chat["chat_id"])
-        os.makedirs(storage_dir, exist_ok=True)
-        slides_file_path = os.path.join(storage_dir, f"{generate_hash(name, strategy="uuid")}.{extension}")
+        content = await slides.read()
+        final_filename = splitext(slides.filename)[0] + '.pdf' # convert to PDF if it's a PPTX file
+
+        if slides.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+            pdf_content = await convert_pptx_to_pdf(content)
+        else:
+            pdf_content = content
+
+        # Get page count
+        with pymupdf.open(stream=pdf_content, filetype="pdf") as doc:
+            page_count = doc.page_count
+
+        # Prepare UploadFile
+        pdf_file_io = io.BytesIO(pdf_content)
+        pdf_file_io.seek(0)
+        converted_file = UploadFile(
+            filename=final_filename,
+            file=pdf_file_io,
+            content_type='application/pdf'
+        )
+
+        slides_fid = await filemanager.upload(file=converted_file, user_id=current_user["user_id"])
+
+        slide_dict = SlideDB.create(
+            chat_id=chat["chat_id"], slides_file_name=slides.filename, slides_fid=slides_fid, 
+            pages_count=page_count, last_slide_number=1
+        )
+        slide_dict.pop("chat_id")
         
-        try:
-            file = FileFactory()(file=slides)
-            file.save(slides_file_path)
-            slides_file_path = file.path
+        last_opened_slide_id = slide_dict["slide_id"]
 
-            pages_count = 0
-            with file.get() as pdf:
-                pages_count = pdf.page_count
+    chat = ChatDB.create(
+        db, course_id=course_id, chat_title=chat_title, slides_mode=bool(slides), 
+        slides_fid=slides_fid, last_opened_slide_id=last_opened_slide_id
+    )
 
-            new_slide = SlideDB.create(chat_id=chat["chat_id"], slides_file_name=slides_file_name, slides_file_url=slides_file_path,
-                                       pages_count=pages_count, last_slide_number=1)
-            
-            new_slide.pop("chat_id")
-            new_slide.pop("slides_file_url")
-            chat = ChatDB.update(chat_id=chat["chat_id"], last_opened_slide_id=new_slide["slide_id"])
-            chat["slides"] = [new_slide]
+    if slides:
+        chat["slides"] = [slide_dict]
 
-        # Rollback changes
-        except ValueError as e: # If the file extension is invalid (file manager can't handle it)
-            ChatDB.delete(chat_id=chat["chat_id"])
-            file.delete()
-            SlideDB.delete(chat_id=chat["chat_id"], all=True)
-            shutil.rmtree(storage_dir) # "rm -rf chat_<chat_id>", remove the directory and its contents
-            raise HTTPException(status_code=400, detail=str(e))
-        except Exception as e:
-            ChatDB.delete(chat_id=chat["chat_id"])
-            file.delete()
-            SlideDB.delete(chat_id=chat["chat_id"], all=True)
-            shutil.rmtree(storage_dir) # "rm -rf chat_<chat_id>", remove the directory and its contents
-            raise HTTPException(status_code=500, detail=str(e)) """
-        
-    chat.pop("history_url") # it's null on creation
     return {"chat": chat, "message": "Chat created successfully."}
+
+
+# Quiz
+@router.get("/quiz/{quiz_id}")
+async def get_quiz(quiz_id: int,
+                   current_user: dict = Depends(user.get_current_user),
+                   db: Session = Depends(get_db)):
+    """
+    Get the details of a specific quiz by its ID.
+
+    Args:
+        quiz_id (int): The ID of the quiz to retrieve.
+
+    Returns:
+        dict: A dictionary containing the quiz details.
+
+    Raises:
+        HTTPException: If the quiz is not found or the user is not authorized to access the quiz.
+    """
+    quiz = QuizDB.fetch(db, quiz_id=quiz_id)
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found.")
+    
+    chat = ChatDB.fetch(db, chat_id=quiz["chat_id"])
+    courses = await course.get_user_courses(current_user["user_id"])
+    if chat["course_id"] not in [course["course_id"] for course in courses]:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    
+    fid = quiz["quiz_fid"] # file ID of the quiz
+
+    quiz_bytes = await filemanager.download(file_id=fid)
+    quiz_dict = json.loads(quiz_bytes.decode('utf-8'))
+
+    return quiz_dict
+
+
+@router.put("/quiz/{quiz_id}")
+async def rename_quiz(quiz_id: int,
+                      new_title: str,
+                      current_user: dict = Depends(user.get_current_user),
+                      db: Session = Depends(get_db)):
+    """
+    Rename a quiz by its ID.
+
+    Args:
+        quiz_id (int): The ID of the quiz to rename.
+        new_title (str): The new title for the quiz.
+
+    Returns:
+        dict: A dictionary containing the updated quiz details.
+
+    Raises:
+        HTTPException: If the quiz is not found or the user is not authorized to rename the quiz.
+    """
+    quiz = QuizDB.fetch(db, quiz_id=quiz_id)
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found.")
+    
+    chat = ChatDB.fetch(db, chat_id=quiz["chat_id"])
+    courses = await course.get_user_courses(current_user["user_id"])
+    if chat["course_id"] not in [course["course_id"] for course in courses]:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+
+    updated_quiz = QuizDB.update(db, quiz_id=quiz_id, quiz_title=new_title)
+    return {"status": "success", "quiz": updated_quiz}
+
+
+@router.delete("/quiz/{quiz_id}")
+async def delete_quiz(quiz_id: int,
+                      current_user: dict = Depends(user.get_current_user),
+                      db: Session = Depends(get_db)):
+        """
+        Delete a quiz by its ID.
+    
+        Args:
+            quiz_id (int): The ID of the quiz to delete.
+    
+        Returns:
+            dict: A message indicating the quiz was successfully deleted.
+    
+        Raises:
+            HTTPException: If the quiz is not found or the user is not authorized to delete the quiz.
+        """
+        quiz = QuizDB.fetch(db, quiz_id=quiz_id)
+        if not quiz:
+            raise HTTPException(status_code=404, detail="Quiz not found.")
+        
+        chat = ChatDB.fetch(db, chat_id=quiz["chat_id"])
+        courses = await course.get_user_courses(current_user["user_id"])
+        if chat["course_id"] not in [course["course_id"] for course in courses]:
+            raise HTTPException(status_code=403, detail="Forbidden.")
+    
+        QuizDB.delete(db, quiz_id=quiz_id)
+        await filemanager.delete(quiz["quiz_fid"])
+
+        return {"status": "success", "message": "Quiz deleted successfully."}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @router.get("/{chat_id}")

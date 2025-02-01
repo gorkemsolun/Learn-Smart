@@ -118,7 +118,7 @@ class Quiz(Base):
     quiz_id = Column(Integer, primary_key=True, index=True)
     chat_id = Column(Integer, nullable=False)  # the chat ID to which the quiz belongs
     course_id = Column(Integer, nullable=False)  # the course ID to which the quiz belongs
-    quiz_file_name = Column(String(150), nullable=False) # quiz title (e.g. filename)
+    quiz_title = Column(String(150), nullable=False) # quiz title 
     quiz_fid = Column(Integer, nullable=False)  # quiz file ID
     num_questions = Column(Integer, nullable=False)  # the number of questions in the quiz
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -135,7 +135,7 @@ class Quiz(Base):
             "quiz_id": self.quiz_id,
             "chat_id": self.chat_id,
             "course_id": self.course_id,
-            "quiz_file_name": self.quiz_file_name,
+            "quiz_title": self.quiz_title,
             "quiz_fid": self.quiz_fid,
             "num_questions": self.num_questions,
             "created_at": self.created_at
@@ -152,7 +152,7 @@ class Flashcard(Base):
     flashcard_id = Column(Integer, primary_key=True, index=True)
     chat_id = Column(Integer, nullable=False)  # the chat ID to which the flashcard belongs
     course_id = Column(Integer, nullable=False)  # the course ID to which the flashcard belongs
-    flashcard_file_name = Column(String(150), nullable=False) # flashcard title (e.g. filename)
+    flashcard_title = Column(String(150), nullable=False) # flashcard title
     flashcard_fid = Column(Integer, nullable=False)  # flashcard file ID
     num_flashcards = Column(Integer, nullable=False)  # the number of flashcards in the set
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -169,7 +169,7 @@ class Flashcard(Base):
             "flashcard_id": self.flashcard_id,
             "chat_id": self.chat_id,
             "course_id": self.course_id,
-            "flashcard_file_name": self.flashcard_file_name,
+            "flashcard_title": self.flashcard_title,
             "flashcard_fid": self.flashcard_fid,
             "num_flashcards": self.num_flashcards,
             "created_at": self.created_at

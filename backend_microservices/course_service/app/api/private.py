@@ -11,7 +11,7 @@ router = APIRouter(
     dependencies=[Depends(verify_api_key)]
 )
 
-@router.get("/courses/{user_id}")
+@router.get("/user/{user_id}")
 async def get_courses(user_id: int, db: Session = Depends(get_db)):
         """
         Get a user's courses.
@@ -24,3 +24,18 @@ async def get_courses(user_id: int, db: Session = Depends(get_db)):
         """
         courses = CourseDB.fetch(db, user_id=user_id, all=True)
         return courses
+
+
+@router.get("/{course_id}")
+async def get_course(course_id: int, db: Session = Depends(get_db)):
+        """
+        Get a course by its ID.
+    
+        Args:
+            course_id (int): The course's ID.
+    
+        Returns:
+            dict: The course information.
+        """
+        course = CourseDB.fetch(db, course_id=course_id)
+        return course

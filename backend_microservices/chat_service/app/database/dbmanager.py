@@ -13,7 +13,7 @@ class ChatDB:
         db: Session,
         course_id: int,
         chat_title: str,
-        history_url: str = None,
+        history_fid: int = None,
         slides_mode: bool = False,
         last_opened_slide_id: int = None,
     ):
@@ -24,7 +24,7 @@ class ChatDB:
         - db (Session): The database session.
         - course_id (int): The ID of the course associated with the chat.
         - chat_title (str): The title of the chat.
-        - history_url (str, optional): The URL of the chat's history.
+        - history_fid (int, optional): The FID of the chat's history.
         - slides_mode (bool, optional): Indicates whether the chat has slides.
         - last_opened_slide_id (int, optional): The ID of the last opened slide.
 
@@ -34,7 +34,7 @@ class ChatDB:
         chat = Chat(
             course_id=course_id,
             chat_title=chat_title,
-            history_url=history_url,
+            history_fid=history_fid,
             slides_mode=slides_mode,
             last_opened_slide_id=last_opened_slide_id,
         )
@@ -111,7 +111,7 @@ class ChatDB:
             chat_id (int): The ID of the chat to update.
             **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
                 - chat_title (str): The new title for the chat.
-                - history_url (str): The new history URL for the chat.
+                - history_fid (int): The new history FID for the chat.
                 - slides_mode (bool): Enable/disable slides mode of the chat.
                 - last_opened_slide_id: The last opened slide's ID of the chat.
 
@@ -122,7 +122,7 @@ class ChatDB:
             ValueError: If the chat with the specified ID is not found in the database.
         """
         chat_title = kwargs.get("chat_title", None)
-        history_url = kwargs.get("history_url", None)
+        history_fid = kwargs.get("history_fid", None)
         slides_mode = kwargs.get("slides_mode", None)
         last_opened_slide_id = kwargs.get("last_opened_slide_id", None)
 
@@ -132,8 +132,8 @@ class ChatDB:
 
         if chat_title:
             chat.chat_title = chat_title
-        if history_url:
-            chat.history_url = history_url
+        if history_fid:
+            chat.history_fid = history_fid
         if slides_mode is not None:
             chat.slides_mode = slides_mode
         if last_opened_slide_id:
@@ -197,10 +197,10 @@ class SlideDB:
         chat_id: int,
         course_id: int,
         slides_file_name: str,
-        slides_file_url: str,
+        slides_fid: int,
         pages_count: int,
         last_slide_number: int,
-    ):
+    ) -> dict:
         """
         Create a new slide object and save it in the database.
 
@@ -208,7 +208,7 @@ class SlideDB:
         - db (Session): The database session.
         - chat_id (int): The ID of the chat associated with the slides.
         - slides_file_name (str): The filename of the slides.
-        - slides_file_url (str): The URL of the slides.
+        - slides_fid (int): The FID of the slides.
         - pages_count (int): The total number of pages in the slides file.
         - last_slide_number (int): The last fetched slide number.
 
@@ -219,7 +219,7 @@ class SlideDB:
             chat_id=chat_id,
             course_id=course_id,
             slides_file_name=slides_file_name,
-            slides_file_url=slides_file_url,
+            slides_fid=slides_fid,
             pages_count=pages_count,
             last_slide_number=last_slide_number,
         )
@@ -231,6 +231,7 @@ class SlideDB:
 
         return slide.to_dict()
 
+
     @staticmethod
     def fetch(db: Session, **kwargs):
         """
@@ -241,10 +242,6 @@ class SlideDB:
             - slide_id (int): The ID of the slide.
             - chat_id (int): The ID of the chat associated with the slide.
             - course_id (int): The ID of the course associated with the slide.
-            - slides_file_name (str): The filename of the slides.
-            - slides_file_url (str): The URL of the slides.
-            - pages_count (int): The total number of pages in the slides file.
-            - last_slide_number (int): The last fetched slide number.
             - all (bool): Flag indicating whether to fetch all matching slide records. Default is False.
 
         Returns:
@@ -259,16 +256,9 @@ class SlideDB:
         slide_id = kwargs.get("slide_id", None)
         chat_id = kwargs.get("chat_id", None)
         course_id = kwargs.get("course_id", None)
-        slides_file_name = kwargs.get("slides_file_name", None)
-        slides_file_url = kwargs.get("slides_file_url", None)
-        pages_count = kwargs.get("pages_count", None)
-        last_slide_number = kwargs.get("last_slide_number", None)
         all = kwargs.get("all", False)
 
-        if not any(
-            [slide_id, chat_id, course_id, slides_file_name,
-             slides_file_url, pages_count, last_slide_number]
-        ):
+        if not any([slide_id, chat_id, course_id]):
             raise ValueError("No query parameters provided")
 
         # Create a list of filters based on the provided query parameters
@@ -279,14 +269,6 @@ class SlideDB:
             filters.append(Slide.chat_id == chat_id)
         if course_id:
             filters.append(Slide.course_id == course_id)
-        if slides_file_name:
-            filters.append(Slide.slides_file_name == slides_file_name)
-        if slides_file_url:
-            filters.append(Slide.slides_file_url == slides_file_url)
-        if pages_count:
-            filters.append(Slide.pages_count == pages_count)
-        if last_slide_number:
-            filters.append(Slide.last_slide_number == last_slide_number)
         
         query = db.query(Slide).filter(and_(*filters))
         result = query.all() if all else query.first()
@@ -294,6 +276,7 @@ class SlideDB:
         if all:
             return [slide.to_dict() for slide in result] if result else []
         return result.to_dict() if result else None
+
 
     @staticmethod
     def update(db: Session, slide_id: int, **kwargs):
@@ -305,7 +288,7 @@ class SlideDB:
             - slide_id (int): The ID of the slide to update.
             - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
                 - slides_file_name (str): The new filename for the slide.
-                - slides_file_url (str): The new URL for the slide.
+                - slides_fid (int): The new FID for the slide.
                 - last_slide_number (int): The new last fetched slide number.
 
         Returns:
@@ -315,7 +298,7 @@ class SlideDB:
             - ValueError: If the slide with the specified ID is not found in the database.
         """
         slides_file_name = kwargs.get("slides_file_name", None)
-        slides_file_url = kwargs.get("slides_file_url", None)
+        slides_fid = kwargs.get("slides_fid", None)
         last_slide_number = kwargs.get("last_slide_number", None)
 
         slide = db.query(Slide).filter(Slide.slide_id == slide_id).first()
@@ -324,8 +307,8 @@ class SlideDB:
 
         if slides_file_name:
             slide.slides_file_name = slides_file_name
-        if slides_file_url:
-            slide.slides_file_url = slides_file_url
+        if slides_fid:
+            slide.slides_fid = slides_fid
         if last_slide_number:
             slide.last_slide_number = last_slide_number
 
@@ -334,6 +317,7 @@ class SlideDB:
 
         return slide.to_dict()
         
+
     @staticmethod
     def delete(db: Session, **kwargs):
         """
@@ -542,8 +526,8 @@ class QuizDB:
     def create(db: Session, 
                chat_id: int, 
                course_id: int,
-               quiz_file_name: str,
-               quiz_file_url: str,
+               quiz_title: str,
+               quiz_fid: int,
                num_questions: int):
         """
         Create a new quiz object and save it in the database.
@@ -552,8 +536,8 @@ class QuizDB:
         - db (Session): The database session.
         - chat_id (int): The ID of the chat associated with the quiz.
         - course_id (int): The ID of the course associated with the quiz.
-        - quiz_file_name (str): The title of the quiz.
-        - quiz_file_url (str): The URL of the quiz file.
+        - quiz_title (str): The title of the quiz.
+        - quiz_fid (int): The file ID of the quiz.
         - num_questions (int): The number of questions in the quiz.
 
         Returns:
@@ -562,8 +546,8 @@ class QuizDB:
         quiz = Quiz(
             chat_id=chat_id,
             course_id=course_id,
-            quiz_file_name=quiz_file_name,
-            quiz_file_url=quiz_file_url,
+            quiz_title=quiz_title,
+            quiz_fid=quiz_fid,
             num_questions=num_questions
         )
 
@@ -572,6 +556,7 @@ class QuizDB:
         db.refresh(quiz)
 
         return quiz.to_dict()
+
 
     @staticmethod
     def fetch(db: Session, **kwargs):
@@ -583,8 +568,7 @@ class QuizDB:
         - quiz_id (int): The ID of the quiz.
         - chat_id (int): The ID of the chat associated with the quiz.
         - course_id (int): The ID of the course associated with the quiz.
-        - quiz_file_name (str): The filename of the quiz.
-        - quiz_file_url (str): The URL of the quiz file.
+        - quiz_fid (int): The file ID of the quiz.
         - all (bool): Flag indicating whether to fetch all matching quiz records. Default is False.
 
         Returns:
@@ -599,11 +583,10 @@ class QuizDB:
         quiz_id = kwargs.get("quiz_id", None)
         chat_id = kwargs.get("chat_id", None)
         course_id = kwargs.get("course_id", None)
-        quiz_file_name = kwargs.get("quiz_file_name", None)
-        quiz_file_url = kwargs.get("quiz_file_url", None)
+        quiz_fid = kwargs.get("quiz_fid", None)
         all = kwargs.get("all", False)
 
-        if not any([quiz_id, chat_id, course_id, quiz_file_name, quiz_file_url]):
+        if not any([quiz_id, chat_id, course_id, quiz_fid]):
             raise ValueError("No query parameters provided")
 
         filters = []
@@ -613,10 +596,8 @@ class QuizDB:
             filters.append(Quiz.chat_id == chat_id)
         if course_id:
             filters.append(Quiz.course_id == course_id)
-        if quiz_file_name:
-            filters.append(Quiz.quiz_file_name == quiz_file_name)
-        if quiz_file_url:
-            filters.append(Quiz.quiz_file_url == quiz_file_url)
+        if quiz_fid:
+            filters.append(Quiz.quiz_fid == quiz_fid)
 
         query = db.query(Quiz).filter(and_(*filters))
         result = query.all() if all else query.first()
@@ -636,8 +617,7 @@ class QuizDB:
         - db (Session): The database session.
         - quiz_id (int): The ID of the quiz to update.
         - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
-            - quiz_file_name (str): The new title for the quiz.
-            - quiz_file_url (str): The new URL for the quiz file.
+            - quiz_title (str): The new title for the quiz.
 
         Returns:
         - dict: A dictionary representing the updated quiz details.
@@ -645,17 +625,14 @@ class QuizDB:
         Raises:
         - ValueError: If the quiz with the specified ID is not found in the database.
         """
-        quiz_file_name = kwargs.get("quiz_file_name", None)
-        quiz_file_url = kwargs.get("quiz_file_url", None)
+        quiz_title = kwargs.get("quiz_title", None)
 
         quiz = db.query(Quiz).filter(Quiz.quiz_id == quiz_id).first()
         if not quiz:
             raise ValueError(f"No quiz with ID {quiz_id} found")
 
-        if quiz_file_name:
-            quiz.quiz_file_name = quiz_file_name
-        if quiz_file_url:
-            quiz.quiz_file_url = quiz_file_url
+        if quiz_title:
+            quiz.quiz_title = quiz_title
 
         db.commit()
         db.refresh(quiz)
@@ -709,7 +686,6 @@ class QuizDB:
         db.commit()
 
         return ret
-    
 
 class FlashcardDB:
     """
@@ -720,8 +696,8 @@ class FlashcardDB:
     def create(db: Session, 
                chat_id: int, 
                course_id: int,
-               flashcard_file_name: str,
-               flashcard_file_url: str,
+               flashcard_title: str,
+               flashcard_fid: int,
                num_flashcards: int):
         """
         Create a new flashcard object and save it in the database.
@@ -730,8 +706,8 @@ class FlashcardDB:
         - db (Session): The database session.
         - chat_id (int): The ID of the chat associated with the flashcard.
         - course_id (int): The ID of the course associated with the flashcard.
-        - flashcard_file_name (str): The title of the flashcard.
-        - flashcard_file_url (str): The URL of the flashcard file.
+        - flashcard_title (str): The title of the flashcard.
+        - flashcard_fid (int): The FID of the flashcard file.
         - num_flashcards (int): The number of flashcards in the set.
 
         Returns:
@@ -740,8 +716,8 @@ class FlashcardDB:
         flashcard = Flashcard(
             chat_id=chat_id,
             course_id=course_id,
-            flashcard_file_name=flashcard_file_name,
-            flashcard_file_url=flashcard_file_url,
+            flashcard_title=flashcard_title,
+            flashcard_fid=flashcard_fid,
             num_flashcards=num_flashcards
         )
 
@@ -762,8 +738,8 @@ class FlashcardDB:
         - flashcard_id (int): The ID of the flashcard.
         - chat_id (int): The ID of the chat associated with the flashcard.
         - course_id (int): The ID of the course associated with the flashcard.
-        - flashcard_file_name (str): The filename of the flashcard.
-        - flashcard_file_url (str): The URL of the flashcard file.
+        - flashcard_title (str): The title of the flashcard.
+        - flashcard_fid (int): The FID of the flashcard file.
         - all (bool): Flag indicating whether to fetch all matching flashcard records. Default is False.
 
         Returns:
@@ -775,11 +751,11 @@ class FlashcardDB:
         flashcard_id = kwargs.get("flashcard_id", None)
         chat_id = kwargs.get("chat_id", None)
         course_id = kwargs.get("course_id", None)
-        flashcard_file_name = kwargs.get("flashcard_file_name", None)
-        flashcard_file_url = kwargs.get("flashcard_file_url", None)
+        flashcard_title = kwargs.get("flashcard_title", None)
+        flashcard_fid = kwargs.get("flashcard_fid", None)
         all = kwargs.get("all", False)
 
-        if not any([flashcard_id, chat_id, course_id, flashcard_file_name, flashcard_file_url]):
+        if not any([flashcard_id, chat_id, course_id, flashcard_title, flashcard_fid]):
             raise ValueError("No query parameters provided")
 
         filters = []
@@ -789,10 +765,10 @@ class FlashcardDB:
             filters.append(Flashcard.chat_id == chat_id)
         if course_id:
             filters.append(Flashcard.course_id == course_id)
-        if flashcard_file_name:
-            filters.append(Flashcard.flashcard_file_name == flashcard_file_name)
-        if flashcard_file_url:
-            filters.append(Flashcard.flashcard_file_url == flashcard_file_url)
+        if flashcard_title:
+            filters.append(Flashcard.flashcard_title == flashcard_title)
+        if flashcard_fid:
+            filters.append(Flashcard.flashcard_fid == flashcard_fid)
 
         query = db.query(Flashcard).filter(and_(*filters))
         result = query.all() if all else query.first()
@@ -812,8 +788,8 @@ class FlashcardDB:
         - db (Session): The database session.
         - flashcard_id (int): The ID of the flashcard to update.
         - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
-            - flashcard_file_name (str): The new title for the flashcard.
-            - flashcard_file_url (str): The new URL for the flashcard file.
+            - flashcard_title (str): The new title for the flashcard.
+            - flashcard_fid (int): The new FID for the flashcard file.
 
         Returns:
         - dict: A dictionary representing the updated flashcard details.
@@ -821,17 +797,17 @@ class FlashcardDB:
         Raises:
         - ValueError: If the flashcard with the specified ID is not found in the database.
         """
-        flashcard_file_name = kwargs.get("flashcard_file_name", None)
-        flashcard_file_url = kwargs.get("flashcard_file_url", None)
+        flashcard_title = kwargs.get("flashcard_title", None)
+        flashcard_fid = kwargs.get("flashcard_fid", None)
 
         flashcard = db.query(Flashcard).filter(Flashcard.flashcard_id == flashcard_id).first()
         if not flashcard:
             raise ValueError(f"No flashcard with ID {flashcard_id} found")
 
-        if flashcard_file_name:
-            flashcard.flashcard_file_name = flashcard_file_name
-        if flashcard_file_url:
-            flashcard.flashcard_file_url = flashcard_file_url
+        if flashcard_title:
+            flashcard.flashcard_title = flashcard_title
+        if flashcard_fid:
+            flashcard.flashcard_fid = flashcard_fid
 
         db.commit()
         db.refresh(flashcard)
