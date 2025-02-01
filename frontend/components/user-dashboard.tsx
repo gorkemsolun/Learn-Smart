@@ -1,23 +1,23 @@
 "use client";
 
-import * as React from "react";
 import { Course } from "@/app/types";
 import { CourseCreateDialog } from "@/components/course-create-dialog";
 import { CoursesList } from "@/components/courses-list";
 import {
-    Card,
-    CardHeader,
-    CardFooter,
-    CardTitle,
-    CardDescription,
-    CardContent } from "@/components/ui/card";
-import {useCallback, useEffect, useState} from "react";
-import Cookies from "js-cookie";
-import {backendAPI} from "@/environment/backend_api";
-import {useToast} from "@/hooks/use-toast";
-import {ToastAction} from "@/components/ui/toast";
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { ToastAction } from "@/components/ui/toast";
+import { backendAPI } from "@/environment/backend_api";
+import { useToast } from "@/hooks/use-toast";
 import HubIcon from '@mui/icons-material/Hub';
-import {useRouter} from "next/navigation";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 export default function UserDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
