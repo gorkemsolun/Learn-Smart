@@ -15,31 +15,6 @@ from course_service.app.clients import user, genai, filemanager, chat
 
 router = APIRouter(prefix="/public", tags=["Course - Public API"])
 
-@router.get("/{course_id}")
-async def get_course(course_id: int, 
-                     current_user: dict = Depends(user.get_current_user),
-                     db: Session = Depends(get_db)):
-    """
-    Get course details by course ID.
-
-    Args:
-        course_id (int): The ID of the course to retrieve.
-
-    Returns:
-        dict: A dictionary containing the course details.
-    """
-    course = CourseDB.fetch(db, course_id=course_id)
-
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found.")
-
-    # Check if the user is authorized to view the course
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
-
-    return course
-
-
 @router.post("/create")
 async def create_course(course_name: str = Form(...), 
                         course_code: str = Form(...),
@@ -131,49 +106,31 @@ async def create_course(course_name: str = Form(...),
             await filemanager.delete(course_study_plan_fid)
 
         raise HTTPException(status_code=500, detail="Unknown error occurred while creating the course.")
+    
 
-
-@router.delete("/{course_id}")
-async def delete_course(course_id: int,
-                        current_user: dict = Depends(user.get_current_user),
-                        authorization: str = Header(None),
-                        db: Session = Depends(get_db)):
+@router.get("/{course_id}")
+async def get_course(course_id: int, 
+                     current_user: dict = Depends(user.get_current_user),
+                     db: Session = Depends(get_db)):
     """
-    Delete a course.
+    Get course details by course ID.
 
     Args:
-        course_id (int): The ID of the course to delete.
-        current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
+        course_id (int): The ID of the course to retrieve.
 
     Returns:
-        Success message.
-
-    Raises:
-        HTTPException: If there is an error deleting the course.
+        dict: A dictionary containing the course details.
     """
     course = CourseDB.fetch(db, course_id=course_id)
+
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
 
+    # Check if the user is authorized to view the course
     if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden - Not authorized to delete this course.")
+        raise HTTPException(status_code=403, detail="Forbidden.")
 
-    course_syllabus_fid = course["course_syllabus_fid"]
-    if course_syllabus_fid: 
-        await filemanager.delete(course_syllabus_fid)
-    
-    course_icon_fid = course["course_icon_fid"]
-    if course_icon_fid: 
-        await filemanager.delete(course_icon_fid)
-        
-    course_study_plan_fid = course["course_study_plan_fid"]
-    if course_study_plan_fid: 
-        await filemanager.delete(course_study_plan_fid)
-
-    await chat.delete_chats(course_id=course_id, authorization=authorization)
-
-    CourseDB.delete(course_id=course_id)  # delete the course
-    return {"status": "Success", "course": course}
+    return course
 
 
 @router.put("/{course_id}")
@@ -209,9 +166,6 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
     - HTTPException(404): If the course is not found.
     - HTTPException(403): If the user is not authorized to update the course.
     - HTTPException(400): If there is a value error during the update process.
-
-    TODO:
-        Syllabus updates must go to LLM. course_syllabus_url field would change too.
     """
 
     CourseUpdateRequest(
@@ -285,240 +239,44 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{course_id}/chats")
-async def get_chats(course_id: int, 
-                    current_user: dict = Depends(user.get_current_user),
-                    authorization: str = Header(None),
-                    db: Session = Depends(get_db)):
+@router.delete("/{course_id}")
+async def delete_course(course_id: int,
+                        current_user: dict = Depends(user.get_current_user),
+                        authorization: str = Header(None),
+                        db: Session = Depends(get_db)):
     """
-    Get all chats for a course.
+    Delete a course.
 
     Args:
-        course_id (int): The ID of the course.
+        course_id (int): The ID of the course to delete.
+        current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
 
     Returns:
-        list: A list of chat messages.
-    """
-
-    course = CourseDB.fetch(db, course_id=course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found.")
-
-    # Check if the user is authorized to view the course
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
-
-    chats = chat.get_chats(course_id=course_id, authorization=authorization)
-
-    return [
-        {"chat_id": chat["chat_id"],
-         "chat_title": chat["chat_title"],
-         "slides_mode": chat["slides_mode"],
-         "last_opened_slide_id": chat["last_opened_slide_id"],
-         "created_at": chat["created_at"]} 
-        for chat in chats]  # return chat titles along with chat IDs
-
-
-@router.get("/{course_id}/quizzes")
-async def get_quizzes(course_id: int, 
-                      current_user: dict = Depends(user.get_current_user),
-                      db: Session = Depends(get_db)):
-    """
-    Get all quizzes for a course.
-
-    Args:
-        course_id (int): The ID of the course.
-        current_user (User): The current authenticated user (used for authentication).
-
-    Returns:
-        list: A list of quizzes.
-    """
-
-    course = CourseDB.fetch(db, course_id=course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found.")
-    
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden. You are not authorized to rename this quiz.")
-
-    # TODO: Convert into gRPC call
-    """chats = ChatDB.fetch(course_id=course_id, all=True)
-
-    quizzes = []
-    for chat in chats:
-        quizzes_path = get_quizzes_folder_path(chat["chat_id"])
-        if os.path.exists(quizzes_path):
-            filenames = [splitext(filename)[0] for filename in os.listdir(quizzes_path)]
-            quizzes.append({"chat_id": chat["chat_id"], "chat_title": chat["chat_title"], "quizzes": filenames})
-    return quizzes"""
-
-
-# TODO: In chat_service, we will have DB entries for quizzes, which will have IDs -- rendering this function wrong and unnecessary
-# Quizzes don't have entries in DB and don't have IDs, which makes this function inefficient
-@router.put("/{course_id}/quizzes/{quiz_name}")
-async def rename_quiz(course_id: int, quiz_name: str, new_quiz_name: str,
-                      current_user: dict = Depends(user.get_current_user),
-                      db: Session = Depends(get_db)):
-    """
-    Rename a quiz.
-
-    Args:
-        course_id (int): The ID of the course.
-        quiz_name (str): The current name of the quiz.
-        new_quiz_name (str): The new name of the quiz.
-        current_user (User): The current authenticated user (used for authentication).
-
-    Returns:
-        dict: A dictionary containing the new quiz name.
+        Success message.
 
     Raises:
-        HTTPException: If there is an error renaming the quiz.
+        HTTPException: If there is an error deleting the course.
     """
-
-    course = CourseDB.fetch(db, course_id=course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found.")
-    
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden. You are not authorized to rename this quiz.")
-
-    quiz_name = quiz_name.strip()
-    chats = ChatDB.fetch(course_id=course_id, all=True)
-
-    """old, new = None, None
-    for chat in chats:
-        quizzes_path = get_quizzes_folder_path(chat["chat_id"])
-        if os.path.exists(quizzes_path):
-            filenames = [splitext(filename)[0] for filename in os.listdir(quizzes_path)]
-            if new_quiz_name in filenames:
-                raise HTTPException(status_code=400, detail=f'Quiz with name "{new_quiz_name}" already exists.')
-            if quiz_name in filenames:
-                old = os.path.join(quizzes_path, f"{quiz_name}.json")
-                new = os.path.join(quizzes_path, f"{new_quiz_name}.json")
-    
-    if old and new:
-        os.rename(old, new)
-        return new
-    
-    raise HTTPException(status_code=404, detail=f'Quiz with name "{quiz_name}" not found.')"""
-
-
-# TODO: In chat_service, we will have DB entries for quizzes, which will have IDs -- rendering this function wrong and unnecessary
-@router.get("/{course_id}/quizzes/{quiz_name}")
-async def get_quiz(course_id: int, quiz_name: str,
-                   current_user: dict = Depends(user.get_current_user),
-                   db: Session = Depends(get_db)):
-    """
-    Get a quiz.
-
-    Args:
-        course_id (int): The ID of the course.
-        quiz_name (str): The name of the quiz.
-        current_user (User): The current authenticated user (used for authentication).
-
-    Returns:
-        dict: A dictionary containing the quiz.
-
-    Raises:
-        HTTPException: If there is an error getting the quiz.
-    """
-
     course = CourseDB.fetch(db, course_id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
 
     if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden. You are not authorized to rename this quiz.")
+        raise HTTPException(status_code=403, detail="Forbidden - Not authorized to delete this course.")
 
-    quiz_name = quiz_name.strip()
-    chats = ChatDB.fetch(course_id=course_id, all=True)
-    """for chat in chats:
-        quizzes_path = get_quizzes_folder_path(chat["chat_id"])
-        if os.path.exists(quizzes_path):
-            filenames = [splitext(filename)[0] for filename in os.listdir(quizzes_path)]
-            if quiz_name in filenames:
-                with open(os.path.join(quizzes_path, f"{quiz_name}.json"), "r") as f:
-                    return json.load(f)
-
-    raise HTTPException(status_code=404, detail="Quiz not found.")"""
-
-
-# TODO: In chat_service, we will have DB entries for quizzes, which will have IDs -- rendering this function wrong and unnecessary
-@router.delete("/{course_id}/quizzes/{quiz_name}")
-async def delete_quiz(course_id: int, quiz_name: str,
-                      current_user: dict = Depends(user.get_current_user),
-                      db: Session = Depends(get_db)):
-    """
-    Delete a quiz.
-
-    Args:
-        course_id (int): The ID of the course.
-        quiz_name (str): The name of the quiz.
-        current_user (User): The current authenticated user (used for authentication).
-
-    Returns:
-        dict: A dictionary containing the success message.
-
-    Raises:
-        HTTPException: If there is an error deleting the quiz.
-    """
-
-    course = CourseDB.fetch(db, course_id=course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found.")
-
-    quiz_name = quiz_name.strip()
-    chats = ChatDB.fetch(course_id=course_id, all=True)
-
-    """for chat in chats:
-        quizzes_path = get_quizzes_folder_path(chat["chat_id"])
-        if os.path.exists(quizzes_path):
-            filenames = [splitext(filename)[0] for filename in os.listdir(quizzes_path)]
-            if quiz_name in filenames:
-                os.remove(os.path.join(quizzes_path, f"{quiz_name}.json"))
-                return {"message": "Quiz deleted successfully."}
-
-    raise HTTPException(status_code=404, detail="Quiz not found.")"""
-
-
-# TODO: In chat_service, we will have DB entries for flashcards, which will have IDs -- rendering this function wrong and unnecessary
-# Also filemanager implementation is needed
-@router.get("/{course_id}/flashcards")
-async def get_flashcards_list(course_id: int, current_user: dict = Depends(user.get_current_user)):
-    """
-    Get all flashcards for a course.
-
-    Args:
-        course_id (int): The ID of the course.
-        current_user (User): The current authenticated user (used for authentication).
-
-    Returns:
-        list: A list of flashcards.
-    """
-
-    course = CourseDB.fetch(course_id=course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found.")
+    course_syllabus_fid = course["course_syllabus_fid"]
+    if course_syllabus_fid: 
+        await filemanager.delete(course_syllabus_fid)
     
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden. You are not authorized to rename this quiz.")
+    course_icon_fid = course["course_icon_fid"]
+    if course_icon_fid: 
+        await filemanager.delete(course_icon_fid)
+        
+    course_study_plan_fid = course["course_study_plan_fid"]
+    if course_study_plan_fid: 
+        await filemanager.delete(course_study_plan_fid)
 
-    chats = ChatDB.fetch(course_id=course_id, all=True)
-    
-    flashcards = []
-    for chat in chats:
-        chat_id = chat["chat_id"]
-        flashcards_path = get_flashcards_folder_path(chat_id)
+    await chat.delete_chats(course_id=course_id, authorization=authorization)
 
-        for filename in os.listdir(flashcards_path):
-            if filename.endswith(".json"):
-                with open(os.path.join(flashcards_path, filename), "r") as f:
-                    flashcard = json.load(f)
-                    flashcards.append({
-                        "chat_id": chat_id,
-                        "filename": filename,
-                        "content": flashcard
-                    })
-
-    return flashcards
-    
+    CourseDB.delete(course_id=course_id)  # delete the course
+    return {"status": "Success", "course": course}
