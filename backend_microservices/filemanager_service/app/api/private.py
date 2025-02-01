@@ -64,7 +64,7 @@ def batch_upload_files(user_id: int,
 
 
 @router.get("/")
-def fetch_file(file_id: int, db: FileDB = Depends(get_db)):
+def download_file(file_id: int, db: FileDB = Depends(get_db)):
     """
     Retrieve a file by its ID.
 
@@ -91,6 +91,36 @@ def fetch_file(file_id: int, db: FileDB = Depends(get_db)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to download file")
+    
+
+@router.get("/batch")
+def batch_download_files(file_ids: List[int], db: FileDB = Depends(get_db)):
+    """
+    Retrieve multiple files by their IDs.
+
+    Args:
+        file_ids (List[int]): The IDs of the files to retrieve.
+
+    Returns:
+        StreamingResponse: The response containing the file streams.
+
+    Raises:
+        HTTPException: If there is an error downloading the files.
+    """
+    try:
+        for fid in file_ids:
+            file_db = FileDB.fetch(db, file_id=fid)
+            if not file_db:
+                raise HTTPException(status_code=404, detail="File not found")
+            
+            file_stream = s3lib.download_from_s3(fid)
+            yield StreamingResponse(
+                file_stream, media_type=file_db["mime_type"],
+                headers={"Content-Disposition": f"attachment; filename={file_db['file_name']}"}
+            )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to download files")
 
 
 @router.delete("/")
