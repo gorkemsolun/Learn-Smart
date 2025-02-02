@@ -1,17 +1,13 @@
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
-import shutil, os, glob, json, jsonpickle, itertools
+import os, glob, json, jsonpickle, itertools
 
 from chat_service.app.clients import user, course, filemanager
-from chat_service.app.database.session import get_db
-
 from chat_service.app.database.dbmanager import (
     ChatDB, SlideDB, SlidePageDB, QuizDB, FlashcardDB
 )
-from chat_service.app.util import *
-
-from chat_service.app.schemas import RenameFlashcardRequest
 from chat_service.app.database.session import get_db
+from chat_service.app.util import *
 
 router = APIRouter(prefix="/public", tags=["Chat - Public API"])
 
@@ -73,7 +69,6 @@ async def get_quizzes_of_course(course_id: int,
     
     return ret
 
-
 # Chat
 @router.get("/chat/{chat_id}/info")
 async def get_chat_info(chat_id: int,
@@ -91,15 +86,68 @@ async def get_chat_info(chat_id: int,
     Raises:
         HTTPException: If the chat is not found or the user is not authorized to access the chat.
     """
-    chat = ChatDB.fetch(db, chat_id=chat_id)
-    if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found.")
-    
-    courses = await course.get_user_courses(current_user["user_id"])
-    if chat["course_id"] not in [course["course_id"] for course in courses]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
-    
+    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
     return chat
+
+
+@router.put("chat/{chat_id}/update_slides")
+async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
+                             current_user: dict = Depends(user.get_current_user),
+                             db: Session = Depends(get_db)):
+    """
+    Update the slides for a chat by its ID.
+
+    Args:
+        chat_id (int): The ID of the chat to update.
+        slides (UploadFile): The new slides file to upload.
+
+    Returns:
+        dict: A dictionary containing the updated chat details.
+
+    Raises:
+        HTTPException: If the chat is not found or the user is not authorized to update the chat.
+    """
+    chat, crs = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    if not chat["slides_mode"]:
+        raise HTTPException(status_code=400, detail="Slides mode is not enabled for this chat.")
+
+    # Validate the file type by checking mime type
+    if slides.content_type not in ([
+        'application/pdf', 
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ]):
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid file type. Only .pptx and .pdf files are allowed."
+        )
+    
+    content = await slides.read()
+    final_filename = f"{splitext(slides.filename)[0]}.pdf" # convert to PDF if it's a PPTX file
+
+    if slides.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+        pdf_content = await convert_pptx_to_pdf(content)
+    else:
+        pdf_content = content
+
+    with pymupdf.open(stream=pdf_content, filetype="pdf") as doc:
+        page_count = doc.page_count
+
+    with io.BytesIO(pdf_content) as pdf_file_io:
+        converted_file = UploadFile(
+            filename=final_filename, file=pdf_file_io, content_type='application/pdf'
+        )
+        slides_fid = await filemanager.upload(file=converted_file, user_id=current_user["user_id"])
+
+    slide = SlideDB.create(
+        db, chat_id=chat["chat_id"], course_id=crs["course_id"], slides_file_name=slides.filename, 
+        slides_fid=slides_fid, pages_count=page_count, last_slide_number=1
+    )
+    chat = ChatDB.update(db, chat_id=chat["chat_id"], last_opened_slide_id=slide["slide_id"])
+
+    slides_of_chat = SlideDB.fetch(db, chat_id=chat_id, all=True)
+    chat["slides"] = slides_of_chat
+
+    return {"chat": chat, "message": "Slides updated successfully."}
 
 
 @router.get("/chat/{chat_id}/quizzes")
@@ -118,13 +166,7 @@ async def get_quizzes_of_chat(chat_id: int,
     Raises:
         HTTPException: If the course is not found or the user is not authorized to access the quizzes.
     """
-    chat = ChatDB.fetch(db, chat_id=chat_id)
-    if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found.")
-    
-    courses = await course.get_user_courses(current_user["user_id"])
-    if chat["course_id"] not in [course["course_id"] for course in courses]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
+    get_authorized_chat_and_course(chat_id, current_user["user_id"])
     
     quizzes = QuizDB.fetch(db, chat_id=chat_id, all=True)
     return quizzes
@@ -151,14 +193,16 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
         HTTPException: If the file extension is invalid.
 
     """
-    
     course_dict = course.get_course(course_id)
     if not course_dict:
         raise HTTPException(status_code=404, detail="Course not found.")
     if course_dict["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
+        raise HTTPException(status_code=403, detail="Forbidden - not authorized to create chat for this course.")
     
-    slides_fid, last_opened_slide_id = None, None
+    chat = ChatDB.create(
+        db, course_id=course_id, chat_title=chat_title, slides_mode=bool(slides)
+    )
+
     if slides: # we're creating a chat in slides mode
         if slides.content_type not in ([
             'application/pdf', 
@@ -170,46 +214,147 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
             )
         
         content = await slides.read()
-        final_filename = splitext(slides.filename)[0] + '.pdf' # convert to PDF if it's a PPTX file
+        final_filename = f"{splitext(slides.filename)[0]}.pdf" # convert to PDF if it's a PPTX file
 
         if slides.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
             pdf_content = await convert_pptx_to_pdf(content)
         else:
             pdf_content = content
 
-        # Get page count
         with pymupdf.open(stream=pdf_content, filetype="pdf") as doc:
             page_count = doc.page_count
 
-        # Prepare UploadFile
-        pdf_file_io = io.BytesIO(pdf_content)
-        pdf_file_io.seek(0)
-        converted_file = UploadFile(
-            filename=final_filename,
-            file=pdf_file_io,
-            content_type='application/pdf'
+        with io.BytesIO(pdf_content) as pdf_file_io:
+            converted_file = UploadFile(
+                filename=final_filename, file=pdf_file_io, content_type='application/pdf'
+            )
+            slides_fid = await filemanager.upload(file=converted_file, user_id=current_user["user_id"])
+
+        slide = SlideDB.create(
+            db, chat_id=chat["chat_id"], course_id=course_id, slides_file_name=slides.filename, 
+            slides_fid=slides_fid, pages_count=page_count, last_slide_number=1
         )
+        chat = ChatDB.update(db, chat_id=chat["chat_id"], last_opened_slide_id=slide["slide_id"])
 
-        slides_fid = await filemanager.upload(file=converted_file, user_id=current_user["user_id"])
-
-        slide_dict = SlideDB.create(
-            chat_id=chat["chat_id"], slides_file_name=slides.filename, slides_fid=slides_fid, 
-            pages_count=page_count, last_slide_number=1
-        )
-        slide_dict.pop("chat_id")
-        
-        last_opened_slide_id = slide_dict["slide_id"]
-
-    chat = ChatDB.create(
-        db, course_id=course_id, chat_title=chat_title, slides_mode=bool(slides), 
-        slides_fid=slides_fid, last_opened_slide_id=last_opened_slide_id
-    )
-
-    if slides:
-        chat["slides"] = [slide_dict]
+        slide.pop("chat_id")
+        chat["slides"] = [slide]
 
     return {"chat": chat, "message": "Chat created successfully."}
 
+
+@router.delete("/{chat_id}")
+async def delete_chat(chat_id: int, 
+                      current_user: dict = Depends(user.get_current_user),
+                      db: Session = Depends(get_db)):
+    """
+    Delete a chat by its ID.
+
+    Args:
+        chat_id (int): The ID of the chat to delete.
+
+    Returns:
+        dict: A message indicating the chat was successfully deleted.
+
+    Raises:
+        HTTPException: If the chat is not found or the user is not authorized to delete the chat.
+    """
+
+    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+
+    fids_to_delete = [] # file IDs to delete
+    if chat["slides_mode"]:
+        slides = SlideDB.delete(db, chat_id=chat_id, all=True)
+
+        for slide in slides:
+            fids_to_delete.append(slide["slides_fid"])
+
+            pages = SlidePageDB.delete(db, slide_id=slide["slide_id"], all=True)
+            for page in pages:
+                fids_to_delete.append(page["content_fid"])
+                fids_to_delete.append(page["chat_history_fid"])
+
+    else:
+        fids_to_delete.append(chat["history_fid"])
+
+    quizzes = QuizDB.delete(db, chat_id=chat_id, all=True)
+    fids_to_delete.extend([quiz["quiz_fid"] for quiz in quizzes])
+
+    flashcards = FlashcardDB.delete(db, chat_id=chat_id, all=True)
+    fids_to_delete.extend([flashcard["flashcard_fid"] for flashcard in flashcards])
+
+    ChatDB.delete(db, chat_id=chat_id)
+    await filemanager.batch_delete(file_ids=fids_to_delete)
+
+    return {"status": "success", "message": "Chat deleted successfully."}
+
+
+@router.delete("/chat/{chat_id}/flashcards")
+async def delete_all_flashcards(chat_id: int, 
+                                current_user: dict = Depends(user.get_current_user),
+                                db: Session = Depends(get_db)):
+    """
+    Delete all flashcard files inside the folder without deleting the folder.
+
+    Args:
+        chat_id (int): The ID of the chat.
+        current_user (dict): The current authenticated user (used for authentication).
+
+    Returns:
+        dict: A message indicating all flashcards were successfully deleted.
+    """
+
+    get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    FlashcardDB.delete(db, chat_id=chat_id, all=True)
+
+    return {"status": "success", "message": "All flashcards have been successfully deleted."}
+
+
+@router.put("/{chat_id}")
+def update_chat_title(chat_id: int, chat_title: str, 
+                      current_user: dict = Depends(user.get_current_user),
+                      db: Session = Depends(get_db)):
+    """
+    Update a chat's title by its ID.
+
+    Args:
+        chat_id (int): The ID of the chat to update.
+        chat_title (str): The new title for the chat.
+        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
+
+    Returns:
+        dict: A dictionary containing the updated chat details.
+
+    Raises:
+        HTTPException: If the chat is not found or the user is not authorized to update the chat.
+    """
+    get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    return ChatDB.update(db, chat_id=chat_id, chat_title=chat_title)   
+
+# Slide
+@router.get("/slides/{slide_id}")
+async def get_slide_info(slide_id: int, 
+                         current_user: dict = Depends(user.get_current_user),
+                         db: Session = Depends(get_db)):
+    """
+    Get the details of a specific slide by its ID.
+
+    Args:
+        slide_id (int): The ID of the slide to retrieve.
+        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
+
+    Returns:
+        dict: A dictionary containing the slide details.
+
+    Raises:
+        HTTPException: If the slide is not found or the user is not authorized to access the slide.
+    """
+    
+    slide = SlideDB.fetch(db, slide_id=slide_id)
+    if not slide:
+        raise HTTPException(status_code=404, detail="Slide not found.")
+    
+    get_authorized_chat_and_course(slide["chat_id"], current_user["user_id"])
+    return slide
 
 # Quiz
 @router.get("/quiz/{quiz_id}")
@@ -232,10 +377,7 @@ async def get_quiz(quiz_id: int,
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
     
-    chat = ChatDB.fetch(db, chat_id=quiz["chat_id"])
-    courses = await course.get_user_courses(current_user["user_id"])
-    if chat["course_id"] not in [course["course_id"] for course in courses]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
+    get_authorized_chat_and_course(quiz["chat_id"], current_user["user_id"])
     
     fid = quiz["quiz_fid"] # file ID of the quiz
 
@@ -267,10 +409,7 @@ async def rename_quiz(quiz_id: int,
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
     
-    chat = ChatDB.fetch(db, chat_id=quiz["chat_id"])
-    courses = await course.get_user_courses(current_user["user_id"])
-    if chat["course_id"] not in [course["course_id"] for course in courses]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
+    get_authorized_chat_and_course(quiz["chat_id"], current_user["user_id"])
 
     updated_quiz = QuizDB.update(db, quiz_id=quiz_id, quiz_title=new_title)
     return {"status": "success", "quiz": updated_quiz}
@@ -296,17 +435,92 @@ async def delete_quiz(quiz_id: int,
         if not quiz:
             raise HTTPException(status_code=404, detail="Quiz not found.")
         
-        chat = ChatDB.fetch(db, chat_id=quiz["chat_id"])
-        courses = await course.get_user_courses(current_user["user_id"])
-        if chat["course_id"] not in [course["course_id"] for course in courses]:
-            raise HTTPException(status_code=403, detail="Forbidden.")
-    
+        get_authorized_chat_and_course(quiz["chat_id"], current_user["user_id"])
+
         QuizDB.delete(db, quiz_id=quiz_id)
         await filemanager.delete(quiz["quiz_fid"])
 
         return {"status": "success", "message": "Quiz deleted successfully."}
 
 
+# Flashcard
+@router.delete("/flashcards/{flashcard_id}")
+async def delete_flashcard(flashcard_id: int, 
+                           current_user: dict = Depends(user.get_current_user),
+                           db: Session = Depends(get_db)):
+    """
+    Delete a specific flashcard by its ID.
+
+    Args:
+        flashcard_id (int): The ID the flashcard to delete.
+        current_user (dict): The current authenticated user (used for authentication).
+
+    Returns:
+        dict: A message indicating the flashcard was successfully deleted.
+    """
+    flashcard = FlashcardDB.fetch(db, flashcard_id=flashcard_id)
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found.")
+    if flashcard["course_id"] != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="Forbidden - not authorized to delete the flashcard.")
+    
+    FlashcardDB.delete(db, flashcard_id=flashcard_id)
+    await filemanager.delete(flashcard["flashcard_fid"])
+
+    return {"status": "success", "message": "Flashcard deleted successfully."}
+
+
+@router.get("/flashcards/{flashcard_id}")
+async def get_flashcard(flashcard_id: int, 
+                        current_user: dict = Depends(user.get_current_user),
+                        db: Session = Depends(get_db)):
+    """
+    Get a specific flashcard JSON by its file name.
+
+    Args:
+        flashcard_id (int): The ID of the flashcard to retrieve.
+
+    Returns:
+        dict: A dictionary containing the file name and flashcard content.
+    """
+
+    flashcard = FlashcardDB.fetch(db, flashcard_id=flashcard_id)
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found.")
+    if flashcard["course_id"] != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+
+    flashcard_bytes = await filemanager.download(file_id=flashcard["flashcard_fid"])
+    flashcard_dict = json.loads(flashcard_bytes.decode('utf-8'))
+
+    return flashcard_dict
+
+
+@router.put("/flashcards/{flashcard_id}")
+async def rename_flashcard(
+    flashcard_id: int,
+    new_name: str,
+    current_user: dict = Depends(user.get_current_user)
+):
+    """
+    Rename a specific flashcard.
+
+    Args:
+        flashcard_name (str): The name of the flashcard file to rename.
+        new_name (str): The new name for the flashcard file (without the .json extension).
+
+    Returns:
+        dict: A message indicating the flashcard was successfully renamed.
+    """
+    flashcard = FlashcardDB.fetch(flashcard_id=flashcard_id)
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found.")
+    if flashcard["course_id"] != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+
+    FlashcardDB.update(flashcard_id=flashcard_id, flashcard_name=new_name)
+
+    return {"message": f"Flashcard has been successfully renamed to {new_name}."}
 
 
 
@@ -340,7 +554,7 @@ async def get_chat(chat_id: int,
     """
 
     # TODO: convert this to gRPC call
-    chat, course = fetch_chat_and_course(chat_id, current_user["user_id"])
+    chat, course = get_authorized_chat_and_course(chat_id, current_user["user_id"])
     chat_history_path, metadata_path = get_chat_history_path(chat_id), get_chat_history_metadata_path(chat_id)
     
     if not chat["slides_mode"]:
@@ -363,98 +577,6 @@ async def get_chat(chat_id: int,
     return chat
 
 
-@router.delete("/{chat_id}")
-async def delete_chat(chat_id: int, 
-                      current_user: dict = Depends(auth.get_current_user),
-                      db: Session = Depends(get_db)):
-    """
-    Delete a chat by its ID.
-
-    Args:
-        chat_id (int): The ID of the chat to delete.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
-
-    Returns:
-        dict: A message indicating the chat was successfully deleted.
-
-    Raises:
-        HTTPException: If the chat is not found or the user is not authorized to delete the chat.
-    """
-    
-    # TODO: convert this to gRPC call
-    chat, _ = fetch_chat_and_course(chat_id, current_user["user_id"])
-    
-    if not chat["slides_mode"]:
-        # TODO: gRPC call from FileManager service
-        history_path, metadata_path = get_chat_history_path(chat_id), get_chat_history_metadata_path(chat_id)
-
-        # TODO: gRPC call from FileManager service
-        if os.path.exists(history_path):
-            os.remove(history_path)
-        if os.path.exists(metadata_path):
-            os.remove(metadata_path)
-            
-    files_dir = get_chat_files_path(chat_id)
-    if os.path.exists(files_dir):
-        shutil.rmtree(files_dir)
-
-    if chat["slides_mode"]:
-        # delete files of slides and all the chat histories and metadata
-        slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
-        slide_ids = [slide["slide_id"] for slide in slides]
-
-        # TODO: This logic is to be implemented by FileManager service
-        for slide_id in slide_ids:
-        # Delete files in chat_histories directory
-            history_files = glob.glob(get_slide_history_path(slide_id, "*"))
-            metadata_files = glob.glob(get_slide_history_metadata_path(slide_id, "*"))
-            for history_path, metadata_path in zip(history_files, metadata_files):
-                if os.path.exists(history_path):
-                    os.remove(history_path)
-                if os.path.exists(metadata_path):
-                    os.remove(metadata_path)
-
-            # Delete folders in files directory
-            slide_dirs = glob.glob(get_slides_files_path(slide_id, "*"))
-            for slide_dir in slide_dirs:
-                if os.path.exists(slide_dir):
-                    shutil.rmtree(slide_dir)
-
-        SlideDB.delete(db, chat_id=chat_id, all=True)
-
-    ChatDB.delete(db, chat_id=chat_id)
-    return {"message": "Chat deleted successfully."}    
-
-
-@router.put("/{chat_id}")
-def update_chat_title(chat_id: int, chat_title: str, 
-                      current_user: dict = Depends(auth.get_current_user),
-                      db: Session = Depends(get_db)):
-    """
-    Update a chat's title by its ID.
-
-    Args:
-        chat_id (int): The ID of the chat to update.
-        chat_title (str): The new title for the chat.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
-
-    Returns:
-        dict: A dictionary containing the updated chat details.
-
-    Raises:
-        HTTPException: If the chat is not found or the user is not authorized to update the chat.
-    """
-    
-    # TODO: convert this to gRPC call
-    chat, course = fetch_chat_and_course(chat_id, current_user["user_id"])
-    
-    ChatDB.update(db, chat_id=chat_id, chat_title=chat_title)
-    chat["chat_title"] = chat_title # this might be redundant
-    return chat   
-
-
-# TODO: The entire logic of this endpoint is to be implemented by LLMService
-# What this endpoint should do is solely making a call to LLMService and returning the response
 @router.post("/{chat_id}/send_message")
 async def send_message(chat_id: int, slide_id: int = None, page_number: int = None,
                        text: str = Form(...), file: UploadFile = File(None),
@@ -477,7 +599,7 @@ async def send_message(chat_id: int, slide_id: int = None, page_number: int = No
 
     # TODO: streaming response
     # TODO: prompt engineering in slides mode
-    chat, _ = fetch_chat_and_course(chat_id, current_user["user_id"])
+    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
     
     if slide_id is None and chat["slides_mode"]:
         raise HTTPException(status_code=400, detail="Slide ID is required for this chat.")
@@ -551,33 +673,6 @@ async def send_message(chat_id: int, slide_id: int = None, page_number: int = No
     return {"text": response.text, "role": "model"}
 
 
-@router.get("/slides/{slide_id}")
-async def get_slide_info(slide_id: int, 
-                         current_user: dict = Depends(auth.get_current_user),
-                         db: Session = Depends(get_db)):
-    """
-    Get the details of a specific slide by its ID.
-
-    Args:
-        slide_id (int): The ID of the slide to retrieve.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
-
-    Returns:
-        dict: A dictionary containing the slide details.
-
-    Raises:
-        HTTPException: If the slide is not found or the user is not authorized to access the slide.
-    """
-    
-    slide = SlideDB.fetch(db, slide_id=slide_id)
-    if not slide:
-        raise HTTPException(status_code=404, detail="Slide not found.")
-    
-    # TODO: convert this to gRPC call
-    fetch_chat_and_course(slide["chat_id"], current_user["user_id"])
-
-    return slide
-
 @router.get("/{chat_id}/slide/{slide_id}/page/{page_number}")
 async def get_slide(chat_id: int, slide_id: int, page_number: int, 
                     current_user: dict = Depends(auth.get_current_user),
@@ -586,7 +681,7 @@ async def get_slide(chat_id: int, slide_id: int, page_number: int,
     Get a specific slide and its explanation by its ID and page number.
     """
     # TODO: convert this to gRPC call
-    fetch_chat_and_course(chat_id, current_user["user_id"])
+    get_authorized_chat_and_course(chat_id, current_user["user_id"])
 
     slide = SlideDB.fetch(db, slide_id=slide_id)
     if not slide:
@@ -628,70 +723,12 @@ async def get_slide(chat_id: int, slide_id: int, page_number: int,
     }"""
 
 
-@router.put("/{chat_id}/update_slides")
-async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
-                             current_user: dict = Depends(auth.get_current_user),
-                             db: Session = Depends(get_db)):
-    """
-    Update the slides for a chat by its ID.
-
-    Args:
-        chat_id (int): The ID of the chat to update.
-        slides (UploadFile): The new slides file to upload.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
-
-    Returns:
-        dict: A dictionary containing the updated chat details.
-
-    Raises:
-        HTTPException: If the chat is not found or the user is not authorized to update the chat.
-    """
-    # TODO: convert this to gRPC call
-    chat, _ = fetch_chat_and_course(chat_id, current_user["user_id"])
-
-    if not chat["slides_mode"]:
-        raise HTTPException(status_code=400, detail="Slides mode is not enabled for this chat.")
-
-    # Validate the file extension
-    slides_file_name = slides.filename
-    name, extension = splitext(slides_file_name)
-    if extension.lower() not in ["pptx", "pdf"]:
-        raise HTTPException(status_code=400, detail=f"Invalid file extension: {extension}")
-
-    # Construct the storage directory and slides file URL
-    # TODO: FileManager service
-    storage_dir = get_chat_files_path(chat_id)
-    slides_file_url = os.path.join(storage_dir, f"{generate_hash(name, strategy='uuid')}.{extension}")
-
-    try:
-        uploaded_file = FileFactory()(file=slides)
-        uploaded_file.save(slides_file_url)
-        slides_file_url = uploaded_file.path
-
-        pages_count = 0
-        with uploaded_file.get() as pdf:    
-            pages_count = pdf.page_count
-
-        # Update the chat record with the new slides file information
-        new_slide = SlideDB.create(db, chat_id=chat_id, slides_file_name=slides_file_name, 
-                        slides_file_url=slides_file_url, pages_count=pages_count, 
-                        last_slide_number=1)
-        slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
-        ChatDB.update(db, chat_id=chat_id, last_opened_slide_id=new_slide["slide_id"])
-        chat["slides"] = slides
-        return {"chat": chat, "message": "Slides updated successfully."}
-
-    except Exception as e:
-        shutil.rmtree(storage_dir)
-        raise HTTPException(status_code=500, detail=f"Internal server error occurred: {str(e)}")
-
-
 @router.post("/{chat_id}/create_quiz")
 async def create_quiz(chat_id: int, 
                       current_user: dict = Depends(auth.get_current_user),
                       db: Session = Depends(get_db)):
     # TODO: convert this to gRPC call
-    chat, _ = fetch_chat_and_course(chat_id, current_user["user_id"])
+    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
     if chat["slides_mode"]:
         slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
         slide_ids = [slide["slide_id"] for slide in slides]
@@ -749,7 +786,7 @@ async def create_flashcards(chat_id: int,
                             current_user: dict = Depends(auth.get_current_user),
                             db: Session = Depends(get_db)):
     # TODO: convert this to gRPC call
-    chat, _ = fetch_chat_and_course(chat_id, current_user["user_id"])
+    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
     if chat["slides_mode"]:
         slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
         slide_ids = [slide["slide_id"] for slide in slides]
@@ -807,214 +844,3 @@ async def create_flashcards(chat_id: int,
         json.dump(combined_data, file, indent=4)
 
     return {"combined_data": combined_data}
-
-
-@router.get("/{chat_id}/flashcards")
-async def get_flashcards(chat_id: int, current_user: dict = Depends(auth.get_current_user)):
-    """
-    Get all flashcard JSONs for a specific chat.
-
-    Args:
-        chat_id (int): The ID of the chat.
-        current_user (dict): The current authenticated user (used for authentication).
-
-    Returns:
-        list: A list of dictionaries, each containing the file name and flashcard content.
-    """
-
-    chat = ChatDB.fetch(chat_id=chat_id)
-
-    if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found.")
-    
-    course = CourseDB.fetch(course_id=chat["course_id"])
-
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
-
-    flashcards_path = get_flashcards_folder_path(chat["chat_id"])
-
-    if not os.path.exists(flashcards_path):
-        raise HTTPException(status_code=404, detail="Flashcards folder not found.")
-
-    flashcards = []
-    for filename in os.listdir(flashcards_path):
-        if filename.endswith(".json"):
-            with open(os.path.join(flashcards_path, filename), "r") as f:
-                flashcard = json.load(f)
-                flashcards.append({
-                    "filename": filename,
-                    "content": flashcard
-                })
-
-    return flashcards
-
-@router.get("/{chat_id}/flashcards/{flashcard_name}")
-async def get_flashcard(chat_id: int, flashcard_name: str, current_user: dict = Depends(auth.get_current_user)):
-    """
-    Get a specific flashcard JSON by its file name.
-
-    Args:
-        chat_id (int): The ID of the chat.
-        flashcard_name (str): The name of the flashcard file (without the .json extension).
-        current_user (dict): The current authenticated user (used for authentication).
-
-    Returns:
-        dict: A dictionary containing the file name and flashcard content.
-    """
-
-    chat = ChatDB.fetch(chat_id=chat_id)
-
-    if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found.")
-    
-    course = CourseDB.fetch(course_id=chat["course_id"])
-
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
-
-    flashcards_path = get_flashcards_folder_path(chat["chat_id"])
-
-    if not os.path.exists(flashcards_path):
-        raise HTTPException(status_code=404, detail="Flashcards folder not found.")
-
-    file_path = os.path.join(flashcards_path, f"{flashcard_name}.json")
-
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Flashcard not found.")
-
-    with open(file_path, "r") as f:
-        flashcard = json.load(f)
-
-    return {
-        "filename": f"{flashcard_name}.json",
-        "content": flashcard
-    }
-
-@router.put("/{chat_id}/flashcards/{flashcard_name}")
-async def rename_flashcard(
-    chat_id: int,
-    flashcard_name: str,
-    request: RenameFlashcardRequest,
-    current_user: dict = Depends(auth.get_current_user)
-):
-    """
-    Rename a specific flashcard file.
-
-    Args:
-        chat_id (int): The ID of the chat.
-        flashcard_name (str): The current name of the flashcard file (without the .json extension).
-        request (RenameFlashcardRequest): The request body containing the new name.
-        current_user (dict): The current authenticated user (used for authentication).
-
-    Returns:
-        dict: A message indicating the flashcard was successfully renamed.
-    """
-
-    new_name = request.new_name
-
-    chat = ChatDB.fetch(chat_id=chat_id)
-
-    if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found.")
-    
-    course = CourseDB.fetch(course_id=chat["course_id"])
-
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
-
-    flashcards_path = get_flashcards_folder_path(chat["chat_id"])
-
-    if not os.path.exists(flashcards_path):
-        raise HTTPException(status_code=404, detail="Flashcards folder not found.")
-
-    old_file_path = os.path.join(flashcards_path, f"{flashcard_name}.json")
-    new_file_path = os.path.join(flashcards_path, f"{new_name}.json")
-
-    if not os.path.exists(old_file_path):
-        raise HTTPException(status_code=404, detail="Flashcard not found.")
-
-    if os.path.exists(new_file_path):
-        raise HTTPException(status_code=400, detail="A flashcard with the new name already exists.")
-
-    os.rename(old_file_path, new_file_path)
-
-    return {"message": f"Flashcard '{flashcard_name}.json' has been successfully renamed to '{new_name}.json'."}
-
-
-@router.delete("/{chat_id}/flashcards")
-async def delete_all_flashcards(chat_id: int, current_user: dict = Depends(auth.get_current_user)):
-    """
-    Delete all flashcard files inside the folder without deleting the folder.
-
-    Args:
-        chat_id (int): The ID of the chat.
-        current_user (dict): The current authenticated user (used for authentication).
-
-    Returns:
-        dict: A message indicating all flashcards were successfully deleted.
-    """
-
-    chat = ChatDB.fetch(chat_id=chat_id)
-
-    if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found.")
-    
-    course = CourseDB.fetch(course_id=chat["course_id"])
-
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
-
-    flashcards_path = get_flashcards_folder_path(chat["chat_id"])
-
-    if not os.path.exists(flashcards_path):
-        raise HTTPException(status_code=404, detail="Flashcards folder not found.")
-
-    if not os.listdir(flashcards_path):
-        return {"message": "No flashcards to delete; the folder is already empty."}
-
-    for filename in os.listdir(flashcards_path):
-        name, ext = os.path.splitext(filename)
-        file_path = os.path.join(flashcards_path, f"{name}.json")
-        os.remove(file_path)
-
-    return {"message": "All flashcards have been successfully deleted."}
-
-
-@router.delete("/{chat_id}/flashcards/{flashcard_name}")
-async def delete_flashcard(chat_id: int, flashcard_name: str, current_user: dict = Depends(auth.get_current_user)):
-    """
-    Delete a specific flashcard by its file name.
-
-    Args:
-        chat_id (int): The ID of the chat.
-        flashcard_name (str): The name of the flashcard file (without the .json extension).
-        current_user (dict): The current authenticated user (used for authentication).
-
-    Returns:
-        dict: A message indicating the flashcard was successfully deleted.
-    """
-
-    chat = ChatDB.fetch(chat_id=chat_id)
-
-    if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found.")
-    
-    course = CourseDB.fetch(course_id=chat["course_id"])
-    
-    if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden.")
-
-    flashcards_path = get_flashcards_folder_path(chat["chat_id"])
-
-    if not os.path.exists(flashcards_path):
-        raise HTTPException(status_code=404, detail="Flashcards folder not found.")
-
-    file_path = os.path.join(flashcards_path, f"{flashcard_name}.json")
-
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Flashcard not found.")
-
-    os.remove(file_path)
-
-    return {"message": f"Flashcard '{flashcard_name}.json' has been successfully deleted."}

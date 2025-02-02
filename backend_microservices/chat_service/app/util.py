@@ -6,6 +6,7 @@ from PIL import Image
 
 from fastapi import HTTPException, UploadFile
 
+from chat_service.app.clients import course
 from chat_service.app.database.dbmanager import SlideDB, ChatDB
 
 async def convert_pptx_to_pdf(pptx_content: bytes) -> bytes:
@@ -67,7 +68,7 @@ def splitext(filename: str) -> tuple[str, str]:
     return base_name, extension
 
 
-def fetch_chat_and_course(chat_id: int, user_id: int):
+def get_authorized_chat_and_course(chat_id: int, user_id: int):
     """
     Fetches the chat and course information for the given chat ID and course ID, and verifies the user ID.
 
@@ -76,7 +77,7 @@ def fetch_chat_and_course(chat_id: int, user_id: int):
         user_id (int): The ID of the user to verify.
 
     Raises:
-        HTTPException: If the chat is not found (404) or if the user is not authorized to access the course (403).
+        HTTPException: If the chat or course is not found (404) or if the user is not authorized to access the course (403).
 
     Returns:
         tuple: A tuple containing dictionaries of chat and course information.
@@ -85,11 +86,14 @@ def fetch_chat_and_course(chat_id: int, user_id: int):
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found.")
     
-    course = CourseDB.fetch(course_id=chat["course_id"])
-    if course["user_id"] != user_id:
+    course_dict = course.get_course(course_id=chat["course_id"])
+    if not course_dict:
+        raise HTTPException(status_code=404, detail="Course not found.")
+    
+    if course_dict["user_id"] != user_id:
         raise HTTPException(status_code=403, detail="Forbidden.")
     
-    return chat, course
+    return chat, course_dict
 
 
 def init_chat(history_content=None):

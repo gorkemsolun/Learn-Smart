@@ -100,7 +100,7 @@ async def batch_delete(file_ids: list[int]):
         - file_ids (list): A list of file IDs to delete.
 
     Returns:
-        - bool: True if all files were deleted successfully, False otherwise.
+        - bool: True if all files were deleted successfully.
     """
     try:
         async with httpx.AsyncClient() as client:
