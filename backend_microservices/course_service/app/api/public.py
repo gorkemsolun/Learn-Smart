@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, File
 import os
-import uuid
+import tempfile
 
 from course_service.app.database.dbmanager import CourseDB
 from course_service.app.database.session import get_db
@@ -67,20 +67,17 @@ async def create_course(course_name: str = Form(...),
 
             # send the syllabus to GenAI service for weekly study plan generation
             study_plan_text = await genai.create_study_plan(course_syllabus_file)
+            
+            with tempfile.NamedTemporaryFile(
+                suffix='.md', mode='w+', encoding='utf-8', delete=True
+            ) as temp_file:
+                temp_file.write(study_plan_text)
+                temp_file.flush()
+                temp_file.seek(0)
 
-            # Create an .md file out of the returned study plan
-            temp_file_path = f"/tmp/{str(uuid.uuid4())}.md"
-            with open(temp_file_path, "w", encoding="utf-8") as f:
-                f.write(study_plan_text)
-
-            # Upload the study plan file to the FileManager
-            with open(temp_file_path, "rb") as f:
                 course_study_plan_fid = await filemanager.upload(
-                    file=f, user_id=current_user["user_id"]
+                    file=tempfile, user_id=current_user["user_id"]
                 )
-
-            # Delete the temporary file after upload
-            os.remove(temp_file_path)
 
         course = CourseDB.create(
             db, user_id=current_user["user_id"], course_name=course_name, 
@@ -210,22 +207,20 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         # send the syllabus to GenAI service for weekly study plan generation
         study_plan_text = await genai.create_study_plan(course_syllabus_file)
 
-        # Create an .md file out of the returned study plan
-        temp_file_path = f"/tmp/{str(uuid.uuid4())}.md"
-        with open(temp_file_path, "w", encoding="utf-8") as f:
-            f.write(study_plan_text)
+        with tempfile.NamedTemporaryFile(
+            suffix=".md", mode="w+", encoding="utf-8", delete=True
+        ) as temp_file:
+            temp_file.write(study_plan_text)
+            temp_file.flush()
+            temp_file.seek(0)
 
-        # Upload the study plan file to the FileManager
-        with open(temp_file_path, "rb") as f:
-            new_syllabus_fid = await filemanager.upload(
-                file=f, user_id=current_user["user_id"]
-            )
-
-        # Delete the temporary file after upload
-        os.remove(temp_file_path)
+            new_study_plan_fid = await filemanager.upload(
+                file=temp_file, user_id=current_user["user_id"]
+            ) 
 
     try:
         course = CourseDB.update(
+            db,
             course_id=course_id, course_name=course_name, course_code=course_code,
             course_description=(
                 "" if course_description is None and update_description else course_description
