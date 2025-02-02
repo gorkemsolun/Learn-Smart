@@ -1,13 +1,14 @@
-from typing import Optional
+from typing import Optional, Tuple, List
 import asyncio
 import tempfile
-import pymupdf, os, io, json, jsonpickle, base64
-from PIL import Image
+import os, json, base64
+import uuid
 
 from fastapi import HTTPException, UploadFile
 
-from chat_service.app.clients import course
-from chat_service.app.database.dbmanager import SlideDB, ChatDB
+from chat_service.app.model import ChatHistory, ChatFile
+from chat_service.app.clients import filemanager, course, genai
+from chat_service.app.database.dbmanager import ChatDB
 
 async def convert_pptx_to_pdf(pptx_content: bytes) -> bytes:
     """
@@ -68,7 +69,7 @@ def splitext(filename: str) -> tuple[str, str]:
     return base_name, extension
 
 
-def get_authorized_chat_and_course(chat_id: int, user_id: int):
+def get_authorized_chat_and_course(chat_id: int, user_id: int) -> tuple[dict, dict]:
     """
     Fetches the chat and course information for the given chat ID and course ID, and verifies the user ID.
 
@@ -96,170 +97,120 @@ def get_authorized_chat_and_course(chat_id: int, user_id: int):
     return chat, course_dict
 
 
-def init_chat(history_content=None):
+async def load_chat_history(history_fid: Optional[str]) -> ChatHistory:
     """
-    Initializes a chat session with a generative AI model.
+    Loads the chat history from a JSON file.
 
     Args:
-        history_content (str, optional): A jsonpickle-encoded string representing the chat history. 
-                                         If None, an empty history is used.
+        history_fid (Optional[str]): The file ID of the chat history.
 
     Returns:
-        model: An instance of the GenerativeModel class with the chat session started.
+        ChatHistory: The loaded chat history.
     """
-    history = jsonpickle.decode(history_content) if history_content else []
-    model = genai.GenerativeModel(MODEL_VERSION, system_instruction=SYSTEM_PROMPT).start_chat(history=history)
-    return model
+    if history_fid:
+        history_bytes = await filemanager.download(file_id=history_fid)
+        return ChatHistory.from_bytes(history_bytes)
+    return ChatHistory()
 
 
-def save_history(history_path, history):
+async def save_chat_history(history: ChatHistory, user_id: int) -> str:
     """
-    Save chat history to a specified file.
+    Saves the chat history to a JSON file and uploads it to the FileManager service.
 
     Args:
-        history_path (str): The path to the file where the history will be saved.
-        history (str): The jsonpickle encoded chat history content to be saved.
-
-    """
-    with open(history_path, "w") as history_file:
-        history_file.write(history)
-
-
-def get_slide_content(slide_id: int, page_number: int):
-    """
-    Returns the content of the slide as a PIL Image with the given slide ID and page number.
-    page_number is 1-based, not 0-based.
-    """
-    slide = SlideDB.fetch(slide_id=slide_id)
-    if not slide:
-        return None
-    
-    slide_path = slide["slides_file_url"]
-    doc = pymupdf.open(slide_path)
-    page = doc.load_page(page_number - 1) # page_number is 1-based on UI side
-    pix = page.get_pixmap()
-    
-    img_buffer = io.BytesIO(pix.tobytes("png"))  # Save pixmap as PNG to buffer
-    img_buffer.seek(0)  # Rewind the buffer to the beginning
-    doc.close()
-    
-    img = Image.open(img_buffer)
-    return img
-
-
-def handle_file_upload_for_message(file: UploadFile, chat_id: int, slide_id: Optional[int] = None, page_number: Optional[int] = None):
-    """
-    Handles the upload of a file for a chat message, optionally associating it with a specific slide and page number.
-    Args:
-        file (UploadFile): The file to be uploaded.
-        chat_id (int): The ID of the chat to which the file is being uploaded.
-        slide_id (Optional[int], optional): The ID of the slide to associate the file with. Defaults to None.
-        page_number (Optional[int], optional): The page number of the slide to associate the file with. Defaults to None.
-    Returns:
-        tuple: A tuple containing the path where the file was saved and the content of the uploaded file.
-    Raises:
-        HTTPException: If there is an error during file upload, a 400 status code HTTPException is raised with the error details.
-    """
-    filename = file.filename
-    name, extension = splitext(filename)
-    
-    try:
-        upload_file = FileFactory()(file=file)
-        hashed_file_name = f"{generate_hash(name, strategy='timestamp')}.{extension}"
-        if slide_id is not None and page_number is not None:
-            dir_path = get_slides_files_path(slide_id, page_number)
-        else:
-            dir_path = get_chat_files_path(chat_id)
-        path = os.path.join(dir_path, hashed_file_name)
-        upload_file.save(path)
-        path = upload_file.path
-        file_content = upload_file.content()
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
-    return path, file_content
-
-
-def update_metadata(metadata_path, new_metadata):
-    """
-    Updates the metadata file with new metadata. If the file exists, it appends the new metadata to the existing data.
-    If the file does not exist, it creates a new file with the new metadata.
-
-    Args:
-        metadata_path (str): The path to the metadata file.
-        new_metadata (dict): The new metadata to be added.
-
-    Raises:
-        HTTPException: If there is an error during loading or saving the metadata, a 500 status code HTTPException is raised with the error details.
-    """
-    if os.path.exists(metadata_path):
-        with open(metadata_path, "r") as metadata_file:
-            try:
-                data = json.load(metadata_file)
-                data.append(new_metadata)
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Internal server error occurred during loading history metadata: {str(e)}")
-    else:
-        data = [new_metadata]
-    
-    with open(metadata_path, "w") as metadata_file:
-        json.dump(data, metadata_file, indent=4)
-
-
-def get_formatted_history(history_path, history_metadata_path):
-    """
-    Retrieves and formats chat history from specified file paths.
-    Args:
-        history_path (str): The file path to the chat history file.
-        history_metadata_path (str): The file path to the chat metadata file.
-    Returns:
-        list: A list of dictionaries, each containing the following keys:
-            - 'text' (str): The text of the chat message.
-            - 'role' (str): The role of the message sender (model | user).
-            - 'message_id' (int): The ID of the chat message.
-            - 'media_url' (str, optional): The URL of any media attached to the message.
-    """
-    metadata = {} # initialize metadata to an empty dictionary
-    if os.path.exists(history_metadata_path):
-        with open(history_metadata_path, "r") as file:
-            metadata = {item['message_id']: item for item in json.load(file)}
-
-    chat_content = None # set chat_content to None if no chat history yet
-    if os.path.exists(history_path):
-        with open(history_path, "r") as file:
-            chat_content = file.read() # Read the chat history from the file
-    
-    history = jsonpickle.decode(chat_content) if chat_content else [] # Decode the chat content from JSON
-
-    # parse the chat history and create a new dictionary with 'message' and 'role' keys
-    messages = []
-    for idx, content in enumerate(history):
-        if idx in metadata and metadata[idx].get('skip', False): # metadata says skip this message
-            continue
-
-        for part in content._pb.parts: # Google's protobuf message parts
-            # Create a dictionary with the message, role, and ID of the chat
-            chat_dict = {"text": part.text, "role": content._pb.role, "message_id": idx}
-
-            if idx in metadata and 'media_url' in metadata[idx]: # a file is attached to this message
-                chat_dict['media_url'] = metadata[idx]['media_url']
-
-            if not messages or chat_dict["message_id"] != messages[-1]["message_id"]: # to remove duplicates, if any
-                messages.append(chat_dict)
-
-    return messages
-
-
-def image_to_base64(image: Image.Image) -> str:
-    """
-    Convert a PIL Image to a base64 encoded string.
-
-    Args:
-        image (Image.Image): The PIL Image to be converted.
+        history (ChatHistory): The chat history to save.
+        user_id (int): The ID of the user to save the history for.
 
     Returns:
-        str: The base64 encoded string representation of the image.
+        str: The file ID of the uploaded chat history file.
     """
-    buffered = io.BytesIO()
-    image.save(buffered, format="PNG")
-    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+    with tempfile.NamedTemporaryFile(
+        mode='w+', encoding='utf-8', suffix='.json', delete=True
+    ) as tf:
+        json.dump(history.messages, tf)
+        tf.seek(0)
+        
+        history_file = UploadFile(
+            filename=f"chat_history_{uuid.uuid4()}.json",
+            file=tf,
+            content_type="application/json"
+        )
+        
+        return await filemanager.upload(file=history_file, user_id=user_id)
+
+
+async def create_chat_files(
+        files: List[UploadFile], file_ids: List[str]) -> List[ChatFile]:
+    """
+    Create ChatFile objects from a list of UploadFile objects.
+
+    Args:
+        files (List[UploadFile]): The list of UploadFile objects.
+        file_ids (List[str]): The list of file IDs.
+
+    Returns:
+        List[ChatFile]: The list of ChatFile objects.
+    """
+    chat_files = []
+    for file, fid in zip(files, file_ids):
+        await file.seek(0)  # Reset file pointer
+        chat_files.append(ChatFile(
+            mimetype=file.content_type,
+            raw_data=await file.read(),
+            fid=fid
+        ))
+    return chat_files
+
+
+async def handle_chat_message(
+    history_fid: Optional[str],
+    files: List[UploadFile],
+    text: str,
+    model: str,
+    authorization: str,
+    user_id: int
+) -> Tuple[str, str]:
+    """
+    Processes a chat message by sending it to the AI model and updating the chat history.
+
+    Args:
+        history_fid (Optional[str]): The file ID of the chat history.
+        files (List[UploadFile]): The list of uploaded files.
+        text (str): The text message from the user.
+        model (str): The generative AI model to use.
+        authorization (str): The authorization token.
+        user_id (int): The ID of the user.
+
+    Returns:
+        Tuple[str, str]: A tuple containing the new history file ID and the AI response.
+    """
+    # Load or create chat history
+    history = await load_chat_history(history_fid)
+    
+    # Handle file uploads and message creation
+    file_ids = filemanager.batch_upload(files=files, user_id=user_id)
+    chat_files = await create_chat_files(files, file_ids)
+    
+    # Add messages and generate response
+    history.add_message(role="user", content=text, files=chat_files)
+    response = genai.send_message(history=history, model=model, authorization=authorization)
+    history.add_message(role="assistant", content=response)
+    
+    # Save updated history
+    new_history_fid = await save_chat_history(history, user_id)
+    
+    # Cleanup old history file
+    if history_fid:
+        filemanager.delete(file_id=history_fid)
+    
+    return new_history_fid, response
+
+
+
+def encode_base64(file: bytes) -> str:
+    """
+    Encode an image file as a base64 string.
+    Args:
+        - file (BinaryIO): The file object to encode.
+    """
+    return base64.b64encode(file).decode("utf-8")

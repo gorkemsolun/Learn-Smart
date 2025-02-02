@@ -1,8 +1,9 @@
+from fastapi import APIRouter, HTTPException, UploadFile, Depends, Form, File, Header
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
+from typing import List
 import os, glob, json, jsonpickle, itertools
 
-from chat_service.app.clients import user, course, filemanager
+from chat_service.app.clients import user, course, filemanager, genai
 from chat_service.app.database.dbmanager import (
     ChatDB, SlideDB, SlidePageDB, QuizDB, FlashcardDB
 )
@@ -240,6 +241,75 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
         chat["slides"] = [slide]
 
     return {"chat": chat, "message": "Chat created successfully."}
+
+
+@router.post("/chat{chat_id}/send_message")
+async def send_message(chat_id: int,
+                       slide_id: int = None,
+                       page_id: int = None,
+                       text: str = Form(...),
+                       files: List[UploadFile] = File(None),
+                       model: str = Form("google"),
+                       current_user: dict = Depends(user.get_current_user),
+                       authorization: str = Header(None),
+                       db: Session = Depends(get_db)):
+    """
+    Send a message to a chat.
+
+    Args:
+        chat_id (int): The ID of the chat.
+        slide_id (int, optional): The ID of the slide. Defaults to None.
+        page_id (int, optional): The ID of the page. Defaults to None.
+        text (str): The message text.
+        files (List[UploadFile], optional): The files to send. Defaults to None.
+        model (str, optional): The generative AI model to use. Defaults to "google".
+        current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
+        authorization (str, optional): The authorization header. Defaults to Header(None).
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+
+    Returns:
+        dict: A dictionary containing the response text and the role of the sender.
+    """
+    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    
+    # Validate slide/page parameters
+    if chat["slides_mode"]:
+        if slide_id is None:
+            raise HTTPException(400, "Slide ID is required for this chat.")
+        slide = SlideDB.fetch(db, slide_id=slide_id)
+        page = SlidePageDB.fetch(db, page_id=page_id) if page_id else None
+        if not slide or not page:
+            raise HTTPException(404, "Slide or page not found.")
+        history_fid = page["chat_history_fid"]
+        if not history_fid:
+            raise HTTPException(500, "Unknown error occurred.")
+    else:
+        if slide_id is not None:
+            raise HTTPException(400, "Slides mode is not enabled for this chat.")
+        history_fid = chat.get("history_fid")
+
+    # Process message and get updated history
+    new_history_fid, response = await handle_chat_message(
+        history_fid=history_fid,
+        files=files,
+        text=text,
+        model=model,
+        authorization=authorization,
+        user_id=current_user["user_id"]
+    )
+
+    # Update database records
+    if chat["slides_mode"]:
+        SlidePageDB.update(page_id=page_id, chat_history_fid=new_history_fid)
+        ChatDB.update(chat_id=chat_id, last_opened_slide_id=slide_id)
+    else:
+        ChatDB.update(
+            chat_id=chat_id,
+            history_fid=new_history_fid,
+            last_opened_slide_id=None
+        )
+
+    return {"text": response, "role": "model"}
 
 
 @router.delete("/{chat_id}")
@@ -542,7 +612,6 @@ async def get_chat(chat_id: int,
 
     Args:
         chat_id (int): The ID of the chat to retrieve.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
 
     Returns:
         dict: A dictionary containing the chat details, including history or slides.
@@ -552,10 +621,7 @@ async def get_chat(chat_id: int,
     Raises:
         HTTPException: If the chat is not found or the user is not authorized to access the chat.
     """
-
-    # TODO: convert this to gRPC call
     chat, course = get_authorized_chat_and_course(chat_id, current_user["user_id"])
-    chat_history_path, metadata_path = get_chat_history_path(chat_id), get_chat_history_metadata_path(chat_id)
     
     if not chat["slides_mode"]:
         # TODO: gRPC call from FileManager service
@@ -572,105 +638,11 @@ async def get_chat(chat_id: int,
         slide.pop("chat_id")
         slide.pop("slides_file_url")
 
-    chat.pop("history_url") # in slides mode, history_url is not used
     chat["slides"] = slides
     return chat
 
 
-@router.post("/{chat_id}/send_message")
-async def send_message(chat_id: int, slide_id: int = None, page_number: int = None,
-                       text: str = Form(...), file: UploadFile = File(None),
-                       current_user: dict = Depends(auth.get_current_user),
-                       db: Session = Depends(get_db)):
-    """
-    Send a message in a chat and generate a response.
 
-    Args:
-        chat_id (int): The ID of the chat to send the message.
-        slide_id (int, optional): The ID of the slide. Defaults to None.
-        page_number (int, optional): The page number of the slide. Defaults to None.
-        text (str): The user message to send.
-        file (UploadFile, optional): The file to send. Defaults to None.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
-        db (Session): The database session. 
-    Returns:
-        dict: The generated response in dictionary format.
-    """
-
-    # TODO: streaming response
-    # TODO: prompt engineering in slides mode
-    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
-    
-    if slide_id is None and chat["slides_mode"]:
-        raise HTTPException(status_code=400, detail="Slide ID is required for this chat.")
-    
-    if slide_id is not None and not chat["slides_mode"]:
-        raise HTTPException(status_code=400, detail="Slides mode is not enabled for this chat.")
-
-    if slide_id is not None and chat["slides_mode"]: # Slide specific chat
-        if page_number is None:
-            raise HTTPException(status_code=400, detail="Slide page number is required.")
-        
-        slide = SlideDB.fetch(db, slide_id=slide_id)
-        if not slide:
-            raise HTTPException(status_code=404, detail="Slides not found.")
-        
-        if page_number <= 0 or page_number > slide["pages_count"]:
-            raise HTTPException(status_code=400, detail="Invalid slide number.")
-        
-        slide_history_path, slide_metadata_path = get_slide_history_path(slide_id, page_number), get_slide_history_metadata_path(slide_id, page_number)
-
-        raw_history_content = None # decoded content
-        if os.path.exists(slide_history_path):
-            with open(slide_history_path, "r") as slide_history_file:
-                raw_history_content = slide_history_file.read()
-    
-        model = init_chat(raw_history_content)
-        slide_content = get_slide_content(slide_id, page_number)
-
-        # TODO: LLM Service calls
-        """ TODO:
-        history + message + any files uploaded => LLMService => response + new history
-        """
-        """ if file:
-            path, file_content = handle_file_upload_for_message(file, chat_id, slide_id, page_number)
-            new_metadata = {"message_id": len(model.history), "media_url": path}
-            update_metadata(slide_metadata_path, new_metadata)
-            response = model.send_message([text, file_content, slide_content])
-
-        else:
-            response = model.send_message([text, slide_content]) """
-
-        history = jsonpickle.encode(model.history, True) 
-        save_history(slide_history_path, history)
-
-        ChatDB.update(chat_id=chat_id, last_opened_slide_id=slide_id)
-        return {"text": response.text, "role": "model"}
-    
-    history_path, metadata_path = get_chat_history_path(chat_id), get_chat_history_metadata_path(chat_id) 
-    raw_history_content = None
-    if os.path.exists(history_path):
-        with open(history_path, "r") as history_file:
-            raw_history_content = history_file.read()
-
-    model = init_chat(raw_history_content)
-
-    if file:
-        path, file_content = handle_file_upload_for_message(file, chat_id)
-        new_metadata = {"message_id": len(model.history), "media_url": path}
-        update_metadata(metadata_path, new_metadata)
-        response = model.send_message([text, file_content])
-    else:
-        response = model.send_message(text)
-
-    history = jsonpickle.encode(model.history, True) # Encode back the updated chat history
-    save_history(history_path, history) 
-
-    if not os.path.exists(history_path):
-        ChatDB.update(chat_id=chat_id, history_url=history_path)
-
-    ChatDB.update(chat_id=chat_id, last_opened_slide_id=slide_id)
-    return {"text": response.text, "role": "model"}
 
 
 @router.get("/{chat_id}/slide/{slide_id}/page/{page_number}")

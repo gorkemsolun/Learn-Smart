@@ -36,6 +36,41 @@ async def upload(file: UploadFile, user_id: int):
         )
 
 
+async def batch_upload(files: list[UploadFile], user_id: int):
+    """
+    Calls the FileManager service to upload multiple files for a given user.
+
+    Args:
+        - files (list): A list of files to upload.
+        - user_id (int): The ID of the user to upload the files for.
+
+    Returns:
+        - list: A list of file IDs for the uploaded files.
+    """
+    try:
+        file_ids = []
+        async with httpx.AsyncClient() as client:
+            for file in files:
+                response = await client.post(
+                    FILEMANAGER_SERVICE_URL,
+                    params={"user_id": user_id},
+                    headers={"X-API-Key": FILEMANAGER_CLIENT_KEY},
+                    files={
+                        "file": (file.filename, file.file, file.content_type or "application/octet-stream")
+                    }
+                )
+                response.raise_for_status()  # Raise an exception for HTTP errors
+                file_ids.append(response.json().get("file_id"))
+        
+        return file_ids
+    
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"FileManager service error: {str(e)}"
+        )
+
+
 async def download(file_id: int):
     """
     Calls the FileManager service to download a file.

@@ -2,12 +2,15 @@ from fastapi import APIRouter, Depends, Form, UploadFile, HTTPException
 from typing import List
 import json
 
-from genai_service.app.clients import user
-from genai_service.app.genai_client import ChatHistory, ChatClient, ChatFile
+import google.generativeai as genai
 
-from genai_service.app.util import validate_quiz_format
+from genai_service.app.client import ChatClient
+
+from genai_service.app.util import validate_quiz_format, encode_base64
 from genai_service.app.security.auth import verify_api_key
-from genai_service.app import WEEKLY_STUDY_PLAN_PROMPT, QUIZZES_PROMPT, FLASHCARD_PROMPT
+from genai_service.app import (
+    WEEKLY_STUDY_PLAN_PROMPT, QUIZZES_PROMPT, FLASHCARD_PROMPT, GOOGLE_MODEL_VERSION
+)
 
 
 router = APIRouter(
@@ -15,6 +18,7 @@ router = APIRouter(
     tags=["Generative AI - Private API"],
     dependencies=[Depends(verify_api_key)]
 )
+
 
 @router.post("/generate/weekly_study_plan")
 async def create_weekly_study_plan(syllabus: UploadFile = Form(...)):
@@ -25,15 +29,17 @@ async def create_weekly_study_plan(syllabus: UploadFile = Form(...)):
         syllabus (UploadFile): The course syllabus.
         current_user (dict): The current user.
     """
-    client = ChatClient.create(model="google", system_prompt=WEEKLY_STUDY_PLAN_PROMPT)
-    response, _ = client.invoke(
-        query=" ", 
-        files=[ChatFile(mimetype=syllabus.content_type, data=syllabus.file)],
+    model = genai.GenerativeModel(
+        model_name=GOOGLE_MODEL_VERSION,
+        # system_instruction=... TODO: replace with an actual system prompt
         generation_config={"response_mime_type": "application/json"}
     )
-    
+    syllabus_content = encode_base64(await syllabus.file.read())
+    response = model.generate_content([
+        {'mime_type':'application/pdf', 'data': syllabus_content}, 
+        WEEKLY_STUDY_PLAN_PROMPT
+    ])
     response_dict = json.loads(response)
-        
     return {"success": response_dict["success"], "data": response_dict["data"]}
 
 
