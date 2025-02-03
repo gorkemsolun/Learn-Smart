@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dayjs from "dayjs";
 import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
@@ -72,19 +73,29 @@ export default function UserDashboard() {
         },
       });
 
-      // Process analytics data
+      const getLast7Days = () => {
+        return [...Array(7)].map((_, i) => dayjs().subtract(6 - i, "day").format("YYYY-MM-DD"));
+      };
+
+      const last7Days = getLast7Days(); // Get the last 7 days in order
+
       const formattedData = analyticsResponse.data.map((item: { date: string; time_spent: number; timestamp: string }) => ({
         day: mapDateToDay(item.date),
+        date: item.date,
         timeSpent: item.time_spent,
         timestamp: item.timestamp,
       }));
 
-      setChartData((prevChartData) =>
-        prevChartData.map((entry) => {
-          const match = formattedData.find((item) => item.day === entry.day);
-          return match ? { ...entry, timeSpent: match.timeSpent } : entry;
-        })
-      );
+      const chartData = last7Days.map((date) => {
+        const found = formattedData.find((item) => item.date === date);
+        return {
+          day: mapDateToDay(date),
+          date,
+          timeSpent: found ? found.timeSpent : 0,
+          timestamp: found ? found.timestamp : new Date(date).toISOString(),
+        };
+      });
+      setChartData(chartData);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       toast({
@@ -190,7 +201,7 @@ export default function UserDashboard() {
       <CourseCreateDialog
         isOpen={courseDialog}
         onClose={setCourseDialog}
-        onCourseCreation={fetchDashboardData} // Refresh all data
+        onCourseCreation={fetchDashboardData}
       />
     </div>
   );

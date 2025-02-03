@@ -11,7 +11,7 @@ class AnalyticsRequest(BaseModel):
         date (date): The date of the usage in 'YYYY-MM-DD' format.
         time_spent (int): The time spent in seconds.
     """
-    date: datetime
+    date: date
     time_spent: int
     timestamp: datetime
 
