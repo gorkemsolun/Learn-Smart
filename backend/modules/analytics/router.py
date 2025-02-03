@@ -8,8 +8,6 @@ from datetime import date, datetime, timedelta
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
-from datetime import datetime, timedelta, timezone
-
 @router.post("/log", response_model=AnalyticsResponse)
 def log_usage(
         request: AnalyticsRequest,
@@ -19,7 +17,9 @@ def log_usage(
     try:
         timestamp = request.timestamp
         time_spent = request.time_spent
+
         max_seconds_per_day = 86_400
+
         def distribute_time(user_id, timestamp, remaining_time):
             date = timestamp.date()
 
@@ -58,8 +58,6 @@ def log_usage(
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-
 
 
 @router.get("/", response_model=list[AnalyticsResponse])
