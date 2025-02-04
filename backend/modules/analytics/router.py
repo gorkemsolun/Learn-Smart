@@ -3,7 +3,7 @@ from fastapi import Depends, APIRouter, HTTPException
 from database.dbmanager import AnalyticsDB
 from modules.analytics.schemas import AnalyticsRequest, AnalyticsResponse
 from middleware import authentication as auth
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
@@ -15,62 +15,46 @@ def log_usage(
 ):
     user_id = current_user["user_id"]
     try:
-        input_date = request.date
-        today_date = date.today()
-        time_spent = request.time_spent
         timestamp = request.timestamp
+        time_spent = request.time_spent
 
-        analytics_data = {}
+        max_seconds_per_day = 86_400
 
-        if input_date == today_date:
-            # Process for today's log
-            existing_record = AnalyticsDB.get_usage(user_id=user_id, date=input_date)
-            if existing_record:
-                updated_time_spent = (existing_record.get("time_spent") or 0) + time_spent
-                analytics_data = AnalyticsDB.update_usage(
-                    user_id=user_id, date=input_date, time_spent=updated_time_spent, timestamp=timestamp
-                ) or {}
-            else:
-                analytics_data = AnalyticsDB.log_usage(
-                    user_id=user_id, date=input_date, time_spent=time_spent, timestamp=timestamp
-                ) or {}
-        else:
-            # Process for past dates
-            existing_record = AnalyticsDB.get_usage(user_id=user_id, date=input_date)
-            midnight = datetime.combine(input_date, datetime.max.time().replace(microsecond=0))
-            request_timestamp = datetime.combine(input_date, timestamp.time())
+        def distribute_time(user_id, timestamp, remaining_time):
+            date = timestamp.date()
 
-            if request_timestamp > midnight:
-                request_timestamp = midnight
+            start_of_next_day = datetime.combine(date + timedelta(days=1), datetime.min.time())
+
+            if timestamp.tzinfo is not None:
+                start_of_next_day = start_of_next_day.replace(tzinfo=timestamp.tzinfo)
+
+            seconds_until_midnight = (start_of_next_day - timestamp).total_seconds()
+            time_for_current_day = min(remaining_time, seconds_until_midnight)
+
+            existing_record = AnalyticsDB.get_usage(user_id=user_id, date=date)
+            already_logged = existing_record.get("time_spent", 0) if existing_record else 0
+
+            time_for_current_day = min(time_for_current_day, max_seconds_per_day - already_logged)
 
             if existing_record:
-                remaining_time = (midnight - request_timestamp).seconds
-                time_for_input_day = min(time_spent, remaining_time)
-
-                updated_time_spent = (existing_record.get("time_spent") or 0) + time_for_input_day
-                analytics_data = AnalyticsDB.update_usage(user_id=user_id, date=input_date,
-                                                          time_spent=updated_time_spent,
-                                                          timestamp=request_timestamp) or {}
-                remaining_time_spent = time_spent - time_for_input_day
+                AnalyticsDB.update_usage(user_id=user_id, date=date,
+                                         time_spent=already_logged + time_for_current_day,
+                                         timestamp=timestamp)
             else:
-                time_for_input_day = min(time_spent, (midnight - request_timestamp).seconds)
-                analytics_data = AnalyticsDB.log_usage(user_id=user_id, date=input_date, time_spent=time_for_input_day,
-                                                       timestamp=request_timestamp) or {}
-                remaining_time_spent = time_spent - time_for_input_day
+                AnalyticsDB.log_usage(user_id=user_id, date=date,
+                                      time_spent=time_for_current_day,
+                                      timestamp=timestamp)
 
-            if remaining_time_spent > 0:
-                existing_today_record = AnalyticsDB.get_usage(user_id=user_id, date=today_date)
-                if existing_today_record:
-                    updated_today_time_spent = (existing_today_record.get("time_spent") or 0) + remaining_time_spent
-                    analytics_data = AnalyticsDB.update_usage(user_id=user_id, date=today_date,
-                                                              time_spent=updated_today_time_spent,
-                                                              timestamp=datetime.now()) or {}
-                else:
-                    analytics_data = AnalyticsDB.log_usage(user_id=user_id, date=today_date,
-                                                           time_spent=remaining_time_spent,
-                                                           timestamp=datetime.now()) or {}
+            remaining_time -= time_for_current_day
 
-        return AnalyticsResponse(**analytics_data)
+            if remaining_time > 0:
+                # Move to the next day, set time to 00:00:00
+                distribute_time(user_id, start_of_next_day, remaining_time)
+
+        distribute_time(user_id, timestamp, time_spent)
+
+        latest_data = AnalyticsDB.get_usage(user_id=user_id, date=date.today()) or {}
+        return AnalyticsResponse(**latest_data)
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

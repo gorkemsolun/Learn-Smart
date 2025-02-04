@@ -20,11 +20,6 @@ import {useState} from "react";
 
 const components: { title: string; href: string; description: string }[] = [
   {
-    title: "Profile",
-    href: "",
-    description: "Adjust your preferences, according to your need.",
-  },
-  {
     title: "Notifications",
     href: "",
     description: "Keep updated with the latest changes.",

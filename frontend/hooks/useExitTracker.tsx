@@ -6,22 +6,29 @@ export default function useExitTracker() {
   const hasExited = useRef(false);
 
   useEffect(() => {
-    const handleExit = async (useBeacon = false) => {
-      if (hasExited.current) return; // Prevent duplicate calls
+    const handleExit = async () => {
+      if (hasExited.current) return;
       hasExited.current = true;
 
       const token = Cookies.get("authToken");
       const signInTime = Cookies.get("signin_time");
+      const signOutTime = Cookies.get("signout_time")
 
       if (!token || !signInTime) return;
 
       const signInDate = new Date(signInTime);
+      const signOutDate = new Date(signOutTime);
       if (isNaN(signInDate.getTime())) {
         console.error("Invalid sign-in time format");
         return;
       }
 
-      const timeDifferenceInSeconds = Math.floor((Date.now() - signInDate.getTime()) / 1000);
+      let timeDifferenceInSeconds;
+
+      if(signOutTime)
+        timeDifferenceInSeconds = Math.floor((signOutDate.getTime() - signInDate.getTime()) / 1000);
+      else
+        timeDifferenceInSeconds = Math.floor((Date.now() - signInDate.getTime()) / 1000);
 
       const data = {
         date: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
@@ -30,19 +37,14 @@ export default function useExitTracker() {
       };
 
       try {
-        if (useBeacon) {
-          const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
-          navigator.sendBeacon(`${backendAPI.defaults.baseURL}/analytics/log`, blob);
-        } else {
-          const response = await backendAPI.post(`/analytics/log`, data, {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          console.log(response);
-        }
+        await backendAPI.post(`/analytics/log`, data, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
         Cookies.set("signin_time", new Date().toISOString(), { path: "/" });
+        Cookies.remove("signout_time");
       } catch (error) {
         console.error("Error logging exit data:", error);
       }
@@ -54,9 +56,9 @@ export default function useExitTracker() {
       }
     };
 
-    const beforeUnloadHandler = (event) => {
-      handleExit(true);
-      event.preventDefault();
+    const beforeUnloadHandler = () => {
+      Cookies.set("signout_time", new Date().toISOString(), { path: "/" });
+      handleExit();
     };
 
     document.addEventListener("visibilitychange", visibilityChangeHandler);

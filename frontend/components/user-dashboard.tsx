@@ -1,22 +1,28 @@
 "use client";
 
+import * as React from "react";
+import dayjs from "dayjs";
+import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 
 import { Course } from "@/app/types";
 import { CourseDialogModal } from "@/components/course-dialog";
 import { CoursesList } from "@/components/courses-list";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { ToastAction } from "@/components/ui/toast";
 import { UserChart } from "@/components/user-analytics";
-import { backendAPI } from "@/environment/backend_api";
+import {
+  Card,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { backendAPI } from "@/environment/backend_api";
 
-import { AutoGraph } from "@mui/icons-material";
-import ChatIcon from "@mui/icons-material/Chat";
 import HubIcon from "@mui/icons-material/Hub";
+import ChatIcon from "@mui/icons-material/Chat";
 import PersonIcon from "@mui/icons-material/Person";
+import { AutoGraph } from "@mui/icons-material";
 
 // Helper function to map dates to weekdays
 const mapDateToDay = (dateString: string): string => {
@@ -67,21 +73,29 @@ export default function UserDashboard() {
         },
       });
 
-      // Process analytics data
-      const formattedData = analyticsResponse.data.map(
-        (item: { date: string; time_spent: number; timestamp: string }) => ({
-          day: mapDateToDay(item.date),
-          timeSpent: item.time_spent,
-          timestamp: item.timestamp,
-        })
-      );
+      const getLast7Days = () => {
+        return [...Array(7)].map((_, i) => dayjs().subtract(6 - i, "day").format("YYYY-MM-DD"));
+      };
 
-      setChartData((prevChartData) =>
-        prevChartData.map((entry) => {
-          const match = formattedData.find((item) => item.day === entry.day);
-          return match ? { ...entry, timeSpent: match.timeSpent } : entry;
-        })
-      );
+      const last7Days = getLast7Days(); // Get the last 7 days in order
+
+      const formattedData = analyticsResponse.data.map((item: { date: string; time_spent: number; timestamp: string }) => ({
+        day: mapDateToDay(item.date),
+        date: item.date,
+        timeSpent: item.time_spent,
+        timestamp: item.timestamp,
+      }));
+
+      const chartData = last7Days.map((date) => {
+        const found = formattedData.find((item) => item.date === date);
+        return {
+          day: mapDateToDay(date),
+          date,
+          timeSpent: found ? found.timeSpent : 0,
+          timestamp: found ? found.timestamp : new Date(date).toISOString(),
+        };
+      });
+      setChartData(chartData);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       toast({
@@ -188,7 +202,7 @@ export default function UserDashboard() {
         isCreate={true}
         isOpen={courseDialog}
         onClose={setCourseDialog}
-        onCourseCreation={fetchDashboardData} // Refresh all data
+        onCourseCreation={fetchDashboardData}
       />
     </div>
   );
