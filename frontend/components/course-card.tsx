@@ -3,7 +3,7 @@
 import { CourseCardProps } from "@/app/types";
 import default_study_logo from "@/assets/default_study_logo.png";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
-import { CourseEditDialogModal } from "@/components/course-edit-dialog";
+import { CourseDialogModal } from "@/components/course-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -101,7 +101,8 @@ export function CourseCard(modalParameters: CourseCardProps) {
           </div>
         </CardContent>
       </Card>
-      <CourseEditDialogModal
+      <CourseDialogModal
+        isCreate={false}
         isOpen={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
         course={modalParameters.course}

@@ -1,27 +1,22 @@
 "use client";
 
-import * as React from "react";
-import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 import { Course } from "@/app/types";
-import { CourseCreateDialog } from "@/components/course-create-dialog";
+import { CourseDialogModal } from "@/components/course-dialog";
 import { CoursesList } from "@/components/courses-list";
-import { UserChart } from "@/components/user-analytics";
-import {
-  Card,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { ToastAction } from "@/components/ui/toast";
+import { UserChart } from "@/components/user-analytics";
 import { backendAPI } from "@/environment/backend_api";
+import { useToast } from "@/hooks/use-toast";
 
-import HubIcon from "@mui/icons-material/Hub";
-import ChatIcon from "@mui/icons-material/Chat";
-import PersonIcon from "@mui/icons-material/Person";
 import { AutoGraph } from "@mui/icons-material";
+import ChatIcon from "@mui/icons-material/Chat";
+import HubIcon from "@mui/icons-material/Hub";
+import PersonIcon from "@mui/icons-material/Person";
 
 // Helper function to map dates to weekdays
 const mapDateToDay = (dateString: string): string => {
@@ -73,11 +68,13 @@ export default function UserDashboard() {
       });
 
       // Process analytics data
-      const formattedData = analyticsResponse.data.map((item: { date: string; time_spent: number; timestamp: string }) => ({
-        day: mapDateToDay(item.date),
-        timeSpent: item.time_spent,
-        timestamp: item.timestamp,
-      }));
+      const formattedData = analyticsResponse.data.map(
+        (item: { date: string; time_spent: number; timestamp: string }) => ({
+          day: mapDateToDay(item.date),
+          timeSpent: item.time_spent,
+          timestamp: item.timestamp,
+        })
+      );
 
       setChartData((prevChartData) =>
         prevChartData.map((entry) => {
@@ -187,7 +184,8 @@ export default function UserDashboard() {
       )}
 
       {/* Course Creation Dialog */}
-      <CourseCreateDialog
+      <CourseDialogModal
+        isCreate={true}
         isOpen={courseDialog}
         onClose={setCourseDialog}
         onCourseCreation={fetchDashboardData} // Refresh all data
