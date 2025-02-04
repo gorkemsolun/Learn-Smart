@@ -316,7 +316,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
             {props.isCreate ? "Create" : "Edit"} Individual Study
           </DialogTitle>
           <DialogDescription></DialogDescription>
-          <label className="text-foreground/70 text-xs font-semibold">
+          <label className="text-xs font-semibold text-foreground/70">
             Name
           </label>
           <Input
@@ -326,7 +326,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
             onChange={(event) => setCourseName(event.target.value)}
             required
           />
-          <label className="text-foreground/70 text-xs font-semibold">
+          <label className="text-xs font-semibold text-foreground/70">
             Code
           </label>
           <Input
@@ -336,7 +336,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
             onChange={(event) => setCourseCode(event.target.value)}
             required
           />
-          <label className="text-foreground/70 text-xs font-semibold">
+          <label className="text-xs font-semibold text-foreground/70">
             Description
           </label>
           <Textarea
@@ -373,11 +373,11 @@ export function CourseDialogModal(props: CourseDialogProps) {
                 ) : (
                   <div>
                     <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
-                    <p className="text-foreground/70 text-sm">
+                    <p className="text-sm text-foreground/70">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-foreground/70 text-base">PDF or DOCX</p>
+                    <p className="text-base text-foreground/70">PDF or DOCX</p>
                   </div>
                 )}
               </div>
@@ -413,12 +413,12 @@ export function CourseDialogModal(props: CourseDialogProps) {
                   </div>
                 ) : (
                   <div>
-                    <LuUpload className="size-[6vh] mb-4 text-foreground/70" />
-                    <p className="text-foreground/70 text-sm">
+                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
+                    <p className="text-sm text-foreground/70">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-foreground/70 text-base">
+                    <p className="text-base text-foreground/70">
                       JPG, JPEG or PNG
                     </p>
                   </div>
