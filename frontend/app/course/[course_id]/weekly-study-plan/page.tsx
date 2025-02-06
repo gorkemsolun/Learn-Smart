@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { useLoading } from "@/hooks/useLoading"; // Import the custom hook
 import { LoadingSpinner } from "@/components/LoadingSpinner"; // Import the loading spinner
+import { Card } from "@/components/ui/card";
 
 export default function WeeklyStudyPlan() {
   // Hooks for authentication, routing, and state management
@@ -62,17 +63,19 @@ export default function WeeklyStudyPlan() {
   if (!studyPlan) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p className="text-gray-600">No study plan available for this course. 🧐</p>
+        <Card className="p-6 shadow-lg">
+          <p className="text-muted-foreground">No study plan available for this course. 🧐</p>
+        </Card>
       </div>
     );
   }
 
   // Render the study plan using Markdown
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      <div className="prose max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg text-gray-800">
+    <div className="p-8 bg-muted min-h-screen flex justify-center items-center">
+      <Card className="prose max-w-4xl w-full bg-background p-6 rounded-lg shadow-lg text-foreground">
         <Markdown>{studyPlan}</Markdown>
-      </div>
+      </Card>
     </div>
   );
 }
