@@ -26,7 +26,7 @@ export default function CourseFlashCardList() {
   const fetchFlashcardList = async (course_id: string) => {
     try {
       setLoading(true);
-      const response = await backendAPI.get(`/course/${course_id}/quizzes`, {
+      const response = await backendAPI.get(`/course/${course_id}/flashcards`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
