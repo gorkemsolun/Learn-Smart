@@ -9,7 +9,6 @@ import {
   CardContent,
   CardTitle,
 } from "@/components/ui/card";
-import { backend } from "@/environment/backend_api";
 import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -44,8 +43,8 @@ export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
               <Pencil2Icon />
             </Button>
             <ConfirmationDialog
-              title="Confirm Deleting Skill modalParameters"
-              description={`Are you sure you want to delete the skill modalParameters "${modalParameters.title}"? This action cannot be undone.`}
+              title={`Confirm Deleting Skill Tree "${modalParameters.title}"`}
+              description={`Are you sure you want to delete the skill tree named "${modalParameters.title}"? This action cannot be undone.`}
               triggerButtonLabel={<TrashIcon />}
               onConfirm={() => modalParameters.onSkillTreeDelete(modalParameters.id)}
             />

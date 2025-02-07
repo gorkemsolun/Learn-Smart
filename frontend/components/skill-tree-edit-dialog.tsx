@@ -17,7 +17,7 @@ import { FileIcon, FileTextIcon, ImageIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
 import * as React from "react";
 import { useState } from "react";
-import { LuUploadCloud } from "react-icons/lu";
+import { LuUpload } from "react-icons/lu";
 import { SkillTreeEditDialogProps } from "@/app/types";
 
 export function SkillTreeEditDialogModal(dialogParameters: SkillTreeEditDialogProps) {
@@ -166,7 +166,7 @@ export function SkillTreeEditDialogModal(dialogParameters: SkillTreeEditDialogPr
                   </div>
                 ) : (
                   <div>
-                    <LuUploadCloud className="mb-4 size-[6vh] text-foreground/70" />
+                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
                     <p className="text-sm text-foreground/70">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
@@ -207,7 +207,7 @@ export function SkillTreeEditDialogModal(dialogParameters: SkillTreeEditDialogPr
                   </div>
                 ) : (
                   <div>
-                    <LuUploadCloud className="mb-4 size-[6vh] text-foreground/70" />
+                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
                     <p className="text-sm text-foreground/70">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
