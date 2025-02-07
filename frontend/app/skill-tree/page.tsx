@@ -60,58 +60,58 @@ export default function Home() {
   }
 
   return (
-    <div className="fixed inset-0 flex h-screen overflow-hidden">
-      <SidebarProvider defaultOpen={true} className="mt-[7vh]">
-        <Sidebar variant="floating" className="z-50 mt-[8vh] flex h-[calc(100vh-10vh)] flex-col">
-          <SidebarHeader className="flex-col items-center justify-center">
-            <div className="py-4 text-lg font-bold">Skill Tree</div>
-            <SidebarMenu className="w-full">
-              <SidebarMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton className="w-full justify-between">
-                      SELECTED COURSE
-                      <ChevronDown className="ml-2 size-4"/>
-                    </SidebarMenuButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
-                    <DropdownMenuItem>
-                      <span>Course 1</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <span>Course 2</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarHeader>
+      <div className="fixed inset-0 flex h-screen overflow-hidden">
+        <SidebarProvider defaultOpen={true} className="mt-[7vh]">
+          <Sidebar variant="floating" className="z-50 mt-[8vh] flex h-[calc(100vh-10vh)] flex-col">
+            <SidebarHeader className="flex-col items-center justify-center">
+              <div className="py-4 text-lg font-bold">Skill Tree</div>
+              <SidebarMenu className="w-full">
+                <SidebarMenuItem>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuButton className="w-full justify-between">
+                        SELECTED COURSE
+                        <ChevronDown className="ml-2 size-4"/>
+                      </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
+                      <DropdownMenuItem>
+                        <span>Course 1</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <span>Course 2</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarHeader>
 
-          <SidebarContent className="flex-1 overflow-y-auto">
-            <SidebarGroup>
-              <SidebarGroupLabel>Selected Course&#39;s Skill Trees</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {items.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild>
-                          <a href={item.url}>
-                            <span>{item.title}</span>
-                          </a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
+            <SidebarContent className="flex-1 overflow-y-auto">
+              <SidebarGroup>
+                <SidebarGroupLabel>Selected Course&#39;s Skill Trees</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {items.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild>
+                            <a href={item.url}>
+                              <span>{item.title}</span>
+                            </a>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </SidebarContent>
+          </Sidebar>
 
-        <main className="flex-1 overflow-y-auto p-4">
-          <SidebarTrigger/>
-          <SkillTreeList skillTrees={skillTrees}/>
-        </main>
-      </SidebarProvider>
-    </div>
+          <main className="w-full flex-1 p-4 transition-all duration-300">
+            <SidebarTrigger/>
+            <SkillTreeList skillTrees={skillTrees}/>
+          </main>
+        </SidebarProvider>
+      </div>
   );
 }
