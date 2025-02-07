@@ -102,6 +102,7 @@ export interface NodeData {
   id: string;
   label: string;
   group: number;
+  completed: boolean;
 }
 
 export interface LinkData {
