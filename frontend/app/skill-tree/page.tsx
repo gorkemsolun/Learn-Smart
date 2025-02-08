@@ -107,7 +107,7 @@ export default function Home() {
             </SidebarContent>
           </Sidebar>
 
-          <main className="w-full flex-1 p-4 transition-all duration-300">
+          <main className="w-full flex-1 p-4">
             <SidebarTrigger/>
             <SkillTreeList skillTrees={skillTrees}/>
           </main>

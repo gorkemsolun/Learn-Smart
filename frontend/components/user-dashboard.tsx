@@ -203,6 +203,7 @@ export default function UserDashboard() {
         isOpen={courseDialog}
         onClose={setCourseDialog}
         onCourseCreation={fetchDashboardData}
+        onCourseUpdate={fetchDashboardData}
       />
     </div>
   );
