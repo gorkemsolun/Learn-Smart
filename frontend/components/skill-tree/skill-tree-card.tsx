@@ -1,18 +1,14 @@
 "use client";
 
-import {SkillTreeCardProps} from "@/app/types";
+import { SkillTreeCardProps } from "@/app/types";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
 // import { SkillTreeEditDialogModal } from "@/components/course-edit-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
+import { ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {ChevronRight} from "lucide-react";
 
 export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
   const router = useRouter();
@@ -23,15 +19,17 @@ export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
 
   return (
     <Card
-        key={modalParameters.id}
-        className="group h-[25vh] overflow-hidden transition-all duration-300 hover:shadow-lg"
+      key={modalParameters.id}
+      className="group h-[25vh] overflow-hidden transition-all duration-300 hover:shadow-lg"
     >
-      <CardContent
-        className="flex h-full flex-col justify-between p-0"
-      >
+      <CardContent className="flex h-full flex-col justify-between p-0">
         <div className="space-y-2 bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-6">
-          <CardTitle className="line-clamp-1 overflow-hidden text-xl font-bold">{modalParameters.title}</CardTitle>
-          <p className="line-clamp-1 overflow-hidden text-sm text-muted-foreground">{modalParameters.description || "No description available"}</p>
+          <CardTitle className="line-clamp-1 overflow-hidden text-xl font-bold">
+            {modalParameters.title}
+          </CardTitle>
+          <p className="line-clamp-1 overflow-hidden text-sm text-muted-foreground">
+            {modalParameters.description || "No description available"}
+          </p>
         </div>
         <div className="flex items-center justify-between bg-muted/50 p-4">
           <div className="flex items-center space-x-2">
@@ -46,7 +44,9 @@ export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
               title={`Confirm Deleting Skill Tree "${modalParameters.title}"`}
               description={`Are you sure you want to delete the skill tree named "${modalParameters.title}"? This action cannot be undone.`}
               triggerButtonLabel={<TrashIcon />}
-              onConfirm={() => modalParameters.onSkillTreeDelete(modalParameters.id)}
+              onConfirm={() =>
+                modalParameters.onSkillTreeDelete(modalParameters.id)
+              }
             />
           </div>
           <Button

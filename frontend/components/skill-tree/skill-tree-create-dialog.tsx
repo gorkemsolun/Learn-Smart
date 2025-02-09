@@ -1,6 +1,7 @@
 "use client";
 
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
+import { SkillTreeCreateDialogProps } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,16 +12,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
-import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { FileIcon, FileTextIcon, ImageIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
 import * as React from "react";
 import { useState } from "react";
 import { LuUploadCloud } from "react-icons/lu";
-import { SkillTreeCreateDialogProps } from "@/app/types";
 
-export function SkillTreeCreateDialogModal(dialogParameters: SkillTreeCreateDialogProps) {
+export function SkillTreeCreateDialogModal(
+  dialogParameters: SkillTreeCreateDialogProps
+) {
   const [skillTreeTitle, setSkillTreeTitle] = useState<string>("");
   const [keywords, setKeywords] = useState<string>("");
   const [skillTreeDescription, setSkillTreeDescription] = useState<string>("");
@@ -92,7 +93,6 @@ export function SkillTreeCreateDialogModal(dialogParameters: SkillTreeCreateDial
   ) {
     // Prevent default form submission
     event.preventDefault();
-
   }
 
   function handleOpenChange() {
