@@ -14,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 import { FileIcon, FileTextIcon, ImageIcon } from "@radix-ui/react-icons";
-import Cookies from "js-cookie";
 import * as React from "react";
 import { useState } from "react";
 import { LuUpload } from "react-icons/lu";
@@ -29,7 +28,6 @@ export function SkillTreeEditDialogModal(
   const [icon, setIcon] = useState<File | null>(null);
   const [disableCreateButton, setDisableCreateButton] =
     useState<boolean>(false);
-  const [token] = useState<string>(Cookies.get("authToken") as string);
 
   const { toast } = useToast();
   const resetFields = () => {
@@ -85,6 +83,7 @@ export function SkillTreeEditDialogModal(
       }
     }
   }
+
   // TO-DO write the backend logic for creating skill tree
   async function handleSubmit(
     event:
@@ -110,7 +109,7 @@ export function SkillTreeEditDialogModal(
         <div className="space-y-1">
           <DialogTitle className="mb-2">Skill Tree</DialogTitle>
           <DialogDescription></DialogDescription>
-          <label className="text-xs font-semibold text-foreground/70">
+          <label className="text-foreground/70 text-xs font-semibold">
             Title
           </label>
           <Input
@@ -120,7 +119,7 @@ export function SkillTreeEditDialogModal(
             onChange={(event) => setSkillTreeTitle(event.target.value)}
             required
           />
-          <label className="text-xs font-semibold text-foreground/70">
+          <label className="text-foreground/70 text-xs font-semibold">
             Keywords
           </label>
           <Input
@@ -130,7 +129,7 @@ export function SkillTreeEditDialogModal(
             onChange={(event) => setKeywords(event.target.value)}
             required
           />
-          <label className="text-xs font-semibold text-foreground/70">
+          <label className="text-foreground/70 text-xs font-semibold">
             Description
           </label>
           <Textarea
@@ -166,12 +165,12 @@ export function SkillTreeEditDialogModal(
                   </div>
                 ) : (
                   <div>
-                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
-                    <p className="text-sm text-foreground/70">
+                    <LuUpload className="text-foreground/70 mb-4 size-[6vh]" />
+                    <p className="text-foreground/70 text-sm">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-base text-foreground/70">PDF or DOCX</p>
+                    <p className="text-foreground/70 text-base">PDF or DOCX</p>
                   </div>
                 )}
               </div>
@@ -207,12 +206,12 @@ export function SkillTreeEditDialogModal(
                   </div>
                 ) : (
                   <div>
-                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
-                    <p className="text-sm text-foreground/70">
+                    <LuUpload className="text-foreground/70 mb-4 size-[6vh]" />
+                    <p className="text-foreground/70 text-sm">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-base text-foreground/70">
+                    <p className="text-foreground/70 text-base">
                       JPG, JPEG or PNG
                     </p>
                   </div>

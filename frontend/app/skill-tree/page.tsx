@@ -1,6 +1,7 @@
 "use client";
 
 import { SkillTreeCard } from "@/app/types";
+import { SkillTreeCreateDialogModal } from "@/components/skill-tree/skill-tree-create-dialog";
 import SkillTreeList from "@/components/skill-tree/skill-tree-list";
 import {
   DropdownMenu,
@@ -21,6 +22,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { Pencil1Icon } from "@radix-ui/react-icons";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
@@ -52,6 +54,8 @@ const items = [
 
 export default function Home() {
   const [dummySkillTreeData, setDummySkillTreeData] = useState(false);
+  const [openSkillTreeCreateDialog, setOpenSkillTreeCreateDialog] =
+    useState(false);
 
   // Implement the handleCardClick function. This should fetch the data about the selected skill tree from the backend, then display it.
   function handleCardClick(link: string) {
@@ -67,7 +71,16 @@ export default function Home() {
           className="z-50 mt-[8vh] flex h-[calc(100vh-10vh)] flex-col"
         >
           <SidebarHeader className="flex-col items-center justify-center">
-            <div className="py-4 text-lg font-bold">Skill Tree</div>
+            <div className="flex w-full items-center justify-center px-2">
+              <div className="grow py-4 text-lg font-bold">Skill Tree</div>
+              <Pencil1Icon
+                className="flex-none"
+                onClick={() => {
+                  setOpenSkillTreeCreateDialog(!openSkillTreeCreateDialog);
+                }}
+              />
+            </div>
+
             <SidebarMenu className="w-full">
               <SidebarMenuItem>
                 <DropdownMenu>
@@ -115,6 +128,11 @@ export default function Home() {
         <main className="w-full flex-1 p-4">
           <SidebarTrigger />
           <SkillTreeList skillTrees={skillTrees} />
+          <SkillTreeCreateDialogModal
+            isOpen={openSkillTreeCreateDialog}
+            onClose={() => setOpenSkillTreeCreateDialog(false)}
+            onSkillTreeCreation={() => console.log("TODO Skill Tree Created")}
+          />
         </main>
       </SidebarProvider>
     </div>

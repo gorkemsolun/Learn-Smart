@@ -16,7 +16,7 @@ export default function SkillTreeCreateCard(
   return (
     <div className="w-1/4 p-6">
       <Card className="group relative h-[25vh] overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-background" />
+        <div className="from-primary/5 via-secondary/5 to-background absolute inset-0 bg-gradient-to-br" />
         <CardContent className="relative flex h-full flex-col items-center justify-center p-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -24,17 +24,17 @@ export default function SkillTreeCreateCard(
             transition={{ duration: 0.5 }}
             className="z-10 space-y-4"
           >
-            <h3 className="mb-2 text-2xl font-bold tracking-tight text-foreground">
+            <h3 className="text-foreground mb-2 text-2xl font-bold tracking-tight">
               Skill Tree
             </h3>
-            <p className="mb-4 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mb-4 text-sm">
               Visualize your growth journey
             </p>
             <Button
               onClick={() => {
                 setSkillTreeDialog(true);
               }}
-              className="relative overflow-hidden bg-background text-foreground transition-all duration-500 hover:bg-foreground hover:text-background"
+              className="bg-background text-foreground hover:bg-foreground hover:text-background relative overflow-hidden transition-all duration-500"
               variant="outline"
             >
               <span className="relative z-10 flex items-center transition-transform duration-500">

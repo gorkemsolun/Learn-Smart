@@ -2,7 +2,7 @@
 
 import { SkillTreeCardProps } from "@/app/types";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
-// import { SkillTreeEditDialogModal } from "@/components/course-edit-dialog";
+import { SkillTreeEditDialogModal } from "@/components/skill-tree/skill-tree-edit-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
@@ -12,7 +12,8 @@ import { useState } from "react";
 
 export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
   const router = useRouter();
-  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
+  const [skillTreeEditDialogOpen, setSkillTreeEditDialogOpen] =
+    useState<boolean>(false);
   const handleCardClick = (id: string) => {
     router.push(`/skill-tree/${id}`);
   };
@@ -23,20 +24,20 @@ export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
       className="group h-[25vh] overflow-hidden transition-all duration-300 hover:shadow-lg"
     >
       <CardContent className="flex h-full flex-col justify-between p-0">
-        <div className="space-y-2 bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-6">
+        <div className="from-primary/5 via-secondary/5 to-background space-y-2 bg-gradient-to-br p-6">
           <CardTitle className="line-clamp-1 overflow-hidden text-xl font-bold">
             {modalParameters.title}
           </CardTitle>
-          <p className="line-clamp-1 overflow-hidden text-sm text-muted-foreground">
+          <p className="text-muted-foreground line-clamp-1 overflow-hidden text-sm">
             {modalParameters.description || "No description available"}
           </p>
         </div>
-        <div className="flex items-center justify-between bg-muted/50 p-4">
+        <div className="bg-muted/50 flex items-center justify-between p-4">
           <div className="flex items-center space-x-2">
             <Button
               size="icon"
               variant="outline"
-              onClick={() => setEditDialogOpen(true)}
+              onClick={() => setSkillTreeEditDialogOpen(true)}
             >
               <Pencil2Icon />
             </Button>
@@ -59,6 +60,15 @@ export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
           </Button>
         </div>
       </CardContent>
+
+      <SkillTreeEditDialogModal
+        isOpen={skillTreeEditDialogOpen}
+        onClose={() => setSkillTreeEditDialogOpen(false)}
+        onSkillTreeUpdate={() => {
+          console.log("TODO on SkillTreeUpdate");
+        }} // TO-DO)}
+        skillTree={modalParameters} // Skill Tree data which is SkillTreeCardProps
+      />
     </Card>
   );
 }
