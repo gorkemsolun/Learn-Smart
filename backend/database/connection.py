@@ -51,6 +51,7 @@ class DatabaseConnection:
             connection.execute(text("DROP TABLE IF EXISTS courses;"))
             connection.execute(text("DROP TABLE IF EXISTS users;"))
             connection.execute(text("DROP TABLE IF EXISTS notifications;"))
+            connection.execute(text("DROP TABLE IF EXISTS analytics;"))
 
     def __enter__(self):
         """

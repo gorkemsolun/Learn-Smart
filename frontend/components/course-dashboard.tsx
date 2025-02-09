@@ -22,18 +22,20 @@ import {
 } from "react-icons/fa";
 import { IoCloudUploadSharp } from "react-icons/io5";
 import UpdateUploadSyllabus from "./upload-syllabus-modal-old";
-import { useAuthToken } from "@/hooks/useAuthToken";
+import { useLoading } from "@/hooks/useLoading";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function CourseHomepage() {
   const router = useRouter();
   const { theme } = useTheme();
   const [course, setCourse] = useState<Course>();
-  const [loading, setLoading] = useState(true);
+  const { loading, startLoading, stopLoading } = useLoading();
 
   // Loading state is essential to ensure a smooth user experience, especially after a page refresh.
   // This helps handle potential issues with icon themes that may not load correctly due to changes in the current theme.
 
-  const token = useAuthToken();
+  const token = useAuthRedirect();
   const { toast } = useToast();
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
@@ -49,7 +51,7 @@ export default function CourseHomepage() {
   }, [token, course_id]);
 
   const fetchCourseData = async (course_id: string) => {
-    setLoading(true);
+    startLoading();
     try {
       // TODO: PUT THIS CODE DUPLICATION TO A GENERALIZED FOLDER
       const response = await backendAPI.get(`/course/${course_id}`, {
@@ -67,23 +69,27 @@ export default function CourseHomepage() {
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
   const handleFlashcardsClick = () => {
+    startLoading();
     router.push(`/course/${course_id}/flashcards`);
   };
 
   const handleQuizzesClick = () => {
+    startLoading();
     router.push(`/course/${course_id}/quizzes`);
   };
 
   const handleInstructorClick = () => {
+    startLoading();
     router.push(`/course/${course_id}/instructor`);
   };
 
   const handleWeeklyStudyPlanClick = () => {
+    startLoading();
     console.log("handleWeeklyStudyPlanClick");
     router.push(`/course/${course_id}/weekly-study-plan`);
   };
@@ -154,6 +160,10 @@ export default function CourseHomepage() {
       onClick: handleUploadSyllabusClick,
     },
   ];
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <main className="min-h-screen bg-transparent text-black">

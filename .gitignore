@@ -1,6 +1,5 @@
 /chat_histories
 /files
-# .env
 /old-frontend/node_modules
 /old-frontend/.pnp
 /old-frontend/.pnp.js
@@ -99,3 +98,5 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+*.bat

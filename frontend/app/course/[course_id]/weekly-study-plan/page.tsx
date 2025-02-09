@@ -1,41 +1,45 @@
-"use client"
+"use client";
 
 import { backend, backendAPI } from "@/environment/backend_api";
-import { useAuthToken } from "@/hooks/useAuthToken";
-import { useParams, useRouter } from "next/navigation";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
+import { useLoading } from "@/hooks/useLoading"; // Import the custom hook
+import { LoadingSpinner } from "@/components/LoadingSpinner"; // Import the loading spinner
+import { Card } from "@/components/ui/card";
 
 export default function WeeklyStudyPlan() {
-  const token = useAuthToken();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [studyPlan, setStudyPlan] = useState(null);
-  const params = useParams<{ course_id: string }>();
-  const course_id = params.course_id;
-  const router = useRouter();
+  // Hooks for authentication, routing, and state management
+  const token = useAuthRedirect();
+  const { loading, startLoading, stopLoading } = useLoading(); // Use the custom hook
+  const [studyPlan, setStudyPlan] = useState<string | null>(null);
+  const { course_id } = useParams<{ course_id: string }>();
 
+  // Fetch study plan data when the token or course_id changes
   useEffect(() => {
-    if (token) {
+    if (token && course_id) {
       fetchStudyPlanData(course_id);
     }
   }, [token, course_id]);
 
-  if (token == null) {
-    router.replace("/login");
-  }
-
+  // Function to fetch study plan data from the backend
   const fetchStudyPlanData = async (course_id: string) => {
     try {
-      setLoading(true);
-      const response = await backendAPI.get(`/course/${course_id}`, {
+      startLoading(); // Start loading
+
+      // Fetch course details to get the study plan URL
+      const courseResponse = await backendAPI.get(`/course/${course_id}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-      
-      const studyPlanUrl = response.data.course_study_plan_url;
-      const studyPlanResponse = await backend.get(`${studyPlanUrl}`, {
+
+      const studyPlanUrl = courseResponse.data.course_study_plan_url;
+
+      // Fetch the actual study plan content
+      const studyPlanResponse = await backend.get(studyPlanUrl, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
@@ -44,23 +48,34 @@ export default function WeeklyStudyPlan() {
 
       setStudyPlan(studyPlanResponse.data);
     } catch (error) {
-      console.error("Error fetching course data:", error);
+      console.error("Oops! Something went wrong while fetching the study plan:", error);
     } finally {
-      setLoading(false);
+      stopLoading(); // Stop loading
     }
   };
 
+  // Show loading spinner while loading
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
+  // Handle case where no study plan is available
   if (!studyPlan) {
-    return <div>No study plan available.</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Card className="p-6 shadow-lg">
+          <p className="text-muted-foreground">No study plan available for this course. 🧐</p>
+        </Card>
+      </div>
+    );
   }
 
+  // Render the study plan using Markdown
   return (
-    <div>
-      <pre><Markdown>{studyPlan}</Markdown></pre>
+    <div className="p-8 bg-muted min-h-screen flex justify-center items-center">
+      <Card className="prose max-w-4xl w-full bg-background p-6 rounded-lg shadow-lg text-foreground">
+        <Markdown>{studyPlan}</Markdown>
+      </Card>
     </div>
   );
 }

@@ -437,14 +437,17 @@ async def get_flashcards_list(course_id: int, current_user: dict = Depends(auth.
         chat_id = chat["chat_id"]
         flashcards_path = get_flashcards_folder_path(chat_id)
 
-        for filename in os.listdir(flashcards_path):
-            if filename.endswith(".json"):
-                with open(os.path.join(flashcards_path, filename), "r") as f:
-                    flashcard = json.load(f)
-                    flashcards.append({
-                        "chat_id": chat_id,
-                        "filename": filename,
-                        "content": flashcard
-                    })
+        # Check if the directory exists before listing its contents
+        if os.path.exists(flashcards_path) and os.path.isdir(flashcards_path):
+            for filename in os.listdir(flashcards_path):
+                if filename.endswith(".json"):
+                    file_path = os.path.join(flashcards_path, filename)
+                    with open(file_path, "r") as f:
+                        flashcard = json.load(f)
+                        flashcards.append({
+                            "chat_id": chat_id,
+                            "filename": filename,
+                            "content": flashcard
+                        })
 
     return flashcards

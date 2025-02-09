@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Navbar } from "@/components/navbar";
+import useExitTracker from "@/hooks/useExitTracker";
 
 export default function ClientLayout({
   children
@@ -14,6 +15,7 @@ export default function ClientLayout({
   const isNavbar = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up')
       || /^\/course\/\d+\/instructor/.test(pathname);
 
+  useExitTracker();
   return (
     <ThemeProvider
       attribute="class"

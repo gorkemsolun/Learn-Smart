@@ -11,11 +11,14 @@ export interface User {
 }
 
 export interface Course {
-  course_id: string;
+  course_id?: string;
   course_name: string;
   course_code: string;
   course_description: string;
-  course_icon_url: string;
+  course_icon_url?: string;
+  course_syllabus_url?: string;
+  course_syllabus?: File;
+  course_icon?: File;
 }
 
 export interface Message {
@@ -66,12 +69,6 @@ export interface ChatInterfaceProps {
   setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export interface CourseCreateDialogProps {
-  isOpen: boolean;
-  onClose: (value: boolean) => void;
-  onCourseCreation: () => void;
-}
-
 export interface CoursesListProps {
   courses: Course[];
   onCourseDelete: () => void;
@@ -92,11 +89,13 @@ export interface CourseCardProps {
   onCourseUpdate: () => void;
 }
 
-export interface CourseEditDialogProps {
+export interface CourseDialogProps {
+  isCreate: boolean;
   isOpen: boolean;
   onClose: (value: boolean) => void;
   onCourseUpdate: () => void;
-  course: Course;
+  onCourseCreation?: () => void;
+  course?: Course;
 }
 
 export interface NodeData {
@@ -117,4 +116,45 @@ export interface CustomSimulationNode
   id: string;
   label: string;
   group: number;
+}
+
+export interface SkillTree {
+  id: string;
+  title: string;
+  nodes: NodeData[];
+  nodeLinks: LinkData[];
+}
+
+export interface SkillTreeCard {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface SkillTreeListProps {
+  skillTrees: SkillTreeCard[];
+}
+
+export interface SkillTreeCreateDialogProps {
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onSkillTreeCreation: () => void;
+}
+
+export interface SkillTreeCreateProps {
+  onSkillTreeUpdate: () => void;
+}
+
+export interface SkillTreeCardProps {
+  id: string;
+  title: string;
+  description: string;
+  onSkillTreeDelete: (id: string) => void;
+}
+
+export interface SkillTreeEditDialogProps {
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onSkillTreeUpdate: () => void;
+  skillTree: SkillTreeCard;
 }
