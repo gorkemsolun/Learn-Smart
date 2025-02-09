@@ -16,7 +16,7 @@ In summary, Edux provides essential tools and resources through a web applicatio
 
 ## Build
 
-1. Use node 23.6.1
+1. Use latest node
 
 2. Use python 3.12.8
 
