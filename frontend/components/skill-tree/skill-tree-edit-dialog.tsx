@@ -1,7 +1,7 @@
 "use client";
 
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
-import { SkillTreeEditDialogProps } from "@/app/types";
+import { Chat, SkillTreeEditDialogProps } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,7 +22,7 @@ export function SkillTreeEditDialogModal(
   dialogParameters: SkillTreeEditDialogProps
 ) {
   const [skillTreeTitle, setSkillTreeTitle] = useState<string>("");
-  const [keywords, setKeywords] = useState<string>("");
+  const [chat, setChat] = useState<Chat>();
   const [skillTreeDescription, setSkillTreeDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
@@ -31,12 +31,28 @@ export function SkillTreeEditDialogModal(
 
   const { toast } = useToast();
   const resetFields = () => {
-    setKeywords("");
+    setChat(undefined);
     setSkillTreeTitle("");
     setSkillTreeDescription("");
     setSyllabus(null);
     setIcon(null);
   };
+
+  // TODO: Replace this with actual chats fetched from the backend
+  const availableChats: Chat[] = [
+    {
+      chat_id: "1",
+      chat_title: "Chat 1",
+    },
+    {
+      chat_id: "2",
+      chat_title: "Chat 2",
+    },
+    {
+      chat_id: "3",
+      chat_title: "Chat 3",
+    },
+  ];
 
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -100,11 +116,7 @@ export function SkillTreeEditDialogModal(
   }
 
   return (
-    <Dialog
-      open={dialogParameters.isOpen}
-      onOpenChange={handleOpenChange}
-      className="w-3/5"
-    >
+    <Dialog open={dialogParameters.isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
         <div className="space-y-1">
           <DialogTitle className="mb-2">Skill Tree</DialogTitle>
@@ -120,15 +132,33 @@ export function SkillTreeEditDialogModal(
             required
           />
           <label className="text-foreground/70 text-xs font-semibold">
-            Keywords
+            Select a chat
           </label>
-          <Input
-            id="keywords"
-            type="text"
-            value={keywords}
-            onChange={(event) => setKeywords(event.target.value)}
-            required
-          />
+          <select
+            className="w-full appearance-none rounded-md border bg-black px-3 py-2 text-sm text-white"
+            title="Select a chat"
+            value={chat?.chat_id || ""}
+            onChange={(event) => {
+              const selectedId = event.target.value;
+              const foundChat = availableChats.find(
+                (c) => c.chat_id === selectedId
+              );
+              setChat(foundChat);
+            }}
+          >
+            <option value="" disabled className="bg-black text-white">
+              Choose a chat
+            </option>
+            {availableChats.map((c) => (
+              <option
+                key={c.chat_id}
+                value={c.chat_id}
+                className="bg-black text-white"
+              >
+                {c.chat_title}
+              </option>
+            ))}
+          </select>
           <label className="text-foreground/70 text-xs font-semibold">
             Description
           </label>
@@ -232,7 +262,7 @@ export function SkillTreeEditDialogModal(
             onClick={handleSubmit}
             type="submit"
             className="w-1/5"
-            disabled={!skillTreeTitle || !keywords || disableCreateButton}
+            disabled={!skillTreeTitle || !chat || disableCreateButton}
           >
             Create
           </Button>

@@ -31,10 +31,10 @@ export interface Message {
 export interface Chat {
   chat_id: string;
   chat_title: string;
-  slides_mode: boolean;
-  last_opened_slide_id: string | null;
-  slides: Slide[];
-  created_at: string;
+  slides_mode?: boolean;
+  last_opened_slide_id?: string | null;
+  slides?: Slide[];
+  created_at?: string;
 }
 
 export interface Slide {
