@@ -9,6 +9,7 @@ import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
 import { ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { VscDebugRestart } from "react-icons/vsc";
 
 export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
   const router = useRouter();
@@ -40,6 +41,15 @@ export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
               onClick={() => setSkillTreeEditDialogOpen(true)}
             >
               <Pencil2Icon />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => {
+                console.log("TODO on Reset");
+              }}
+            >
+              <VscDebugRestart />
             </Button>
             <ConfirmationDialog
               title={`Confirm Deleting Skill Tree "${modalParameters.title}"`}
