@@ -3,8 +3,8 @@ import { backendAPI } from "@/environment/backend_api";
 // import { toast } from "react-toastify";
 
 export const useGenerateFlashcard = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<any>(null);
+  const [isLoadingF, setIsLoading] = useState<boolean>(false);
+  const [errorF, setError] = useState<any>(null);
   const [flashcardData, setFlashcardData] = useState<any>(null);
 
   const generateFlashcard = async (chat_id: string, token: string) => {
@@ -22,14 +22,12 @@ export const useGenerateFlashcard = () => {
         }
       );
       setFlashcardData(response.data.combined_data);
-      console.log(response.data);
     } catch (error) {
       setError(error);
-      // toast.error(error?.response?.data?.detail || "Error generating flashcard");
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { generateFlashcard, isLoading, error, flashcardData };
+  return { generateFlashcard, isLoadingF, errorF, flashcardData };
 };

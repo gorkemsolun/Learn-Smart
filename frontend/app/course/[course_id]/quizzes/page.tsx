@@ -1,17 +1,19 @@
 "use client"
 
 import { backendAPI } from "@/environment/backend_api";
-import { useAuthToken } from "@/hooks/useAuthToken";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useLoading } from "@/hooks/useLoading";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 export default function CourseQuizList() {
-  const token = useAuthToken();
-  const [loading, setLoading] = useState<boolean>(true);
+  const token = useAuthRedirect();
+  const { loading, startLoading, stopLoading } = useLoading();
   const [quizList, setQuizList] = useState([]);
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
-  const router = useRouter();
 
   useEffect(() => {
     if (token) {
@@ -19,46 +21,43 @@ export default function CourseQuizList() {
     }
   }, [token, course_id]);
 
-  if (token == null) {
-    router.replace("/login");
-  }
-
   const fetchQuizList = async (course_id: string) => {
     try {
-      setLoading(true);
+      startLoading();
       const response = await backendAPI.get(`/course/${course_id}/quizzes`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
       setQuizList(response.data)
+      console.log(response.data)
     } catch (error) {
       console.error("Error fetching course data:", error);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
+  if (loading) return <LoadingSpinner />;
   if (!quizList || quizList.length === 0) {
-    return <div>No quiz available.</div>;
+    return (
+      <Card className="text-center">
+        <CardHeader>
+          <h2 className="text-xl font-semibold">No Quizzes Available</h2>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            It looks like there are no quizzes to display at the moment.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <div>
       <h1>Quizzes for Course {course_id}</h1>
-      <ul>
-        {quizList.map((quiz, index) => (
-          <li key={index}>
-            <h2>{quiz}</h2> {/* 10.11.2024 current chat does note create quizzes or flashcards */}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
