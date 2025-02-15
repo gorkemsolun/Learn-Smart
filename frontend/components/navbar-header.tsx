@@ -26,7 +26,7 @@ const components: { title: string; href: string; description: string }[] = [
   },
   {
     title: "Subscription Service",
-    href: "",
+    href: "/subscription",
     description: "You can upgrade to the paid plan.",
   },
 ];
@@ -72,8 +72,8 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
     }
   };
 
-  const handleHomePageClick = async () => {
-    router.replace("/edux-homepage");
+  const handleNavigation = async (route: string) => {
+    router.push(route);
   };
 
   const handleLogout = () => {
@@ -89,7 +89,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
         <NavigationMenuList>
           <Button
             type="button"
-            onClick={handleHomePageClick}
+            onClick={() => handleNavigation("/edux-homepage")}
             variant="ghost"
             className="space-x-1 hover:bg-transparent focus-visible:ring-0"
           >
@@ -149,7 +149,8 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
                   <ListItem
                     key={component.title}
                     title={component.title}
-                    href={component.href}
+                    onClick={() => handleNavigation(component.href)}
+                    className="cursor-pointer"
                   >
                     {component.description}
                   </ListItem>

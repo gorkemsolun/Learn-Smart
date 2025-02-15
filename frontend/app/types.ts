@@ -158,3 +158,13 @@ export interface SkillTreeEditDialogProps {
   onSkillTreeUpdate: () => void;
   skillTree: SkillTreeCard;
 }
+
+export interface StepData {
+  step: string;
+  title: string;
+  status: string;
+}
+
+export interface OnboardingProcessProps {
+  steps: StepData[];
+}

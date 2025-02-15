@@ -34,7 +34,7 @@ export function CourseCard(modalParameters: CourseCardProps) {
       transition={{ duration: 0.5 }}
     >
       <Card
-        className="g-gradient-to-br min-h-[43vh] min-w-[38.5vh] overflow-hidden from-primary/10 to-secondary/10
+        className="g-gradient-to-br min-h-[43vh] min-w-[38vh] overflow-hidden from-primary/10 to-secondary/10
               transition-shadow duration-300 hover:shadow-lg"
       >
         <div className="group relative h-[22vh] overflow-hidden p-2">
