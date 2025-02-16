@@ -24,18 +24,17 @@ export function SkillTreeEditDialogModal(
   const [skillTreeTitle, setSkillTreeTitle] = useState<string>("");
   const [chat, setChat] = useState<Chat>();
   const [skillTreeDescription, setSkillTreeDescription] = useState<string>("");
-  const [syllabus, setSyllabus] = useState<File | null>(null);
-  const [icon, setIcon] = useState<File | null>(null);
-  const [disableCreateButton, setDisableCreateButton] =
-    useState<boolean>(false);
+  const [files, setFiles] = useState<FileList | File | undefined>();
+  const [icon, setIcon] = useState<FileList | File | undefined>();
 
   const { toast } = useToast();
+
   const resetFields = () => {
     setChat(undefined);
     setSkillTreeTitle("");
     setSkillTreeDescription("");
-    setSyllabus(null);
-    setIcon(null);
+    setFiles(undefined);
+    setIcon(undefined);
   };
 
   // TODO: Replace this with actual chats fetched from the backend
@@ -56,32 +55,41 @@ export function SkillTreeEditDialogModal(
 
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<File | null>>,
-    fileType: string
+    setter: React.Dispatch<React.SetStateAction<FileList | File | undefined>>,
+    fileType: string,
+    isSingleFile: boolean = true
   ) {
-    const file = event.target.files && event.target.files[0];
-    handleFile(file, setter, fileType);
+    // The following line first checks if the event has a target.files property
+    // then checks the isSingleFile variable to determine if it should get the first file
+    // or all files from the event.target.files array. If the event has no target.files property, it sets the file_s variable to undefined.
+    const file_s = event.target.files || undefined;
+    handleFiles(file_s, setter, fileType, isSingleFile);
   }
 
-  function handleFile(
-    file: File | null,
-    setter: React.Dispatch<React.SetStateAction<File | null>>,
-    fileType: string
+  function handleFiles(
+    files: FileList | undefined,
+    setter: React.Dispatch<React.SetStateAction<FileList | File | undefined>>,
+    fileType: string,
+    isSingleFile: boolean = true
   ) {
     if (
-      file &&
+      files &&
       fileType === "document" &&
-      documentMimeTypes.includes(file.type)
+      Array.from(files).every((file: File) => {
+        return documentMimeTypes.includes(file.type);
+      })
     ) {
-      setter(file);
+      setter(isSingleFile ? files[0] : files);
     } else if (
-      file &&
+      files &&
       fileType === "image" &&
-      imageMimeTypes.includes(file.type)
+      Array.from(files).every((file: File) => {
+        return imageMimeTypes.includes(file.type);
+      })
     ) {
-      setter(file);
+      setter(isSingleFile ? files[0] : files);
     } else {
-      setter(null);
+      setter(undefined);
       if (fileType === "document") {
         toast({
           title: "Invalid File Type",
@@ -97,6 +105,14 @@ export function SkillTreeEditDialogModal(
           action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
       }
+    }
+  }
+
+  function fileNameHandler(name: string = "") {
+    if (name.length < 13) {
+      return name;
+    } else {
+      return name.slice(0, 10) + "...";
     }
   }
 
@@ -174,25 +190,29 @@ export function SkillTreeEditDialogModal(
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              const file = e.dataTransfer.files[0];
-              handleFile(file, setSyllabus, "document");
+              const files = e.dataTransfer.files;
+              handleFiles(files, setFiles, "document", false);
             }}
           >
             <label
-              htmlFor="syllabus"
+              htmlFor="files"
               className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
             >
               <div className="flex flex-col items-center justify-center">
-                {syllabus ? (
-                  <div>
-                    {syllabus.name.endsWith(".pdf") && (
-                      <FileIcon className="mb-4 size-[6vh]" />
-                    )}
-                    {syllabus.name.endsWith(".docx") && (
-                      <FileTextIcon className="mb-4 size-[6vh]" />
-                    )}
-                    <p>{syllabus.name}</p>
-                  </div>
+                {files && (files as FileList).length > 0 ? (
+                  Array.from(files as FileList).map((file) => {
+                    return (
+                      <div key={file.name}>
+                        {file.name.endsWith(".pdf") && (
+                          <FileIcon className="mb-4 size-[6vh]" />
+                        )}
+                        {file.name.endsWith(".docx") && (
+                          <FileTextIcon className="mb-4 size-[6vh]" />
+                        )}
+                        <p>{fileNameHandler(file.name)}</p>
+                      </div>
+                    );
+                  })
                 ) : (
                   <div>
                     <LuUpload className="text-foreground/70 mb-4 size-[6vh]" />
@@ -205,11 +225,12 @@ export function SkillTreeEditDialogModal(
                 )}
               </div>
               <input
-                id="syllabus"
+                id="files"
                 type="file"
+                multiple
                 accept=".pdf,.docx"
                 onChange={(event) =>
-                  handleFileChange(event, setSyllabus, "document")
+                  handleFileChange(event, setFiles, "document", false)
                 }
                 className="hidden"
               />
@@ -220,8 +241,8 @@ export function SkillTreeEditDialogModal(
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              const file = e.dataTransfer.files[0];
-              handleFile(file, setIcon, "image");
+              const file = e.dataTransfer.files;
+              handleFiles(file, setIcon, "image", true);
             }}
           >
             <label
@@ -229,7 +250,7 @@ export function SkillTreeEditDialogModal(
               className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
             >
               <div className="flex flex-col items-center justify-center">
-                {icon ? (
+                {icon && icon instanceof File ? (
                   <div>
                     {<ImageIcon className="mb-4 size-[6vh]" />}
                     <p>{icon.name}</p>
@@ -262,7 +283,7 @@ export function SkillTreeEditDialogModal(
             onClick={handleSubmit}
             type="submit"
             className="w-1/5"
-            disabled={!skillTreeTitle || !chat || disableCreateButton}
+            disabled={!skillTreeTitle || !chat}
           >
             Create
           </Button>
