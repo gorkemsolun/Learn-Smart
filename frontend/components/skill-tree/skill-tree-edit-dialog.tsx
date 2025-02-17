@@ -131,6 +131,22 @@ export function SkillTreeEditDialogModal(
     dialogParameters.onClose(false);
   }
 
+  function handleFileRemove(fileToRemove: File) {
+    if (files instanceof FileList) {
+      const dt = new DataTransfer();
+      // Iterate over the FileList and add all files except the one to remove
+      Array.from(files).forEach((file) => {
+        if (file.name !== fileToRemove.name) {
+          dt.items.add(file);
+        }
+      });
+
+      setFiles(dt.files);
+    } else {
+      setFiles(undefined);
+    }
+  }
+
   return (
     <Dialog open={dialogParameters.isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
@@ -196,25 +212,39 @@ export function SkillTreeEditDialogModal(
           >
             <label
               htmlFor="files"
-              className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
+              className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center overflow-y-auto rounded-lg border-2 border-dashed"
             >
-              <div className="flex flex-col items-center justify-center">
+              <div className="grid grid-cols-2 items-center justify-center gap-4">
                 {files && (files as FileList).length > 0 ? (
                   Array.from(files as FileList).map((file) => {
                     return (
-                      <div key={file.name}>
-                        {file.name.endsWith(".pdf") && (
-                          <FileIcon className="mb-4 size-[6vh]" />
-                        )}
-                        {file.name.endsWith(".docx") && (
-                          <FileTextIcon className="mb-4 size-[6vh]" />
-                        )}
-                        <p>{fileNameHandler(file.name)}</p>
+                      <div key={file.name} className="relative">
+                        <button
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleFileRemove(file);
+                          }}
+                          className="absolute right-0 top-0 font-bold text-red-500"
+                          aria-label="Remove file"
+                          type="button"
+                        >
+                          X
+                        </button>
+                        <div className="flex flex-col items-center">
+                          {file.name.endsWith(".pdf") && (
+                            <FileIcon className="mb-4 size-[6vh]" />
+                          )}
+                          {file.name.endsWith(".docx") && (
+                            <FileTextIcon className="mb-4 size-[6vh]" />
+                          )}
+                          <p>{fileNameHandler(file.name)}</p>
+                        </div>
                       </div>
                     );
                   })
                 ) : (
-                  <div>
+                  <div className="col-span-2">
                     <LuUpload className="text-foreground/70 mb-4 size-[6vh]" />
                     <p className="text-foreground/70 text-sm">
                       <span className="font-semibold">Click to upload</span> or
