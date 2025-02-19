@@ -14,77 +14,9 @@ export default function CourseQuizList() {
   const token = useAuthRedirect();
   const { loading, startLoading, stopLoading } = useLoading();
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null);
-  /*
-  const [quizList, setQuizList] = useState<
-    Array<{
-      question: string;
-      type: string;
-      options: { [key: string]: string };
-      answer: string;
-    }>
-  >([]); */
+  const [quizData, setQuizData] = useState<{ [filename: string]: any[] }>({});
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
-
-  // Dummy data for multiple quizzes
-  const dummyQuizList = [
-    {
-      title: "Quiz 1: Storage Basics",
-      questions: [
-        {
-          question: "What is the defining characteristic of mass storage?",
-          type: "multiple-choice",
-          options: {
-            A: "It is always online and readily accessible.",
-            B: "It is volatile and data is lost when the computer is turned off.",
-            C: "It is persistent storage that retains data even when the computer is powered off.",
-            D: "It is limited in capacity and suitable only for small amounts of data."
-          },
-          answer: "C"
-        },
-        {
-          question: "Which of the following is NOT an example of secondary storage?",
-          type: "multiple-choice",
-          options: {
-            A: "Hard Disk Drive (HDD)",
-            B: "Solid State Drive (SSD)",
-            C: "CD-ROM",
-            D: "Flash-based SSD"
-          },
-          answer: "C"
-        }
-      ]
-    },
-    {
-      title: "Quiz 2: Advanced Storage",
-      questions: [
-        {
-          question: "What does RAID stand for?",
-          type: "multiple-choice",
-          options: {
-            A: "Random Array of Independent Disks",
-            B: "Redundant Array of Independent Disks",
-            C: "Reliable Array of Interconnected Drives",
-            D: "Redundant Access of Integrated Data"
-          },
-          answer: "B"
-        },
-        {
-          question: "Which type of storage is typically used for backups and long-term archiving?",
-          type: "multiple-choice",
-          options: {
-            A: "Primary storage",
-            B: "Secondary storage",
-            C: "Tertiary storage",
-            D: "Volatile storage"
-          },
-          answer: "C"
-        }
-      ]
-    }
-  ];
-
-  const [quizList, setQuizList] = useState(dummyQuizList);
 
   const handleQuizClick = (question: string) => {
     setSelectedQuiz(selectedQuiz === question ? null : question);
@@ -105,8 +37,24 @@ export default function CourseQuizList() {
           Authorization: `Bearer ${token}`,
         },
       });
-      //setQuizList(dummyQuizList);
-      console.log(response.data);
+
+      const quizzesData: { [filename: string]: any[] } = {};
+
+      for (const item of response.data) {
+        const { chat_id, chat_title, quizzes } = item;
+        for (const filename of quizzes) {
+          const quizResponse = await backendAPI.get(`/course/${course_id}/quizzes/${filename}`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          quizzesData[filename] = quizResponse.data;
+        }
+      }
+
+      setQuizData(quizzesData);
     } catch (error) {
       console.error("Error fetching quiz data:", error);
     } finally {
@@ -115,7 +63,8 @@ export default function CourseQuizList() {
   };
 
   if (loading) return <LoadingSpinner />;
-  if (!quizList || quizList.length === 0) {
+
+  if (!quizData || Object.keys(quizData).length === 0) {
     return (
       <Card className="text-center">
         <CardHeader>
@@ -134,16 +83,16 @@ export default function CourseQuizList() {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Quizzes</h1>
       <ul>
-        {quizList.map((quiz, index) => (
-          <li key={index} className="mb-4">
+        {Object.entries(quizData).map(([filename, quizzes]) => (
+          <li key={filename} className="mb-4">
             <div
               className="cursor-pointer p-2 border rounded-lg hover:bg-gray-200"
-              onClick={() => handleQuizClick(quiz.title)}
+              onClick={() => handleQuizClick(filename)}
             >
-              <h2 className="font-semibold">{quiz.title}</h2>
+              <h2 className="font-semibold">{filename}</h2>
             </div>
             <AnimatePresence>
-              {selectedQuiz === quiz.title && (
+              {selectedQuiz === filename && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -152,12 +101,12 @@ export default function CourseQuizList() {
                   className="mt-2 overflow-hidden"
                 >
                   <div className="p-6 border shadow-md rounded-lg">
-                    {quiz.questions.map((question, qIndex) => (
+                    {quizzes.map((quiz, qIndex) => (
                       <QuizComponent
                         key={qIndex}
-                        question={question.question}
-                        options={question.options}
-                        answer={question.answer}
+                        question={quiz.question}
+                        options={quiz.options}
+                        answer={quiz.answer}
                       />
                     ))}
                   </div>
