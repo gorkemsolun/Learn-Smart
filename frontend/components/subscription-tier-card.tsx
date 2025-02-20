@@ -19,39 +19,50 @@ function FeatureList({ items }) {
   );
 }
 
-export default function TierCard({ tier, billingPeriod, handleTierSelection}) {
-
+export default function TierCard({ tier, billingPeriod, handleTierSelection }) {
   return (
     <Card className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/5 backdrop-blur-lg">
       {tier_logo && (
-        <Image
-          src={tier_logo}
-          alt="Logo"
-          layout="fill"
-          objectFit="cover"
-          className="pointer-events-none opacity-5"
-        />
+        <div className="pointer-events-none absolute inset-0">
+          <Image
+            src={tier_logo}
+            alt="Logo"
+            layout="fill"
+            objectFit="cover"
+            className="opacity-5"
+          />
+        </div>
       )}
+
       {tier?.badge && (
-        <Badge className="pointer-events-none absolute right-6 top-6 line-clamp-1 cursor-default select-none rounded-2xl bg-primary px-3 py-1 text-xs font-thin text-background">
+        <Badge className="absolute right-6 top-6 rounded-2xl bg-primary px-3 py-1 text-xs font-thin text-background">
           {tier?.badge}
         </Badge>
       )}
-      <CardContent className="px-6 py-12">
+
+      <CardContent className={`relative z-10 px-6 ${(tier.isHidden && tier.key === "elite") ? "mb-28 py-12" : "py-12"}`}>
         <div className="space-y-6">
           <h3 className="text-2xl font-thin text-foreground/90">{tier.name}</h3>
           <p className="text-sm text-foreground/70">{tier.description}</p>
-          <div className="text-xl font-semibold text-foreground">
-            ${billingPeriod === "monthly" ? tier.monthlyPrice : tier.yearlyPrice}
-            <span className="text-sm text-foreground/60">
-              {billingPeriod === "monthly" ? "/month" : "/year"}
-            </span>
-          </div>
-          <Button className="w-full rounded-lg font-light text-background" onClick={() => handleTierSelection(tier)}>
-            Choose This Plan
-          </Button>
+
+          {!tier.isHidden && (
+              <>
+                <div className="text-xl font-semibold text-foreground">
+                  ${billingPeriod === "monthly" ? tier.monthlyPrice : tier.yearlyPrice}
+                  <span className="text-sm text-foreground/60">
+                    {billingPeriod === "monthly" ? "/month" : "/year"}
+                  </span>
+                </div>
+                <Button
+                    className="w-full rounded-lg font-light text-background"
+                    onClick={() => handleTierSelection(tier)}
+                >
+                  {tier.buttonText}
+                </Button>
+              </>
+          )}
           <SeperatorWithContent>{tier.name}</SeperatorWithContent>
-          <FeatureList items={tier.features} />
+          <FeatureList items={tier.features}/>
         </div>
       </CardContent>
     </Card>

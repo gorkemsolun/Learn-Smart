@@ -33,6 +33,8 @@ class User(Base):
     courses = relationship("Course", back_populates="user") # one-to-many relationship with Course
     analytics = relationship("Analytics", back_populates="user",
                              cascade="all, delete-orphan")  # one-to-many with Analytics
+    subscriptions = relationship("Subscription", back_populates="user",
+                             cascade="all, delete-orphan") # one-to-many with Subscription
 
     def to_dict(self):
         """

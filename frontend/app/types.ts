@@ -85,7 +85,7 @@ export interface ConfirmationDialogProps {
 
 export interface CourseCardProps {
   course: Course;
-  onCourseDelete: (courseId: string) => void;
+  onCourseDelete: (courseId: string | undefined) => void;
   onCourseUpdate: () => void;
 }
 

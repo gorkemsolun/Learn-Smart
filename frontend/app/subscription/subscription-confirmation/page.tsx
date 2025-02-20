@@ -10,6 +10,8 @@ import { OnboardingProgress } from "@/components/onboarding-progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CreditCard, Calendar, LockKeyhole, ArrowLeft, Loader2 } from "lucide-react";
 import TierCardMini from "@/components/subscription-tier-card-mini-preview";
+import {backendAPI} from "@/environment/backend_api";
+import Cookies from "js-cookie";
 
 const steps = [
   { step: "STEP 1", title: "Tier Plan", status: "complete" },
@@ -31,7 +33,8 @@ export default function SubscriptionConfirmation() {
   const searchParams = useSearchParams();
   const tierParam = searchParams.get("tier");
   const tier = tierParam ? JSON.parse(decodeURIComponent(tierParam)) : null;
-
+  const token = Cookies.get("authToken") as string;
+  
   const [cardInfo, setCardInfo] = useState<CardInfo>({
     cardNumber: "",
     cardName: "",
@@ -41,6 +44,7 @@ export default function SubscriptionConfirmation() {
   const [errors, setErrors] = useState<Errors>({});
   const [agreedToTerms, setAgreedToTerms] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [autoSubscribe, setAutoSubscribe] = useState(false);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -53,13 +57,31 @@ export default function SubscriptionConfirmation() {
     if (name === "expiryDate") {
       formattedValue = value.replace(/\D/g, "").slice(0, 4);
       if (formattedValue.length > 2) {
-        let month = parseInt(formattedValue.slice(0, 2), 10);
+        const month = parseInt(formattedValue.slice(0, 2), 10);
+        const year = parseInt(formattedValue.slice(2, 4), 10);
+        const currentYear = new Date().getFullYear() % 100;
+        const currentMonth = new Date().getMonth() + 1;
+
         if (month < 1 || month > 12) {
           formattedValue = "";
-        } else {
+        }
+        else if(formattedValue.length == 4 && (year < currentYear || (year <= currentYear && month < currentMonth))) {
+          formattedValue = "";
+        }
+        else {
           formattedValue = `${formattedValue.slice(0, 2)}/${formattedValue.slice(2)}`;
         }
       }
+    }
+
+    if (name === "cvv") {
+      formattedValue = value.replace(/\D/g, "").slice(0, 3);
+    }
+
+    if (name === "cardName") {
+      formattedValue = value
+        .toUpperCase()
+        .replace(/[^\p{L}\s!"#$%&'()*+,./:;<=>?@[\\\]^_-]/gu, "");
     }
 
     setCardInfo((prev) => ({ ...prev, [name]: formattedValue }));
@@ -88,6 +110,26 @@ export default function SubscriptionConfirmation() {
     e.preventDefault();
     if (validateForm() && agreedToTerms) {
       setIsSubmitting(true);
+
+      // TO-DO handle banking logic
+
+      const data = {
+        subscription_tier: tier.key,
+        subscription_duration: tier.billingPeriod,
+        auto_renew: autoSubscribe
+      };
+
+      try {
+        await backendAPI.post(`/subscriptions/log`, data, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error("Error creating subscription:", error);
+      }
+
       try {
         await new Promise((resolve) => setTimeout(resolve, 2000));
         router.push("/subscription/subscription-complete?status=success");
@@ -117,15 +159,15 @@ export default function SubscriptionConfirmation() {
               <div className="space-y-2">
                 <Label htmlFor="cardNumber" className="font-light">Card Number</Label>
                 <div className="relative">
-                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
                   <Input
-                    id="cardNumber"
-                    name="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    value={cardInfo.cardNumber}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
+                      id="cardNumber"
+                      name="cardNumber"
+                      placeholder="1234 5678 9012 3456"
+                      value={cardInfo.cardNumber}
+                      onChange={handleInputChange}
+                      className="pl-10"
+                      required
                   />
                 </div>
                 {errors.cardNumber && <p className="text-sm text-destructive">{errors.cardNumber}</p>}
@@ -133,12 +175,12 @@ export default function SubscriptionConfirmation() {
               <div className="space-y-2">
                 <Label htmlFor="cardName" className="font-light">Name on Card</Label>
                 <Input
-                  id="cardName"
-                  name="cardName"
-                  placeholder="John Doe"
-                  value={cardInfo.cardName}
-                  onChange={handleInputChange}
-                  required
+                    id="cardName"
+                    name="cardName"
+                    placeholder="J. P. MORGAN"
+                    value={cardInfo.cardName}
+                    onChange={handleInputChange}
+                    required
                 />
                 {errors.cardName && <p className="text-sm text-destructive">{errors.cardName}</p>}
               </div>
@@ -146,15 +188,15 @@ export default function SubscriptionConfirmation() {
                 <div className="space-y-2">
                   <Label htmlFor="expiryDate" className="font-light">Expiry Date</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
                     <Input
-                      id="expiryDate"
-                      name="expiryDate"
-                      placeholder="MM/YY"
-                      value={cardInfo.expiryDate}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                      required
+                        id="expiryDate"
+                        name="expiryDate"
+                        placeholder="MM/YY"
+                        value={cardInfo.expiryDate}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                        required
                     />
                   </div>
                   {errors.expiryDate && <p className="text-sm text-destructive">{errors.expiryDate}</p>}
@@ -162,41 +204,52 @@ export default function SubscriptionConfirmation() {
                 <div className="space-y-2">
                   <Label htmlFor="cvv" className="font-light">CVV</Label>
                   <div className="relative">
-                    <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
                     <Input
-                      id="cvv"
-                      name="cvv"
-                      placeholder="123"
-                      value={cardInfo.cvv}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                      required
+                        id="cvv"
+                        name="cvv"
+                        placeholder="123"
+                        value={cardInfo.cvv}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                        required
                     />
                   </div>
                   {errors.cvv && <p className="text-sm text-destructive">{errors.cvv}</p>}
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={ setAgreedToTerms }/>
-                <label htmlFor="terms" className="text-sm text-muted-foreground">
-                  I agree to the{" "}
-                  <a href="#" className="text-primary hover:underline">
-                    terms and conditions
-                  </a>
-                </label>
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={setAgreedToTerms}/>
+                  <label htmlFor="terms" className="text-sm text-muted-foreground">
+                    I agree to the{" "}
+                    <a href="#" className="text-primary hover:underline">
+                      terms and conditions
+                    </a>
+                  </label>
+                </div>
+                {tier.billingPeriod === "monthly" ? (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="auto-subscribe" checked={autoSubscribe} onCheckedChange={setAutoSubscribe} />
+                    <label htmlFor="auto-subscribe" className="text-sm text-muted-foreground">
+                      Auto Renew
+                    </label>
+                  </div>
+                ) : null}
               </div>
               <div className="flex items-center justify-between">
-                <Button type="button" variant="outline" onClick={() => router.back()} className="flex items-center font-light">
-                  <ArrowLeft className="mr-2 size-4" /> Back
+                <Button type="button" variant="outline" onClick={() => router.back()}
+                        className="flex items-center font-light">
+                  <ArrowLeft className="mr-2 size-4"/> Back
                 </Button>
                 <Button type="submit" className="w-1/2 font-light" disabled={isSubmitting || !agreedToTerms}>
                   {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Processing...
-                    </>
+                      <>
+                        <Loader2 className="mr-2 size-4 animate-spin"/>
+                        Processing...
+                      </>
                   ) : (
-                    "Confirm Payment"
+                      "Confirm Payment"
                   )}
                 </Button>
               </div>
@@ -207,7 +260,7 @@ export default function SubscriptionConfirmation() {
         <div className="space-y-6">
           <Card className="w-full bg-primary p-6 text-primary-foreground shadow-lg">
             <h3 className="mb-4 text-xl">Order Summary</h3>
-            <TierCardMini tier={tier} />
+            <TierCardMini tier={tier}/>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subscription Price</span>
