@@ -74,7 +74,7 @@ export default function Home() {
             <div className="flex w-full items-center justify-center px-2">
               <div className="grow py-4 text-lg font-bold">Skill Tree</div>
               <Pencil1Icon
-                className="flex-none"
+                className="flex-none cursor-pointer"
                 onClick={() => {
                   setOpenSkillTreeCreateDialog(!openSkillTreeCreateDialog);
                 }}

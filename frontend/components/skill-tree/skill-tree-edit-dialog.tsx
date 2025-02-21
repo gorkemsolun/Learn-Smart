@@ -315,7 +315,7 @@ export function SkillTreeEditDialogModal(
             className="w-1/5"
             disabled={!skillTreeTitle || !chat}
           >
-            Create
+            Save
           </Button>
         </div>
       </DialogContent>
