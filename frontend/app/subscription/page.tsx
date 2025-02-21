@@ -18,6 +18,9 @@ const steps = [
 export default function SubscriptionTierCards() {
   const [billingPeriod, setBillingPeriod] = useState("monthly");
   const [currentTier, setCurrentTier] = useState(null);
+  const [startDate, setStartDate] = useState<Date>(null);
+  const [endDate, setEndDate] = useState<Date>(null);
+
   const router = useRouter();
   const token = Cookies.get("authToken") as string;
   const [loading, setLoading] = useState(true);
@@ -32,6 +35,8 @@ export default function SubscriptionTierCards() {
         },
       });
       setCurrentTier(subscriptionResponse.data?.subscription_tier);
+      setStartDate(new Date(subscriptionResponse.data?.start_date));
+      setEndDate(new Date(subscriptionResponse.data?.end_date));
     } catch (error) {
       console.error("Error fetching subscription data:", error);
     } finally {
@@ -48,14 +53,35 @@ export default function SubscriptionTierCards() {
   const tierOrder = ["basic", "premium", "elite"];
   const currentTierIndex = currentTier ? tierOrder.indexOf(currentTier) : -1;
 
-  const tiers = [
+  const calculateProratedPrice = (newTierPrice, currentTierPrice) => {
+    if (!startDate || !endDate) return newTierPrice;
+
+    const now = Date.now();
+    const totalDuration = endDate - startDate;
+    const remainingDuration = endDate - now;
+    const remainingFraction = remainingDuration / totalDuration;
+
+    const creditAmount = currentTierPrice * remainingFraction;
+    const finalPrice = newTierPrice - creditAmount;
+
+    return finalPrice > 0 ? finalPrice.toFixed(2) : "0.00";
+  };
+
+  const subscriptionDuration = (endDate - startDate) / (1000 * 60 * 60 * 24);
+  const isYearly = subscriptionDuration >= 365;
+
+  const currentMonthlyPrice = currentTier === "basic" ? 7.9 : currentTier === "premium" ? 19.9 : 0;
+  const currentYearlyPrice = currentTier === "basic" ? 64.9 : currentTier === "premium" ? 199.9 : 0;
+
+  const tiers =
+  [
     {
       name: "Edux Basic",
       description: "RAG based content creation, and unlimited course creation in Edux.",
       monthlyPrice: "7.9",
       yearlyPrice: "64.9",
       features: ["RAG based content creation.", "Unlimited course creation."],
-      badge: "",
+      badge: currentTier === "basic" ? "Current Plan" : "",
       key: "basic",
       buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
       isHidden: currentTierIndex >= tierOrder.indexOf("basic"),
@@ -63,10 +89,14 @@ export default function SubscriptionTierCards() {
     {
       name: "Edux+ Premium",
       description: "Personal Guidance, RAG, and unlimited course creation in Edux.",
-      monthlyPrice: "19.9",
-      yearlyPrice: "199.9",
+      monthlyPrice: isYearly
+        ? "19.9"
+        : calculateProratedPrice(19.9, currentMonthlyPrice),
+      yearlyPrice: isYearly
+        ? calculateProratedPrice(199.9, currentYearlyPrice)
+        : calculateProratedPrice(199.9, currentMonthlyPrice),
       features: ["Personalized guidance.", "RAG based content creation.", "Unlimited course creation."],
-      badge: "Most popular",
+      badge: currentTier === "premium" ? "Current Plan" : "Most Popular",
       key: "premium",
       buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
       isHidden: currentTierIndex >= tierOrder.indexOf("premium"),
@@ -74,20 +104,25 @@ export default function SubscriptionTierCards() {
     {
       name: "Edux+ Elite",
       description: "Personal Guidance, RAG, LLM selection, and unlimited course creation in Edux.",
-      monthlyPrice: "59.9",
-      yearlyPrice: "599.9",
+      monthlyPrice: isYearly
+        ? "59.9"
+        : calculateProratedPrice(59.9, currentMonthlyPrice),
+      yearlyPrice: isYearly
+        ? calculateProratedPrice(599.9, currentYearlyPrice)
+        : calculateProratedPrice(599.9, currentMonthlyPrice),
       features: [
         "Personalized guidance.",
         "RAG based content creation.",
         "LLM selection for your smart tutor.",
         "Unlimited course creation.",
       ],
-      badge: "",
+      badge: currentTier === "elite" ? "Current Plan" : "",
       key: "elite",
       buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
       isHidden: currentTierIndex >= tierOrder.indexOf("elite"),
     },
   ];
+
 
   const handleTierSelection = (tier) => {
     const selectedTier = {
