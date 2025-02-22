@@ -48,7 +48,7 @@ export default function SkillTreeCreateCard(
       <SkillTreeCreateDialogModal
         isOpen={skillTreeDialog}
         onClose={() => setSkillTreeDialog(false)}
-        onSkillTreeCreation={modalParameters.onSkillTreeUpdate}
+        onSkillTreeSubmit={modalParameters.onSkillTreeSubmit}
       />
     </div>
   );

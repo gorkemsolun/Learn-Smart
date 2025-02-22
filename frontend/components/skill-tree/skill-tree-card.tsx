@@ -2,7 +2,7 @@
 
 import { SkillTreeCardProps } from "@/app/types";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
-import { SkillTreeEditDialogModal } from "@/components/skill-tree/skill-tree-edit-dialog";
+import { SkillTreeEditCreateDialogModal } from "@/components/skill-tree/skill-tree-edit-create-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
@@ -71,13 +71,14 @@ export function SkillTreeCard(modalParameters: SkillTreeCardProps) {
         </div>
       </CardContent>
 
-      <SkillTreeEditDialogModal
+      <SkillTreeEditCreateDialogModal
         isOpen={skillTreeEditDialogOpen}
         onClose={() => setSkillTreeEditDialogOpen(false)}
-        onSkillTreeUpdate={() => {
+        onSkillTreeSubmit={() => {
           console.log("TODO on SkillTreeUpdate");
         }} // TO-DO)}
         skillTree={modalParameters} // Skill Tree data which is SkillTreeCardProps
+        isEdit={true}
       />
     </Card>
   );

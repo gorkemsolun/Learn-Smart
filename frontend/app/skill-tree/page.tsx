@@ -1,7 +1,7 @@
 "use client";
 
 import { SkillTreeCard } from "@/app/types";
-import { SkillTreeCreateDialogModal } from "@/components/skill-tree/skill-tree-create-dialog";
+import { SkillTreeEditCreateDialogModal } from "@/components/skill-tree/skill-tree-edit-create-dialog";
 import SkillTreeList from "@/components/skill-tree/skill-tree-list";
 import {
   DropdownMenu,
@@ -53,15 +53,15 @@ const items = [
 ];
 
 export default function Home() {
-  const [dummySkillTreeData, setDummySkillTreeData] = useState(false);
+  /* const [dummySkillTreeData, setDummySkillTreeData] = useState(false); */
   const [openSkillTreeCreateDialog, setOpenSkillTreeCreateDialog] =
     useState(false);
 
   // Implement the handleCardClick function. This should fetch the data about the selected skill tree from the backend, then display it.
-  function handleCardClick(link: string) {
+  /* function handleCardClick(link: string) {
     setDummySkillTreeData(!dummySkillTreeData);
     console.log("Card clicked", link);
-  }
+  } */
 
   return (
     <div className="fixed inset-0 flex h-screen overflow-hidden">
@@ -128,10 +128,11 @@ export default function Home() {
         <main className="w-full flex-1 p-4">
           <SidebarTrigger />
           <SkillTreeList skillTrees={skillTrees} />
-          <SkillTreeCreateDialogModal
+          <SkillTreeEditCreateDialogModal
             isOpen={openSkillTreeCreateDialog}
             onClose={() => setOpenSkillTreeCreateDialog(false)}
-            onSkillTreeCreation={() => console.log("TODO Skill Tree Created")}
+            onSkillTreeSubmit={() => console.log("TODO Skill Tree Created")}
+            isEdit={false}
           />
         </main>
       </SidebarProvider>
