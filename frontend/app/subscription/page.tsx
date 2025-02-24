@@ -84,7 +84,9 @@ export default function SubscriptionTierCards() {
       badge: currentTier === "basic" ? "Current Plan" : "",
       key: "basic",
       buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
-      isHidden: currentTierIndex >= tierOrder.indexOf("basic"),
+      isHidden: currentTierIndex > tierOrder.indexOf("basic")
+          || ((currentTierIndex === tierOrder.indexOf("basic")) && billingPeriod === "monthly" && !isYearly)
+          || ((currentTierIndex === tierOrder.indexOf("basic")) && isYearly)
     },
     {
       name: "Edux+ Premium",
@@ -99,7 +101,10 @@ export default function SubscriptionTierCards() {
       badge: currentTier === "premium" ? "Current Plan" : "Most Popular",
       key: "premium",
       buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
-      isHidden: currentTierIndex >= tierOrder.indexOf("premium"),
+      isHidden: currentTierIndex > tierOrder.indexOf("premium") || (isYearly &&
+          ((currentTierIndex < tierOrder.indexOf("premium")) && billingPeriod === "monthly"))
+          || ((currentTierIndex === tierOrder.indexOf("premium")) && billingPeriod === "monthly" && !isYearly)
+          || ((currentTierIndex === tierOrder.indexOf("premium")) && isYearly),
     },
     {
       name: "Edux+ Elite",
@@ -119,9 +124,13 @@ export default function SubscriptionTierCards() {
       badge: currentTier === "elite" ? "Current Plan" : "",
       key: "elite",
       buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
-      isHidden: currentTierIndex >= tierOrder.indexOf("elite"),
+      isHidden: (isYearly &&
+          ((currentTierIndex < tierOrder.indexOf("elite")) && billingPeriod === "monthly"))
+          || ((currentTierIndex === tierOrder.indexOf("elite")) && billingPeriod === "monthly" && !isYearly)
+          || ((currentTierIndex === tierOrder.indexOf("elite")) && isYearly),
     },
   ];
+
 
 
   const handleTierSelection = (tier) => {

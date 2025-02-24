@@ -228,14 +228,12 @@ export default function SubscriptionConfirmation() {
                     </a>
                   </label>
                 </div>
-                {tier.billingPeriod === "monthly" ? (
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="auto-subscribe" checked={autoSubscribe} onCheckedChange={setAutoSubscribe} />
-                    <label htmlFor="auto-subscribe" className="text-sm text-muted-foreground">
-                      Auto Renew
-                    </label>
-                  </div>
-                ) : null}
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="auto-subscribe" checked={autoSubscribe} onCheckedChange={setAutoSubscribe} />
+                  <label htmlFor="auto-subscribe" className="text-sm text-muted-foreground">
+                    Auto Renew
+                  </label>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <Button type="button" variant="outline" onClick={() => router.back()}

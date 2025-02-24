@@ -158,7 +158,7 @@ export default function UserDashboard() {
           >
             <div className="flex h-[24vh] items-center rounded-xl bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-3 sm:p-4 lg:p-6">
               <div className="min-w-0 grow space-y-2">
-                <CardTitle className="max-w-[90%] truncate text-base font-bold md:text-lg lg:text-xl">
+                <CardTitle className="max-w-[90%] truncate text-lg font-bold md:text-xl lg:text-[1.42rem]">
                   {card.title}
                 </CardTitle>
                 <CardDescription className="max-w-[95%] truncate text-sm text-muted-foreground md:text-base">
