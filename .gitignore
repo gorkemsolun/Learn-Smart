@@ -58,6 +58,7 @@ __pycache__
 .idea/
 /backend/bin
 # dotenv
+.env
 logs/
 
 .venv
