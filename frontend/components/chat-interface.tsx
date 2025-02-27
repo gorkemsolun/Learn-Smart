@@ -8,6 +8,8 @@ import { Skeleton } from "./ui/skeleton"
 import { useState, useRef } from 'react'
 
 import { backend } from "@/environment/backend_api"
+import { useAuthRedirect } from "@/hooks/useAuthRedirect"
+import { useGenerateFlashcard } from "@/hooks/useCreateFlashcards"
 
 export default function ChatInterface({ 
   messages, 
@@ -23,6 +25,8 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const token = useAuthRedirect();
+  const { generateFlashcard, isLoading, error, flashcardData } = useGenerateFlashcard();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -84,7 +88,7 @@ export default function ChatInterface({
             <Button variant="outline" onClick={() => console.log("Create Quiz clicked")}>
               Create Quiz
             </Button>
-            <Button variant="outline" onClick={() => console.log("Create Flashcards clicked")}>
+            <Button variant="outline" onClick={() => generateFlashcard(activeChat.chat_id, token)}>
               Create Flashcards
             </Button>
           </div>

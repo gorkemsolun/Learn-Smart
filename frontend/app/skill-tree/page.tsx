@@ -1,181 +1,117 @@
 "use client";
 
-import React, { useRef, useEffect } from 'react';
-import * as d3 from 'd3';
-import {NodeData, LinkData, CustomSimulationNode} from "@/app/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import SkillTreeList from "@/components/skill-tree-list";
+import { SkillTreeCard } from "@/app/types";
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
 
-// TO-DO IN BACKEND WE NEED TO LIMIT THE NUMBER OF BRANCHES A NODE CAN HAVE
-// TO-DO ADD QUIZ PARAMETERS TO NODE DATA
-
-// Group is the depth of the node where group 0 will be the root, the example set group root
-// starts with root being 1.
-const nodesData: NodeData[] = [
-  { id: '1', label: 'Education Core', group: 1 },
-  { id: '2', label: 'Learning Styles', group: 2 },
-  { id: '3', label: 'Subjects', group: 2 },
-  { id: '4', label: 'Skills', group: 3 },
-  { id: '5', label: 'Career Paths', group: 3 },
-  { id: '6', label: 'Visual Learners', group: 4 },
-  { id: '7', label: 'Aesthetic Learners', group: 4 },
-  { id: '8', label: 'Math', group: 5 },
-  { id: '9', label: 'Science', group: 5 },
-  { id: '10', label: 'Programming', group: 6 },
-  { id: '11', label: 'Leadership', group: 6 },
-  { id: '12', label: 'Engineer', group: 7 },
-  { id: '13', label: 'Doctor', group: 7 },
+// Here it should fetch the data about the selected skill tree from the backend, then display it.
+const skillTrees: SkillTreeCard[] = [
+  {
+    id: "1",
+    title: "Basic Education Path",
+    description: "Very good Skill Tree"
+  },
+  {
+    id: "2",
+    title: "Second Skill Tree",
+    description: "Second good Skill Tree"
+  },
 ];
 
-// Linking every link data with its child in the backend we will use heap strategy to align
-// parent and child, 2*n + 1 left child, 2*n + 2 will be the right child, parent floor((n-1)/2).
-const linksData: LinkData[] = [
-  { source: '1', target: '2' },
-  { source: '1', target: '3' },
-  { source: '1', target: '4' },
-  { source: '1', target: '5' },
-  { source: '2', target: '6' },
-  { source: '2', target: '7' },
-  { source: '3', target: '8' },
-  { source: '3', target: '9' },
-  { source: '4', target: '10' },
-  { source: '4', target: '11' },
-  { source: '5', target: '12' },
-  { source: '5', target: '13' },
+// Menu items for the sidebar this should change based on the user's selected course. Trees will appear here.
+const items = [
+  {
+    title: "Skill Tree 1",
+    url: "#",
+  },
+  {
+    title: "Skill Tree 2",
+    url: "#",
+  },
 ];
 
-export default function SkillTree() {
-  const svgRef = useRef<SVGSVGElement>(null!);
+export default function Home() {
+  const [dummySkillTreeData, setDummySkillTreeData] = useState(false);
 
-  const getHSLWithOpacity = (hslColor: string, opacity: number) => {
-    const hsl = d3.hsl(hslColor);
-    return `hsla(${hsl.h}, ${hsl.s * 100}%, ${hsl.l * 100}%, ${opacity})`;
-  };
-
-  const colorScale = d3.scaleOrdinal<string>(d3.schemePastel2);
-
-  useEffect(() => {
-    if (!svgRef.current) return;
-
-    const svg = d3.select(svgRef.current);
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
-
-    svg.attr('viewBox', `0 0 ${width} ${height}`);
-    svg.selectAll('*').remove();
-
-    const hierarchy = d3.stratify<NodeData>()
-      .id((d) => d.id)
-      .parentId((d) => linksData.find((link) => link.target === d.id)?.source)(nodesData)
-      .descendants() as CustomSimulationNode[];
-
-    hierarchy.forEach((node) => {
-      node.id = node.data.id;
-      node.label = node.data.label;
-      node.group = node.data.group;
-    });
-
-    // Starts the simulation and links different hierarchical nodes together
-    const simulation = d3
-      .forceSimulation<CustomSimulationNode>(hierarchy)
-      .force(
-        'link',
-        d3.forceLink<CustomSimulationNode>()
-          .links(linksData.map(link => ({
-            source: hierarchy.find(node => node.id === link.source)!,
-            target: hierarchy.find(node => node.id === link.target)!
-          })))
-          .id((d) => d.id)
-          .distance(40)
-      )
-      .force('charge', d3.forceManyBody().strength(-500))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide<CustomSimulationNode>().radius((d) => getNodeRadius(d) + 5));
-
-    // Connectors of the circular nodes
-    const link = svg
-      .append('g')
-      .selectAll('line')
-      .data(simulation.force<d3.ForceLink<CustomSimulationNode, LinkData>>('link')!.links())
-      .enter()
-      .append('line')
-      .attr('stroke', 'hsl(var(--foreground))')
-      .attr('stroke-opacity', 0.6)
-      .attr('stroke-width', 1.5);
-
-    const node = svg
-      .append('g')
-      .selectAll('circle')
-      .data(hierarchy)
-      .enter()
-      .append('circle')
-      .attr('r', (d) => getNodeRadius(d))
-      .attr('fill', (d) => getHSLWithOpacity(colorScale(d.group.toString()), 0.95))
-      .call(
-        d3
-          .drag<SVGCircleElement, CustomSimulationNode>()
-          .on('start', dragStarted)
-          .on('drag', dragged)
-          .on('end', dragEnded)
-      );
-
-    // The labels written inside the circle
-    const label = svg
-      .append('g')
-      .selectAll('text')
-      .data(hierarchy)
-      .enter()
-      .append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'central')
-      .text((d) => d.label)
-      .style('fill', 'black')
-      .style('font-size', 10)
-      .style('font-weight', 'light')
-      .style('pointer-events', 'none');
-
-    simulation.on('tick', () => {
-      link
-        .attr('x1', (d) => (d.source as CustomSimulationNode).x!)
-        .attr('y1', (d) => (d.source as CustomSimulationNode).y!)
-        .attr('x2', (d) => (d.target as CustomSimulationNode).x!)
-        .attr('y2', (d) => (d.target as CustomSimulationNode).y!);
-
-      node.attr('cx', (d) => d.x!).attr('cy', (d) => d.y!);
-      label.attr('x', (d) => d.x!).attr('y', (d) => d.y!);
-    });
-
-    function dragStarted(event: d3.D3DragEvent<SVGCircleElement, CustomSimulationNode, CustomSimulationNode>, d: CustomSimulationNode) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
-
-    function dragged(event: d3.D3DragEvent<SVGCircleElement, CustomSimulationNode, CustomSimulationNode>, d: CustomSimulationNode) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-
-    function dragEnded(event: d3.D3DragEvent<SVGCircleElement, CustomSimulationNode, CustomSimulationNode>, d: CustomSimulationNode) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
-
-    // Each child will be smaller in radius than its parent up until it reaches the threshold
-    function getNodeRadius(d: CustomSimulationNode): number {
-      const maxRadius = 40;
-      const minRadius = 30;
-      const depthFactor = 0.2;
-      return Math.max(minRadius, maxRadius - d.depth * depthFactor * minRadius);
-    }
-
-    return () => {
-      simulation.stop();
-    };
-  }, [colorScale]);
+  // Implement the handleCardClick function. This should fetch the data about the selected skill tree from the backend, then display it.
+  function handleCardClick(link: string) {
+    setDummySkillTreeData(!dummySkillTreeData);
+    console.log("Card clicked", link);
+  }
 
   return (
-    <main>
-      <svg ref={svgRef} className="-mt-[8vh] h-screen w-full" />
-    </main>
+      <div className="fixed inset-0 flex h-screen overflow-hidden">
+        <SidebarProvider defaultOpen={true} className="mt-[7vh]">
+          <Sidebar variant="floating" className="z-50 mt-[8vh] flex h-[calc(100vh-10vh)] flex-col">
+            <SidebarHeader className="flex-col items-center justify-center">
+              <div className="py-4 text-lg font-bold">Skill Tree</div>
+              <SidebarMenu className="w-full">
+                <SidebarMenuItem>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuButton className="w-full justify-between">
+                        SELECTED COURSE
+                        <ChevronDown className="ml-2 size-4"/>
+                      </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
+                      <DropdownMenuItem>
+                        <span>Course 1</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <span>Course 2</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarHeader>
+
+            <SidebarContent className="flex-1 overflow-y-auto">
+              <SidebarGroup>
+                <SidebarGroupLabel>Selected Course&#39;s Skill Trees</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {items.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild>
+                            <a href={item.url}>
+                              <span>{item.title}</span>
+                            </a>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </SidebarContent>
+          </Sidebar>
+
+          <main className="w-full flex-1 p-4">
+            <SidebarTrigger/>
+            <SkillTreeList skillTrees={skillTrees}/>
+          </main>
+        </SidebarProvider>
+      </div>
   );
 }

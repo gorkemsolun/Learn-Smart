@@ -34,6 +34,7 @@ async def send_message(history: ChatHistory, model: str,
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{GENAI_SERVICE_URL}/private/generate/message",
+                headers={"X-API-Key": GENAI_CLIENT_KEY},
                 data=form_data
             )
             response.raise_for_status()

@@ -1,14 +1,14 @@
-![LearnSmart Logo](https://github.com/gorkemsolun/Learn-Smart/blob/main/learnsmartlogo.png)
+![Edux Logo](https://github.com/gorkemsolun/Learn-Smart/blob/main/Eduxlogo.png)
 
 # Edux
 
-LearnSmart is a web application designed to help students study their courses more effectively by intending to improve their grade output with its learning guide.  LearnSmart intends to offer holistic help for students across all facets of their academic progress through newly developed technologies, such as LLMs, and it is intended to be delivered with the future scope of mobile/tablet/metaverse. 
+Edux is a web application designed to help students study their courses more effectively by intending to improve their grade output with its learning guide.  Edux intends to offer holistic help for students across all facets of their academic progress through newly developed technologies, such as LLMs, and it is intended to be delivered with the future scope of mobile/tablet/metaverse. 
 
-Scholarly articles, textbooks, class slides, syllabi, and other necessary study resources can be uploaded by students to the platform. LearnSmart provides thorough explanations using LLMs on a page-by-page basis or in the context of the entire content, where content can be slides, photos, reports, part of a book, and many more. This feature ensures that students can grasp the content thoroughly, enhancing their understanding and retention of course material. The platform includes interactive learning tools like flashcards and quizzes to reinforce learning and assess knowledge.
+Scholarly articles, textbooks, class slides, syllabi, and other necessary study resources can be uploaded by students to the platform. Edux provides thorough explanations using LLMs on a page-by-page basis or in the context of the entire content, where content can be slides, photos, reports, part of a book, and many more. This feature ensures that students can grasp the content thoroughly, enhancing their understanding and retention of course material. The platform includes interactive learning tools like flashcards and quizzes to reinforce learning and assess knowledge.
 
-Additionally, LearnSmart offers customized study schedules tailored to each student’s preferences and syllabus schedule. These tools help students stay organized, manage their time effectively, and optimize their study practices. LearnSmart wants to add a question-answer system with a chatbot capable of answering course-related queries and assisting with study questions. 
+Additionally, Edux offers customized study schedules tailored to each student’s preferences and syllabus schedule. These tools help students stay organized, manage their time effectively, and optimize their study practices. Edux wants to add a question-answer system with a chatbot capable of answering course-related queries and assisting with study questions. 
 
-In summary, LearnSmart provides essential tools and resources through a web application to support students' academic endeavors. By integrating lecture presentations, syllabi, and other study materials with advanced LLM capabilities and offering interactive learning tools, LearnSmart aims to enhance the efficiency and effectiveness of student learning.
+In summary, Edux provides essential tools and resources through a web application to support students' academic endeavors. By integrating lecture presentations, syllabi, and other study materials with advanced LLM capabilities and offering interactive learning tools, Edux aims to enhance the efficiency and effectiveness of student learning.
 
 ## [Design Document](https://docs.google.com/document/d/1yBGZlqTAZuNbOirmpqzgfHXvrq4RJoF7VfEGX3V5clY/edit#heading=h.yr1n1w74g294)
 
@@ -16,7 +16,7 @@ In summary, LearnSmart provides essential tools and resources through a web appl
 
 ## Build
 
-1. Use node 23.6.1
+1. Use latest node
 
 2. Use python 3.12.8
 

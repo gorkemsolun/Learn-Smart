@@ -1,7 +1,6 @@
 "use client";
 
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
-import { CourseCreateDialogProps } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,11 +18,12 @@ import Cookies from "js-cookie";
 import * as React from "react";
 import { useState } from "react";
 import { LuUpload } from "react-icons/lu";
+import { SkillTreeEditDialogProps } from "@/app/types";
 
-export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
-  const [courseName, setCourseName] = useState<string>("");
-  const [courseCode, setCourseCode] = useState<string>("");
-  const [courseDescription, setCourseDescription] = useState<string>("");
+export function SkillTreeEditDialogModal(dialogParameters: SkillTreeEditDialogProps) {
+  const [skillTreeTitle, setSkillTreeTitle] = useState<string>("");
+  const [keywords, setKeywords] = useState<string>("");
+  const [skillTreeDescription, setSkillTreeDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
   const [disableCreateButton, setDisableCreateButton] =
@@ -32,9 +32,9 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
 
   const { toast } = useToast();
   const resetFields = () => {
-    setCourseCode("");
-    setCourseName("");
-    setCourseDescription("");
+    setKeywords("");
+    setSkillTreeTitle("");
+    setSkillTreeDescription("");
     setSyllabus(null);
     setIcon(null);
   };
@@ -84,6 +84,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
       }
     }
   }
+  // TO-DO write the backend logic for creating skill tree
   async function handleSubmit(
     event:
       | React.FormEvent<HTMLFormElement>
@@ -92,59 +93,6 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
     // Prevent default form submission
     event.preventDefault();
 
-    // Create the form data object to send to the backend
-    const formData = new FormData();
-    formData.append("course_name", courseName);
-    formData.append("course_code", courseCode);
-    formData.append("course_description", courseDescription);
-    if (syllabus) {
-      formData.append("course_syllabus_file", syllabus);
-    }
-    if (icon) {
-      formData.append("course_icon_file", icon);
-    }
-
-    setDisableCreateButton(true);
-
-    // Send the form data to the backend
-    await backendAPI
-      .post(`/course/create`, formData, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      .then(() => {
-        // Call the onCourseCreation callback to update the course list
-        dialogParameters.onCourseCreation();
-        toast({
-          title: "Success",
-          description: "Course successfully created",
-          variant: "default",
-          action: (
-            <ToastAction altText="Dismiss" className="hover:bg-background/20">
-              Dismiss
-            </ToastAction>
-          ),
-          className: "bg-green-500 text-background",
-        });
-      })
-      .catch((error) => {
-        console.log(error.response);
-        toast({
-          title: "Error",
-          description: "Error creating course",
-          variant: "destructive",
-          action: <ToastAction altText="Try again">Try again</ToastAction>,
-        });
-      })
-      .finally(() => {
-        // Reset form fields and close the modal
-        setDisableCreateButton(false);
-        resetFields();
-        dialogParameters.onClose(false);
-      });
   }
 
   function handleOpenChange() {
@@ -160,26 +108,26 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
     >
       <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
         <div className="space-y-1">
-          <DialogTitle className="mb-2">Create Individual Study</DialogTitle>
+          <DialogTitle className="mb-2">Skill Tree</DialogTitle>
           <DialogDescription></DialogDescription>
           <label className="text-xs font-semibold text-foreground/70">
-            Name
+            Title
           </label>
           <Input
-            id="courseName"
+            id="skillTreeTitle"
             type="text"
-            value={courseName}
-            onChange={(event) => setCourseName(event.target.value)}
+            value={skillTreeTitle}
+            onChange={(event) => setSkillTreeTitle(event.target.value)}
             required
           />
           <label className="text-xs font-semibold text-foreground/70">
-            Code
+            Keywords
           </label>
           <Input
-            id="courseCode"
+            id="keywords"
             type="text"
-            value={courseCode}
-            onChange={(event) => setCourseCode(event.target.value)}
+            value={keywords}
+            onChange={(event) => setKeywords(event.target.value)}
             required
           />
           <label className="text-xs font-semibold text-foreground/70">
@@ -187,8 +135,8 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
           </label>
           <Textarea
             id="description"
-            value={courseDescription}
-            onChange={(event) => setCourseDescription(event.target.value)}
+            value={skillTreeDescription}
+            onChange={(event) => setSkillTreeDescription(event.target.value)}
           />
         </div>
         <div className="flex items-center space-x-4">
@@ -285,7 +233,7 @@ export function CourseCreateDialog(dialogParameters: CourseCreateDialogProps) {
             onClick={handleSubmit}
             type="submit"
             className="w-1/5"
-            disabled={!courseName || !courseCode || disableCreateButton}
+            disabled={!skillTreeTitle || !keywords || disableCreateButton}
           >
             Create
           </Button>
