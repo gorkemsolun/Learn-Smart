@@ -84,7 +84,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
   };
 
   return (
-    <div className="sticky top-0 z-50 w-full border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="sticky top-0 z-50 mx-auto w-full max-w-[1500px] border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <NavigationMenu>
         <NavigationMenuList>
           <Button

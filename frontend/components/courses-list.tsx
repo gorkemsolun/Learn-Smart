@@ -42,7 +42,7 @@ export function CoursesList (modalParameters: CoursesListProps) {
           <Pencil1Icon className="cursor-pointer items-center justify-center text-foreground hover:bg-transparent hover:text-foreground/40" onClick={ () => modalParameters.setCourseDialog(true)}/>
         </div>
 
-        <ScrollArea className="-mt-2 h-[47vh] w-full bg-transparent">
+        <ScrollArea className="-mt-2 h-96 w-full bg-transparent">
           <div className="p-4">
             <div className="flex flex-wrap gap-4">
             {modalParameters.courses.map((Course, index) => (

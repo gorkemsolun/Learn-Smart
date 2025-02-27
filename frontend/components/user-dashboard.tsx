@@ -146,55 +146,55 @@ export default function UserDashboard() {
     if (link) router.push(link);
   };
 
+
   return (
     <div className="mx-auto space-y-6 p-4 sm:p-6 lg:p-4">
       {/* Cards Section */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="mx-auto grid w-full max-w-[1500px] grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {cardData.map((card, index) => (
-          <Card
-            key={index}
-            onClick={() => handleCardClick(card.link)}
-            className="h-full cursor-pointer transition-shadow duration-300 hover:shadow-lg"
-          >
-            <div className="flex h-[24vh] items-center rounded-xl bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-3 sm:p-4 lg:p-6">
-              <div className="min-w-0 grow space-y-2">
-                <CardTitle className="max-w-[90%] truncate text-base font-bold md:text-lg lg:text-xl">
-                  {card.title}
-                </CardTitle>
-                <CardDescription className="max-w-[95%] truncate text-sm text-muted-foreground md:text-base">
-                  {card.content}
-                </CardDescription>
-              </div>
+            <Card
+                key={index}
+                onClick={() => handleCardClick(card.link)}
+                className="h-full cursor-pointer transition-shadow duration-300 hover:shadow-lg"
+            >
               <div
-                className="ml-2 flex size-[6vh] shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary md:size-[7vh]"
-                aria-hidden="true"
-              >
-                {card.icon}
+                  className="flex h-auto min-h-[175px] items-center rounded-xl bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-3 sm:p-4 lg:p-6">
+                <div className="min-w-0 grow space-y-2">
+                  <CardTitle className="max-w-[90%] truncate text-base font-bold md:text-lg lg:text-xl">
+                    {card.title}
+                  </CardTitle>
+                  <CardDescription className="max-w-[95%] truncate text-sm text-muted-foreground md:text-base">
+                    {card.content}
+                  </CardDescription>
+                </div>
+                <div className="ml-2 flex size-12 items-center justify-center
+                 rounded-full bg-primary/10 text-primary md:size-14">
+                  {card.icon}
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
         ))}
       </div>
 
       {/* Chart and Courses Section */}
       {loading ? (
-        <div className="flex h-[50vh] items-center justify-center">
+          <div className="mx-auto flex max-h-[300px] max-w-[1500px] items-center justify-center">
           <span className="text-gray-500">Loading...</span>
         </div>
       ) : (
-        <div className="grid h-[50vh] grid-cols-1 gap-4 lg:grid-cols-7">
-          <div className="lg:col-span-4">
-            <UserChart chartData={chartData} />
+          <div className="mx-auto grid max-h-[300px] max-w-[1500px] grid-cols-1 gap-4 lg:grid-cols-7">
+            <div className="lg:col-span-4">
+              <UserChart chartData={chartData}/>
+            </div>
+            <div className="lg:col-span-3">
+              <CoursesList
+                  courses={courses}
+                  onCourseDelete={fetchDashboardData}
+                  setCourseDialog={setCourseDialog}
+                  onCourseUpdate={fetchDashboardData}
+              />
+            </div>
           </div>
-          <div className="lg:col-span-3">
-            <CoursesList
-              courses={courses}
-              onCourseDelete={fetchDashboardData}
-              setCourseDialog={setCourseDialog}
-              onCourseUpdate={fetchDashboardData}
-            />
-          </div>
-        </div>
       )}
 
       {/* Course Creation Dialog */}
