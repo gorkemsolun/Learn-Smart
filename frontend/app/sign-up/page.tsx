@@ -1,6 +1,6 @@
 "use client";
 
-import { backendAPI } from "@/environment/backend_api";
+import { userService } from "@/environment/backend_api";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -66,9 +66,9 @@ export default function SignUp() {
       return;
     }
 
-    await backendAPI
+    await userService
       .post(
-        "/users/create",
+        "/create",
         {
           nickname: username,
           email: email,
