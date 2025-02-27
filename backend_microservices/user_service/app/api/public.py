@@ -36,8 +36,10 @@ async def create_user(user: UserCreationRequest, db: Session = Depends(get_db)):
     return UserResponse(**user_dict)
 
 
+# TODO: Put in private router
 @router.get("/authenticate")
-async def authenticate_user(authorization: str = Header(None)):
+async def authenticate_user(authorization: str = Header(None),
+                            db: Session = Depends(get_db)):
     """
     Authenticate the user based on the provided JWT token.
 
@@ -47,11 +49,12 @@ async def authenticate_user(authorization: str = Header(None)):
     Returns:
         dict: A dictionary containing the user's data.
     """
-    return await get_authenticated_user(authorization)
+    return await get_authenticated_user(db, authorization)
 
 
 @router.get("/me")
-async def get_user_and_courses(current_user: dict = Depends(get_authenticated_user)):
+async def get_user_and_courses(db: Session = Depends(get_db), 
+                               authorization: str = Header(None)):
     """
     Retrieve the user's data and courses.
 
@@ -61,6 +64,7 @@ async def get_user_and_courses(current_user: dict = Depends(get_authenticated_us
     Returns:
         dict: A dictionary containing the user's data and courses.
     """
+    current_user = await get_authenticated_user(db, authorization)
     courses = await course.get_courses(current_user["user_id"]) # get the user's courses
 
     current_user["courses"] = courses # add the user's courses to response

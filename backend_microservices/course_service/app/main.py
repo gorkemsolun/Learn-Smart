@@ -9,7 +9,7 @@ from course_service.app.util import init
 app = FastAPI()
 
 # re/create the database tables
-init(restart=True)
+init(restart=False)
 
 # Add CORS middleware to allow cross-origin requests
 # TODO: Disable this in production and specify the frontend URL

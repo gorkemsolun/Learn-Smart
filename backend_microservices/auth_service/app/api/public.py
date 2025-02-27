@@ -10,7 +10,7 @@ router = APIRouter(prefix="/public", tags=["Authentication - Public API"])
 
 
 @router.post("/login", response_model=Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """
     Authenticates the user and generates an access token.
 
@@ -23,7 +23,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     Raises:
         HTTPException: If the user credentials are invalid.
     """
-    user = authenticate_user(form_data.password, email=form_data.username) # authenticate the user using the provided credentials
+    user = await authenticate_user(form_data.password, email=form_data.username) # authenticate the user using the provided credentials
 
     if not user:
         raise HTTPException(

@@ -15,7 +15,7 @@ def init(restart: bool = False):
         if restart:
             # drop "users" table
             print("Dropping tables...")
-            db.execute(text("DROP TABLE IF EXISTS users;"))
+            db.execute(text("DROP TABLE IF EXISTS courses;"))
             
         # create "users" table
         print("Creating tables...")

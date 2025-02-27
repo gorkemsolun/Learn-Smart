@@ -23,10 +23,16 @@ async def get_courses(user_id: int):
         
         courses = response.json()
         return courses
-
+    
     except httpx.RequestError as e:
         raise HTTPException(
             status_code=500,
             detail=f"Course service error: {str(e)}"
+        )
+    
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"Course service error: {e.response.text}"
         )
     

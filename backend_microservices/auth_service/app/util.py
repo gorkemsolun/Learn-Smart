@@ -2,6 +2,7 @@ import jwt
 from datetime import datetime, timedelta
 
 from auth_service.app import SECRET_KEY, ALGORITHM, pwd_context
+import auth_service.app.clients.user as user
 
 async def authenticate_user(password, **kwargs):
     """
@@ -25,13 +26,13 @@ async def authenticate_user(password, **kwargs):
     user_id = kwargs.get("user_id", None)
 
     # get the user from the user service
-    user = await user.get_user(nickname=nickname, email=email, user_id=user_id)
+    user_dict = await user.get_user(nickname=nickname, email=email, user_id=user_id)
     
     # user not found or password does not match
-    if not user or not _verify_password(password, user["hashed_password"]):
+    if not user_dict or not _verify_password(password, user_dict["hashed_password"]):
         return None
     
-    return user
+    return user_dict
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):

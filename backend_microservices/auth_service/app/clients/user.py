@@ -17,12 +17,19 @@ async def get_user(nickname=None, email=None, user_id=None):
         None: If the user is not found.
     """
     try:
+        params = {}
+        if nickname:
+            params["nickname"] = nickname
+        if email:
+            params["email"] = email
+        if user_id:
+            params["id"] = user_id
+
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{USER_SERVICE_URL}/private/users", 
-                params={
-                    "nickname": nickname, "email": email, "id": user_id
-                }, headers={"X-API-Key": USER_CLIENT_KEY}
+                f"{USER_SERVICE_URL}/private/", 
+                params=params,
+                headers={"X-API-Key": USER_CLIENT_KEY}
             )
             response.raise_for_status()
 

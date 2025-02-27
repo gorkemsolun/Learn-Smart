@@ -17,7 +17,7 @@ import {FcGoogle} from "react-icons/fc";
 import {useRouter} from "next/navigation";
 import {useToast} from "@/hooks/use-toast";
 import {useEffect, useState} from "react";
-import {backendAPI} from "@/environment/backend_api";
+import {userService, authService} from "@/environment/backend_api";
 import ImageSlider from "@/components/image-slider";
 
 export default function SignIn() {
@@ -52,8 +52,8 @@ export default function SignIn() {
   }, [router, role]);
 
   async function fetchUserRole() {
-    await backendAPI
-      .get("/users/me", {
+    await userService
+      .get("/me", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${Cookies.get("authToken")}`,
@@ -65,9 +65,9 @@ export default function SignIn() {
   }
 
   const handleSignIn = async () => {
-    await backendAPI
+    await authService
         .post(
-            "/users/login",
+            "/login",
             {
               username: email,
               password: password,
