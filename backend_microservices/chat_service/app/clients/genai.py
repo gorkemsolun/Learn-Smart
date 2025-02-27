@@ -3,10 +3,10 @@ import httpx
 import json
 
 from chat_service.app.clients import GENAI_SERVICE_URL, GENAI_CLIENT_KEY
-from chat_service.app.model import ChatHistory, ChatMessage, ChatFile
+from chat_service.app.model import ChatHistory
 
 async def send_message(history: ChatHistory, model: str, 
-                       authorization: str, system_prompt: str = None) -> dict:
+                       system_prompt: str = None) -> dict:
     """
     Send a message in a chat and generate a response.
 
@@ -33,9 +33,8 @@ async def send_message(history: ChatHistory, model: str,
         
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{GENAI_SERVICE_URL}/public/generate/message",
-                data=form_data,
-                headers={"Authorization": authorization}
+                f"{GENAI_SERVICE_URL}/private/generate/message",
+                data=form_data
             )
             response.raise_for_status()
             return response.text

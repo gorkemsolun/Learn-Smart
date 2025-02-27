@@ -19,6 +19,27 @@ router = APIRouter(
     dependencies=[Depends(verify_api_key)]
 )
 
+@router.post("/generate/message")
+async def send_message(
+    history: List[dict] = Form(None),
+    system_prompt: str = Form(None),
+    model: str = Form("google") # google, openai, or anthropic
+    ):
+    """
+    Send a message in a chat and generate a response.
+
+    Args:
+        history (List[dict]): The chat history.
+        system_prompt (str): The system prompt to use.
+        model (str): The generative AI model to use.
+        current_user (dict): The current user.
+    """
+
+    client = ChatClient.create(model=model, system_prompt=system_prompt)
+    response = client.invoke(history=history)
+
+    return {"status": "success", "response": response}
+
 
 @router.post("/generate/weekly_study_plan")
 async def create_weekly_study_plan(syllabus: UploadFile = Form(...)):
@@ -52,7 +73,7 @@ async def create_quiz(history_urls: List[str] = Form(...)):
         history_urls (List[str]): The URLs of the chat histories.
         current_user (dict): The current user.
     """
-    client = ChatClient.create(model="google", system_prompt=QUIZZES_PROMPT)
+    client = ChatClient.create(model="google")
 
     # placeholder, fetch from S3/FileManager
     histories: List[ChatHistory] = [ChatHistory.from_binary(open(url, "rb")) for url in history_urls] 
@@ -60,7 +81,7 @@ async def create_quiz(history_urls: List[str] = Form(...)):
     history_merged = ChatHistory(messages=messages_merged)
 
     response, _ = client.invoke(
-        query=" ", 
+        query=QUIZZES_PROMPT, 
         history=history_merged,
         generation_config={"response_mime_type": "application/json"}
     )
@@ -85,7 +106,7 @@ async def create_flashcards(history_urls: List[str] = Form(...)):
         history_urls (List[str]): The URLs of the chat histories.
         current_user (dict): The current user.
     """
-    client = ChatClient.create(model="google", system_prompt=FLASHCARD_PROMPT)
+    client = ChatClient.create(model="google")
 
     # placeholder, fetch from S3/FileManager
     histories: List[ChatHistory] = [ChatHistory.from_binary(open(url, "rb")) for url in history_urls] 
@@ -93,7 +114,7 @@ async def create_flashcards(history_urls: List[str] = Form(...)):
     history_merged = ChatHistory(messages=messages_merged)
 
     response, _ = client.invoke(
-        query=" ", 
+        query=FLASHCARD_PROMPT, 
         history=history_merged,
         generation_config={"response_mime_type": "application/json"}
     )

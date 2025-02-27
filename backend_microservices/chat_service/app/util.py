@@ -110,7 +110,8 @@ async def load_chat_history(history_fid: Optional[str]) -> ChatHistory:
     if history_fid:
         history_bytes = await filemanager.download(file_id=history_fid)
         return ChatHistory.from_bytes(history_bytes)
-    return ChatHistory()
+    
+    return ChatHistory() # Create new history if not given
 
 
 async def save_chat_history(history: ChatHistory, user_id: int) -> str:

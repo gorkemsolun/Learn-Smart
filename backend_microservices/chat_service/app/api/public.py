@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, UploadFile, Depends, Form, File, Header
 from sqlalchemy.orm import Session
 from typing import List
-import os, glob, json, jsonpickle, itertools
+import os, io, glob, json, jsonpickle, itertools
+import pymupdf
 
 from chat_service.app.clients import user, course, filemanager, genai
 from chat_service.app.database.dbmanager import (
@@ -9,6 +10,7 @@ from chat_service.app.database.dbmanager import (
 )
 from chat_service.app.database.session import get_db
 from chat_service.app.util import *
+from chat_service.app import EXPLAIN_SLIDE_PROMPT
 
 router = APIRouter(prefix="/public", tags=["Chat - Public API"])
 
@@ -141,7 +143,7 @@ async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
 
     slide = SlideDB.create(
         db, chat_id=chat["chat_id"], course_id=crs["course_id"], slides_file_name=slides.filename, 
-        slides_fid=slides_fid, pages_count=page_count, last_slide_number=1
+        slides_fid=slides_fid, pages_count=page_count, last_opened_page_id=1
     )
     chat = ChatDB.update(db, chat_id=chat["chat_id"], last_opened_slide_id=slide["slide_id"])
 
@@ -233,7 +235,7 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
 
         slide = SlideDB.create(
             db, chat_id=chat["chat_id"], course_id=course_id, slides_file_name=slides.filename, 
-            slides_fid=slides_fid, pages_count=page_count, last_slide_number=1
+            slides_fid=slides_fid, pages_count=page_count, last_opened_page_id=1
         )
         chat = ChatDB.update(db, chat_id=chat["chat_id"], last_opened_slide_id=slide["slide_id"])
 
@@ -243,7 +245,7 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
     return {"chat": chat, "message": "Chat created successfully."}
 
 
-@router.post("/chat{chat_id}/send_message")
+@router.post("/chat/{chat_id}/send_message")
 async def send_message(chat_id: int,
                        slide_id: int = None,
                        page_id: int = None,
@@ -312,7 +314,7 @@ async def send_message(chat_id: int,
     return {"text": response, "role": "model"}
 
 
-@router.delete("/{chat_id}")
+@router.delete("/chat/{chat_id}")
 async def delete_chat(chat_id: int, 
                       current_user: dict = Depends(user.get_current_user),
                       db: Session = Depends(get_db)):
@@ -379,7 +381,7 @@ async def delete_all_flashcards(chat_id: int,
     return {"status": "success", "message": "All flashcards have been successfully deleted."}
 
 
-@router.put("/{chat_id}")
+@router.put("/chat/{chat_id}")
 def update_chat_title(chat_id: int, chat_title: str, 
                       current_user: dict = Depends(user.get_current_user),
                       db: Session = Depends(get_db)):
@@ -593,6 +595,51 @@ async def rename_flashcard(
     return {"message": f"Flashcard has been successfully renamed to {new_name}."}
 
 
+@router.get("/chat/{page_id}")
+async def get_slide(page_id: int, 
+                    model: str,
+                    current_user: dict = Depends(user.get_current_user),
+                    db: Session = Depends(get_db)):
+    """
+    Get a specific slide and its explanation by its ID and page number.
+    """
+    # TODO: convert this to gRPC call
+    page_db = SlidePageDB.fetch(db, page_id=page_id)
+    if not page_db:
+        raise HTTPException(status_code=404, detail="Slide not found.")
+    
+    chat_id = page_db["chat_id"]
+    get_authorized_chat_and_course(chat_id, current_user["user_id"])
+
+    slide_id = page_db["slide_id"]
+    slide = SlideDB.fetch(db, slide_id=slide_id)
+    if not slide:
+        raise HTTPException(status_code=404, detail="Slide not found.")
+
+    page_fid = page_db["content_fid"]
+    page_content = await filemanager.download(file_id=page_fid) 
+    page_base64 = base64.b64encode(page_content).decode("utf-8") # convert bytes to base64
+
+    history_fid = page_db["chat_history_fid"]
+    history_content = load_chat_history(history_fid)
+    history = ChatHistory.from_bytes(history_content)
+
+    history.add_message(
+        role="edux", content=EXPLAIN_SLIDE_PROMPT,
+        # TODO: mimetype="image/png" is hardcoded here
+        files=ChatFile(mimetype="image/png", raw_data=page_content, fid=page_fid)
+    )
+    explanation = genai.send_message(history, model=model)
+    history.add_message(role="assistant", content=explanation)
+
+    new_history_fid = save_chat_history(history, current_user["user_id"])
+    await filemanager.delete(history_fid) # delete the old history file
+
+    SlidePageDB.update(page_id=page_id, chat_history_fid=new_history_fid)
+    SlideDB.update(slide_id=slide_id, last_opened_page_id=page_id)
+
+    return {"slide": page_base64, "history": history.messages}
+
 
 
 
@@ -640,59 +687,6 @@ async def get_chat(chat_id: int,
 
     chat["slides"] = slides
     return chat
-
-
-
-
-
-@router.get("/{chat_id}/slide/{slide_id}/page/{page_number}")
-async def get_slide(chat_id: int, slide_id: int, page_number: int, 
-                    current_user: dict = Depends(auth.get_current_user),
-                    db: Session = Depends(get_db)):
-    """
-    Get a specific slide and its explanation by its ID and page number.
-    """
-    # TODO: convert this to gRPC call
-    get_authorized_chat_and_course(chat_id, current_user["user_id"])
-
-    slide = SlideDB.fetch(db, slide_id=slide_id)
-    if not slide:
-        raise HTTPException(status_code=404, detail="Slide not found.")
-
-    if page_number <= 0 or page_number > slide["pages_count"]:
-        raise HTTPException(status_code=400, detail="Invalid slide number.")
-    
-    # TODO: The rest of the logic is to be implemented by LLMService and FileManager service
-    # What should've been done here is to make a call to LLMService and FileManager service and return the response
-    """slide_history_path, slide_metadata_path = get_slide_history_path(slide_id, page_number), get_slide_history_metadata_path(slide_id, page_number)
-    slide_content = get_slide_content(slide_id, page_number)
-    slide_base64 = image_to_base64(slide_content)
-
-    # if slide history path doesn't exists, it means an explanation is not generated yet
-    if not os.path.exists(slide_history_path):
-        model = init_chat()
-        response = model.send_message([EXPLAIN_SLIDE_PROMPT, slide_content]).text
-        
-        metadata_path = get_slide_history_metadata_path(slide_id, page_number)
-        new_metadata = {"message_id": 0, "skip": True} # skip the EXPLAIN_SLIDE_PROMPT
-        update_metadata(metadata_path, new_metadata)
-        
-        history = jsonpickle.encode(model.history, True)
-        save_history(slide_history_path, history)
-
-        SlideDB.update(slide_id, last_slide_number=page_number)
-        return {
-            "slide": slide_base64,
-            "history": [{"text": response, "role": "model", "message_id": 1}]
-        }
-    
-    messages = get_formatted_history(slide_history_path, slide_metadata_path)
-    
-    SlideDB.update(slide_id, last_slide_number=page_number)
-    ChatDB.update(chat_id=chat_id, last_opened_slide_id=slide_id)
-    return {"slide": slide_base64,
-            "history": messages
-    }"""
 
 
 @router.post("/{chat_id}/create_quiz")

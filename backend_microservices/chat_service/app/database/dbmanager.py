@@ -199,7 +199,7 @@ class SlideDB:
         slides_file_name: str,
         slides_fid: int,
         pages_count: int,
-        last_slide_number: int,
+        last_opened_page_id: int,
     ) -> dict:
         """
         Create a new slide object and save it in the database.
@@ -210,7 +210,7 @@ class SlideDB:
         - slides_file_name (str): The filename of the slides.
         - slides_fid (int): The FID of the slides.
         - pages_count (int): The total number of pages in the slides file.
-        - last_slide_number (int): The last fetched slide number.
+        - last_opened_page_id (int): The last fetched page ID.
 
         Returns:
         - dict: A dictionary representation of the created slide object.
@@ -221,7 +221,7 @@ class SlideDB:
             slides_file_name=slides_file_name,
             slides_fid=slides_fid,
             pages_count=pages_count,
-            last_slide_number=last_slide_number,
+            last_opened_page_id=last_opened_page_id,
         )
 
         # save the slide object in the database
@@ -289,7 +289,7 @@ class SlideDB:
             - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
                 - slides_file_name (str): The new filename for the slide.
                 - slides_fid (int): The new FID for the slide.
-                - last_slide_number (int): The new last fetched slide number.
+                - last_opened_page_id (int): The new last fetched page ID.
 
         Returns:
             - dict: A dictionary representing the updated slide details.
@@ -299,7 +299,7 @@ class SlideDB:
         """
         slides_file_name = kwargs.get("slides_file_name", None)
         slides_fid = kwargs.get("slides_fid", None)
-        last_slide_number = kwargs.get("last_slide_number", None)
+        last_opened_page_id = kwargs.get("last_opened_page_id", None)
 
         slide = db.query(Slide).filter(Slide.slide_id == slide_id).first()
         if not slide:
@@ -309,8 +309,8 @@ class SlideDB:
             slide.slides_file_name = slides_file_name
         if slides_fid:
             slide.slides_fid = slides_fid
-        if last_slide_number:
-            slide.last_slide_number = last_slide_number
+        if last_opened_page_id:
+            slide.last_opened_page_id = last_opened_page_id
 
         db.commit()
         db.refresh(slide)

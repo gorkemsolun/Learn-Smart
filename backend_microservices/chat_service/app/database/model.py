@@ -51,7 +51,7 @@ class Slide(Base):
     slides_file_name = Column(String(255), nullable=False)  # slides' original file name, e.g. Lecture_1.pptx
     slides_fid = Column(Integer, nullable=False)  # slides file ID
     pages_count = Column(Integer, nullable=False)  # the total number of pages in the slides file
-    last_slide_number = Column(Integer, nullable=False)  # the last fetched slide number (e.g. page 3 of a slides file)
+    last_opened_page_id = Column(Integer, nullable=False)  # the last fetched page ID (e.g. page ID: 3 of a slides file)
 
     pages = relationship("SlidePage", back_populates="slide", cascade="all, delete-orphan")
 
@@ -70,7 +70,7 @@ class Slide(Base):
             "slides_file_name": self.slides_file_name,
             "slides_fid": self.slides_fid,
             "pages_count": self.pages_count,
-            "last_slide_number": self.last_slide_number
+            "last_opened_page_id": self.last_opened_page_id
         }
     
 

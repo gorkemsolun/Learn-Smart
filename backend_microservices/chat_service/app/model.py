@@ -23,11 +23,7 @@ class ChatFile:
 
 
 class ChatMessage:
-    role: Literal["assistant", "user", "developer"] = None # The role of the message sender
-    content: str = None  # The message content
-    files: List[ChatFile] = None  # The files sent with the message
-
-    def __init__(self, role: Literal["assistant", "user", "developer"], 
+    def __init__(self, role: Literal["assistant", "user", "developer", "edux"], 
                  content: str, files: List[ChatFile] = None):
         """
         Initialize a ChatMessage object.
@@ -37,9 +33,9 @@ class ChatMessage:
             content (str): The message content.
             files (List[File]): The files sent with the message.
         """
-        self.role = role
-        self.content = content
-        self.files = files or []
+        self.role: Literal["assistant", "user", "developer", "edux"] = role
+        self.content: str = content
+        self.files: List[ChatFile] = files or []
 
 
 class ChatHistory:
@@ -51,7 +47,7 @@ class ChatHistory:
         self.messages = messages or []
 
 
-    def add_message(self, role: Literal["assistant", "user", "developer"], 
+    def add_message(self, role: Literal["assistant", "user", "developer", "edux"], 
                     content: str, files: List[ChatFile] = None):
         """
         Add a message to the chat history.
@@ -97,7 +93,7 @@ class ChatHistory:
                 "text": text
             })
             openai_history.append({
-                "role": message.role,
+                "role": "user" if message.role == "edux" else message.role,
                 "content": content
             })
 
@@ -136,7 +132,7 @@ class ChatHistory:
                 })
 
             anthropic_history.append({
-                "role": message.role,
+                "role": "user" if message.role == "edux" else message.role,
                 "content": file_data.append({   
                     "type": "text",
                     "text": text
@@ -165,7 +161,9 @@ class ChatHistory:
                     }
                 })
 
-            role = "model" if message.role == "assistant" else message.role
+            role = ("model" if message.role == "assistant"
+                    else "user" if message.role == "edux"
+                    else message.role)
             gemini_history.append({"role": role, "parts": parts})
 
         return gemini_history

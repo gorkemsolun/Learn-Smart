@@ -76,10 +76,10 @@ async def download(file_id: int):
     Calls the FileManager service to download a file.
 
     Args:
-        - file_id (int): The ID of the file to download.
+        * file_id (int): The ID of the file to download.
 
     Returns:
-        - tuple: A tuple containing the file name and file content.
+        * bytes: the file content
     """
     try:
         async with httpx.AsyncClient() as client:
@@ -90,8 +90,20 @@ async def download(file_id: int):
             )
             response.raise_for_status()  # Raise an exception for HTTP errors
         
-        return response.content
-    
+            # Read all content from streaming response
+            content = b""
+            async for chunk in response.aiter_bytes():
+                content += chunk
+            
+            return content
+        
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(
+            status_code=500,
+            detail=f"FileManager service error: {str(e)}"
+        )
     except httpx.RequestError as e:
         raise HTTPException(
             status_code=500,
