@@ -100,3 +100,4 @@ wheels/
 *.egg
 
 *.bat
+*.log
