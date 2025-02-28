@@ -39,7 +39,7 @@ export function UserChart({ chartData }: { chartData: { day: string; timeSpent: 
         <CardDescription></CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[47vh] w-full bg-transparent">
+        <ChartContainer config={chartConfig} className="h-[22rem] w-full bg-transparent">
           <ResponsiveContainer height="100%" width="100%">
             <BarChart data={chartData}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
