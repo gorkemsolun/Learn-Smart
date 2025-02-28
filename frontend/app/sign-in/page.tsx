@@ -116,96 +116,110 @@ export default function SignIn() {
   };
 
   return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card className="relative flex h-[72vh] w-3/5 overflow-auto">
-          <Button
-              onClick={() => router.push('/sign-up')}
-              className="absolute right-4 top-4 bg-transparent text-foreground shadow-none hover:bg-foreground/10"
-          >
-            Sign up
-          </Button>
-
-          <div className="border-1 relative flex w-1/2 items-center justify-center space-y-4 rounded-l-lg bg-foreground/5 p-4">
-            <div className="absolute left-4 top-4 flex items-center space-x-2">
-              <Icons.logo className="size-6"/>
-              <p className="font-bold">edux/ai</p>
+      <div className="flex min-h-screen w-full items-center justify-center p-6">
+        <Card className="relative w-full overflow-hidden md:max-w-3xl lg:max-w-4xl">
+          <div className="flex h-full flex-col md:flex-row">
+            {/* Left side with image slider - hidden on small screens */}
+            <div
+                className="hidden border-r bg-foreground/5 md:flex md:w-1/2 md:flex-col md:items-center md:justify-center md:rounded-l-lg md:p-6">
+              <div className="absolute left-4 top-4 flex items-center space-x-2">
+                <Icons.logo className="size-5"/>
+                <p className="text-base font-bold">edux/ai</p>
+              </div>
+              <div className="mt-8 flex size-full">
+                <ImageSlider/>
+              </div>
             </div>
-            <div className="h-[56vh] w-full">
-              <ImageSlider/>
-            </div>
-          </div>
 
-          <div className="flex w-1/2 flex-col items-center justify-center p-4">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Sign in an account</CardTitle>
-            </CardHeader>
+            {/* Right side with sign in form */}
+            <div className="flex w-full flex-col items-center justify-center p-4 md:w-1/2 md:p-6">
+              {/* Logo for mobile view */}
+              <div className="mb-4 flex items-center space-x-2 md:hidden">
+                <Icons.logo className="size-5"/>
+                <p className="text-sm font-bold">edux/ai</p>
+              </div>
 
-            <CardContent className="flex w-full flex-col items-center justify-center">
-              <form className="flex w-full flex-col items-center justify-center">
-                <div className="grid w-5/6 items-center gap-4">
-                  <div className="flex w-full flex-col space-y-1.5">
+              <Button
+                  onClick={() => router.push("/sign-up")}
+                  className="absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm text-foreground shadow-none hover:bg-foreground/10"
+              >
+                Sign up
+              </Button>
 
-                    <div className="relative w-full">
-                      <EnvelopeClosedIcon
-                          className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400"/>
-                      <Input
-                          type="text"
-                          placeholder="email@example.com"
-                          className="pl-10"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                      />
-                    </div>
+              <CardHeader className="space-y-1 text-center">
+                <CardTitle className="p-4 text-xl sm:text-2xl">
+                  Sign in to your account
+                </CardTitle>
+              </CardHeader>
 
-                    <div className="relative w-full">
-                      <LockClosedIcon
-                          className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400"/>
-                      <Input
-                          type="password"
-                          placeholder="********"
-                          className="pl-10"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                      />
+              <CardContent className="flex w-full flex-col items-center justify-center">
+                <form className="flex w-full flex-col items-center justify-center">
+                  <div className="grid w-5/6 items-center gap-4">
+                    <div className="flex w-full flex-col space-y-1.5">
+                      <div className="relative w-full">
+                        <EnvelopeClosedIcon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400"/>
+                        <Input
+                            type="text"
+                            placeholder="email@example.com"
+                            className="pl-10"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                      </div>
+                      <div className="relative w-full">
+                        <LockClosedIcon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400"/>
+                        <Input
+                            type="password"
+                            placeholder="********"
+                            className="pl-10"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </form>
-            </CardContent>
+                </form>
+              </CardContent>
 
-            <CardFooter className="flex w-full justify-center">
-              <Button className="w-5/6" onClick={handleSignIn}>
-                Sign in
-              </Button>
-            </CardFooter>
-
-            <CardContent className="flex w-full flex-col items-center justify-center">
-              <div className="grid w-5/6 items-center gap-4">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t"></span></div>
-                  <div className="relative flex justify-center text-xs uppercase"><span
-                      className="bg-background px-2 text-muted-foreground">Or continue with</span></div>
-                </div>
-                <Button
-                    className="inline-flex items-center justify-center space-x-2 whitespace-nowrap rounded-md border
-                  border-input bg-background px-4 py-2 text-sm
-                  font-medium text-accent-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none
-                  focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" onClick={handleGoogleSignIn}>
-                  <FcGoogle/>
-                  <span>Google</span>
+              <CardFooter className="flex w-full justify-center">
+                <Button className="w-5/6" onClick={handleSignIn}>
+                  Sign in
                 </Button>
-              </div>
-            </CardContent>
+              </CardFooter>
 
-            <p className="w-3/5 text-center text-xs text-foreground/60">
-              By clicking continue, you agree to our <a
-                className="text-foreground/60 underline hover:text-foreground/80"
-                href="">
-              Terms of Service
-            </a> and <a className="text-foreground/60 underline hover:text-foreground/80" href="">
-              Privacy Policy.
-            </a>
-            </p>
+              <CardContent className="flex w-full flex-col items-center justify-center">
+                <div className="grid w-5/6 items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t"></span>
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                    </div>
+                  </div>
+                  <Button
+                      className="inline-flex items-center justify-center space-x-2 whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-accent-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                      onClick={handleGoogleSignIn}
+                  >
+                    <FcGoogle/>
+                    <span>Google</span>
+                  </Button>
+                </div>
+              </CardContent>
+
+              <CardFooter className="flex w-full justify-center">
+                <p className="w-3/5 text-center text-xs text-foreground/60">
+                  By clicking continue, you agree to our <a
+                    className="text-foreground/60 underline hover:text-foreground/80" href="">
+                Terms of Service
+                  </a> and <a className="text-foreground/60 underline hover:text-foreground/80" href="">
+                    Privacy Policy.
+                  </a>
+                </p>
+              </CardFooter>
+            </div>
           </div>
         </Card>
       </div>
