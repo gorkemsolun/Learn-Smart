@@ -34,10 +34,10 @@ export function CourseCard(modalParameters: CourseCardProps) {
       transition={{ duration: 0.5 }}
     >
       <Card
-        className="g-gradient-to-br min-h-[43vh] min-w-[38.5vh] overflow-hidden from-primary/10 to-secondary/10
+        className="g-gradient-to-br min-h-80 min-w-72 overflow-hidden from-primary/10 to-secondary/10
               transition-shadow duration-300 hover:shadow-lg"
       >
-        <div className="group relative h-[22vh] overflow-hidden p-2">
+        <div className="group relative h-40 overflow-hidden p-2">
           <div className="absolute left-4 top-4 z-10">
             <Badge
                 variant="secondary"
@@ -67,7 +67,7 @@ export function CourseCard(modalParameters: CourseCardProps) {
               priority
           />
         </div>
-        <CardContent className="flex min-h-[20vh] flex-col p-4">
+        <CardContent className="flex min-h-40 flex-col p-4">
           <CardTitle className="text-darker mb-1 line-clamp-1 block overflow-x-hidden text-lg font-semibold">
             {modalParameters.course.course_name}
           </CardTitle>
