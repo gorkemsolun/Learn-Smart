@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { EnvelopeClosedIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 
 export default function SignIn() {
@@ -25,6 +25,25 @@ export default function SignIn() {
   const [role, setRole] = useState<string>("");
   const router = useRouter();
   const { toast } = useToast();
+
+  const fetchUserRole = useCallback(async () => {
+    try {
+      const response = await backendAPI.get("/users/me", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Cookies.get("authToken")}`,
+        },
+      });
+      setRole(response.data.role);
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch user role. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
     const fetchAndRedirect = async () => {
@@ -47,20 +66,7 @@ export default function SignIn() {
     };
 
     fetchAndRedirect();
-  }, [router, role]);
-
-  async function fetchUserRole() {
-    await backendAPI
-      .get("/users/me", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("authToken")}`,
-        },
-      })
-      .then((response) => {
-        setRole(response.data.role);
-      });
-  }
+  }, [router, role, fetchUserRole]);
 
   const handleSignIn = async () => {
     await backendAPI
