@@ -24,7 +24,7 @@ export default function SignIn() {
 
   const [email, setEmail] = useState<string>(Cookies.get("emailCookie") || "");
   const [password, setPassword] = useState<string>("");
-  const [role, setRole] = useState<string>("" || null);
+  // const [role, setRole] = useState<string>("" || null);
   const router = useRouter();
   const {toast} = useToast();
 
@@ -37,32 +37,12 @@ export default function SignIn() {
 
       const authToken = Cookies.get("authToken");
       if (authToken) {
-        await fetchUserRole();
-        if (!role) {
-          router.push("/role-card");
-        } else if (role === "User") {
-          router.push("/edux-homepage");
-        } else if (role === "Instructor") {
-          router.push("/edux-homepage-instructor");
-        }
+        router.push("/edux-homepage");
       }
     };
 
     fetchAndRedirect();
-  }, [router, role]);
-
-  async function fetchUserRole() {
-    await userService
-      .get("/me", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("authToken")}`,
-        },
-      })
-      .then((response) => {
-        setRole(response.data.role);
-      });
-  }
+  }, [router]);
 
   const handleSignIn = async () => {
     await authService
@@ -89,16 +69,7 @@ export default function SignIn() {
           // Store the token in a cookie
           Cookies.set("authToken", data["access_token"], {expires: 3});
           Cookies.set("signin_time", new Date().toISOString(), {path: "/" });
-
-          fetchUserRole();
-
-          if (role == null) {
-            router.push("/role-card");
-          } else if (role === "User") {
-            router.push("/edux-homepage");
-          } else if (role === "Instructor") {
-            router.push("/edux-homepage-instructor");
-          }
+          router.push("/edux-homepage");
         })
         .catch((error) => {
           console.error("Sign in error:", error);
