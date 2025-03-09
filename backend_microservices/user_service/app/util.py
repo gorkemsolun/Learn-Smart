@@ -17,9 +17,7 @@ def init(restart: bool = False):
             print("Dropping tables...")
             db.execute(text("DROP TABLE IF EXISTS users;"))
             db.commit()
-            
-        # create "users" table
-        print("Creating tables...")
+
         Base.metadata.create_all(bind=engine)
         
     finally:
@@ -39,7 +37,6 @@ async def get_authenticated_user(db, authorization: str = Header(None)):
     email = await auth.get_authenticated_email(authorization)
     if not email:
         raise HTTPException(status_code=401, detail="Invalid authentication token")
-    
     current_user = UserDB.fetch(db=db, email=email)
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
