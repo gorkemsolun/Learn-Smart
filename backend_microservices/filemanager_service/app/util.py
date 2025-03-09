@@ -4,8 +4,10 @@ from sqlalchemy import text
 
 from filemanager_service.app.database.session import get_db, Base
 from filemanager_service.app.database.model import File # required for table creation
+from filemanager_service.app import STORAGE_DIR
 
 def init(restart: bool = False):
+    os.makedirs(os.path.dirname(STORAGE_DIR), exist_ok=True)
     gen = get_db()
     db = next(gen)
 
