@@ -17,6 +17,10 @@ declare -A services=(
 # Base directory where the services are located
 BASE_DIR="/home/bil/edux/backend_microservices"
 
+# Track successful starts
+success_count=0
+total_services=${#services[@]}
+
 # Start each service
 for service in "${!services[@]}"; do
     port=${services[$service]}
@@ -24,12 +28,23 @@ for service in "${!services[@]}"; do
     
     if [ -d "$service_path" ]; then
         cd "$service_path" || exit
-        nohup uvicorn main:app --reload --host 127.0.0.1 --port "$port" > "$BASE_DIR/$service.log" 2>&1 &
-        echo "$service started on port $port (logging to $BASE_DIR/$service/run.log)"
+        nohup uvicorn main:app --reload --host 127.0.0.1 --port "$port" > "$BASE_DIR/logs/$service.log" 2>&1 &
+        last_pid=$!
+        
+        # Check if process started successfully
+        if ps -p $last_pid > /dev/null; then
+            ((success_count++))
+        else
+            echo "WARNING: Failed to start $service on port $port!"
+        fi
     else
-        echo "Error: Directory $service_path not found!"
+        echo "ERROR: Directory $service_path not found!"
     fi
 done
 
-echo "All services started successfully!"
-
+# Print summary based on success
+if [ $success_count -eq $total_services ]; then
+    echo "All services started successfully!"
+else
+    echo "WARNING: Started $success_count out of $total_services services."
+fi

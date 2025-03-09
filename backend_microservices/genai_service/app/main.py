@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from router import router
+from genai_service.app.api.private import router as private_router
 
 # create the FastAPI app
 app = FastAPI()
@@ -16,6 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api")
+app.include_router(private_router, prefix="/api")
 
 print("FastAPI GenAI service started successfully")

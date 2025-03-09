@@ -3,12 +3,31 @@ import asyncio
 import tempfile
 import os, json, base64
 import uuid
+from sqlalchemy import text
 
 from fastapi import HTTPException, UploadFile
 
 from chat_service.app.model import ChatHistory, ChatFile
 from chat_service.app.clients import filemanager, course, genai
+from chat_service.app.database.session import get_db, Base
 from chat_service.app.database.dbmanager import ChatDB
+
+
+def init(restart: bool = False):
+    gen = get_db()
+    db = next(gen)
+
+    try:
+        if restart:
+            print("Dropping tables...")
+            db.execute(text("DROP TABLE IF EXISTS chats;"))
+            
+        print("Creating tables...")
+        Base.metadata.create_all(bind=db.bind)
+        
+    finally:
+        gen.close() # closes the session
+
 
 async def convert_pptx_to_pdf(pptx_content: bytes) -> bytes:
     """

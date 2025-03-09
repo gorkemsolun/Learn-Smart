@@ -650,163 +650,163 @@ async def get_slide(page_id: int,
 
 
 
-@router.get("/{chat_id}")
-async def get_chat(chat_id: int, 
-                   current_user: dict = Depends(auth.get_current_user),
-                   db: Session = Depends(get_db)):    
-    """
-    Get the details of a specific chat by its ID.
+# @router.get("/{chat_id}")
+# async def get_chat(chat_id: int, 
+#                    current_user: dict = Depends(auth.get_current_user),
+#                    db: Session = Depends(get_db)):    
+#     """
+#     Get the details of a specific chat by its ID.
 
-    Args:
-        chat_id (int): The ID of the chat to retrieve.
+#     Args:
+#         chat_id (int): The ID of the chat to retrieve.
 
-    Returns:
-        dict: A dictionary containing the chat details, including history or slides.
-        If the chat history is not in slides-mode, the entire chat history is returned in the dict.
-        Otherwise, the slides information are returned in the dict.
+#     Returns:
+#         dict: A dictionary containing the chat details, including history or slides.
+#         If the chat history is not in slides-mode, the entire chat history is returned in the dict.
+#         Otherwise, the slides information are returned in the dict.
 
-    Raises:
-        HTTPException: If the chat is not found or the user is not authorized to access the chat.
-    """
-    chat, course = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+#     Raises:
+#         HTTPException: If the chat is not found or the user is not authorized to access the chat.
+#     """
+#     chat, course = get_authorized_chat_and_course(chat_id, current_user["user_id"])
     
-    if not chat["slides_mode"]:
-        # TODO: gRPC call from FileManager service
-        messages = get_formatted_history(chat_history_path, metadata_path)
-        chat["course_name"] = course["course_name"]
-        chat["history"] = messages
-        return chat
+#     if not chat["slides_mode"]:
+#         # TODO: gRPC call from FileManager service
+#         messages = get_formatted_history(chat_history_path, metadata_path)
+#         chat["course_name"] = course["course_name"]
+#         chat["history"] = messages
+#         return chat
     
-    slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
-    if not slides: # this should never happen in a slides-mode chat
-        raise HTTPException(status_code=404, detail="Slides not found.")
+#     slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
+#     if not slides: # this should never happen in a slides-mode chat
+#         raise HTTPException(status_code=404, detail="Slides not found.")
     
-    for slide in slides:
-        slide.pop("chat_id")
-        slide.pop("slides_file_url")
+#     for slide in slides:
+#         slide.pop("chat_id")
+#         slide.pop("slides_file_url")
 
-    chat["slides"] = slides
-    return chat
+#     chat["slides"] = slides
+#     return chat
 
 
-@router.post("/{chat_id}/create_quiz")
-async def create_quiz(chat_id: int, 
-                      current_user: dict = Depends(auth.get_current_user),
-                      db: Session = Depends(get_db)):
-    # TODO: convert this to gRPC call
-    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
-    if chat["slides_mode"]:
-        slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
-        slide_ids = [slide["slide_id"] for slide in slides]
+# @router.post("/{chat_id}/create_quiz")
+# async def create_quiz(chat_id: int, 
+#                       current_user: dict = Depends(auth.get_current_user),
+#                       db: Session = Depends(get_db)):
+#     # TODO: convert this to gRPC call
+#     chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+#     if chat["slides_mode"]:
+#         slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
+#         slide_ids = [slide["slide_id"] for slide in slides]
 
-        # TODO: FileManager service
-        history_paths = [glob.glob(get_slide_history_path(slide_id, "*")) for slide_id in slide_ids]
-        history_paths = list(itertools.chain(*history_paths))
-        history_paths = sorted(history_paths)
+#         # TODO: FileManager service
+#         history_paths = [glob.glob(get_slide_history_path(slide_id, "*")) for slide_id in slide_ids]
+#         history_paths = list(itertools.chain(*history_paths))
+#         history_paths = sorted(history_paths)
         
-        if len(history_paths) == 0:
-            raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-        history = []
-        for history_path in history_paths:
-            with open(history_path, "r") as file:
-                history.extend(jsonpickle.decode(file.read()))
-    else:
-        history_url = get_chat_history_path(chat_id)
-        if not os.path.exists(history_url):
-            raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-        with open(history_url, "r") as file:
-            history = jsonpickle.decode(file.read())
+#         if len(history_paths) == 0:
+#             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
+#         history = []
+#         for history_path in history_paths:
+#             with open(history_path, "r") as file:
+#                 history.extend(jsonpickle.decode(file.read()))
+#     else:
+#         history_url = get_chat_history_path(chat_id)
+#         if not os.path.exists(history_url):
+#             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
+#         with open(history_url, "r") as file:
+#             history = jsonpickle.decode(file.read())
 
-    # TODO: LLM service
-    model = genai.GenerativeModel(
-        MODEL_VERSION, system_instruction=SYSTEM_PROMPT, 
-        generation_config={"response_mime_type": "application/json"}
-    ).start_chat(history=history)
+#     # TODO: LLM service
+#     model = genai.GenerativeModel(
+#         MODEL_VERSION, system_instruction=SYSTEM_PROMPT, 
+#         generation_config={"response_mime_type": "application/json"}
+#     ).start_chat(history=history)
 
-    # TODO: the weird thing is, model only generates quizzes for the last slide set it explained unless prompted explicitly 
-    # we need extra prompt engineering
-    # TODO: FileManager service & LLM service
-    response = model.send_message([QUIZZES_PROMPT])
-    response_dict = json.loads(response.text)
-    if not response_dict["success"]:
-        raise HTTPException(status_code=500, detail="Failed to generate quiz.")
+#     # TODO: the weird thing is, model only generates quizzes for the last slide set it explained unless prompted explicitly 
+#     # we need extra prompt engineering
+#     # TODO: FileManager service & LLM service
+#     response = model.send_message([QUIZZES_PROMPT])
+#     response_dict = json.loads(response.text)
+#     if not response_dict["success"]:
+#         raise HTTPException(status_code=500, detail="Failed to generate quiz.")
     
-    data = response_dict["data"]
-    if not validate_llm_quiz_response(data):
-        raise HTTPException(status_code=500, detail="An error occurred while generating the quiz.")
+#     data = response_dict["data"]
+#     if not validate_llm_quiz_response(data):
+#         raise HTTPException(status_code=500, detail="An error occurred while generating the quiz.")
 
-    quizzes_base_path = get_quizzes_folder_path(chat_id)
-    os.makedirs(quizzes_base_path, exist_ok=True)
+#     quizzes_base_path = get_quizzes_folder_path(chat_id)
+#     os.makedirs(quizzes_base_path, exist_ok=True)
 
-    quiz_file_name = f"{generate_hash("", strategy='timestamp', human_readable=True)}.json"
-    quiz_file_path = os.path.join(quizzes_base_path, quiz_file_name)
+#     quiz_file_name = f"{generate_hash("", strategy='timestamp', human_readable=True)}.json"
+#     quiz_file_path = os.path.join(quizzes_base_path, quiz_file_name)
 
-    with open(quiz_file_path, 'w') as file:
-        json.dump(data, file, indent=4)
+#     with open(quiz_file_path, 'w') as file:
+#         json.dump(data, file, indent=4)
         
-    return {"filename": splitext(quiz_file_name)[0], "quiz": data}
+#     return {"filename": splitext(quiz_file_name)[0], "quiz": data}
 
 
-@router.post("/{chat_id}/create_flashcards")
-async def create_flashcards(chat_id: int, 
-                            current_user: dict = Depends(auth.get_current_user),
-                            db: Session = Depends(get_db)):
-    # TODO: convert this to gRPC call
-    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
-    if chat["slides_mode"]:
-        slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
-        slide_ids = [slide["slide_id"] for slide in slides]
+# @router.post("/{chat_id}/create_flashcards")
+# async def create_flashcards(chat_id: int, 
+#                             current_user: dict = Depends(auth.get_current_user),
+#                             db: Session = Depends(get_db)):
+#     # TODO: convert this to gRPC call
+#     chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+#     if chat["slides_mode"]:
+#         slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
+#         slide_ids = [slide["slide_id"] for slide in slides]
 
-        # TODO: FileManager service
-        history_paths = [glob.glob(get_slide_history_path(slide_id, "*")) for slide_id in slide_ids]
-        history_paths = list(itertools.chain(*history_paths))
-        history_paths = sorted(history_paths)
+#         # TODO: FileManager service
+#         history_paths = [glob.glob(get_slide_history_path(slide_id, "*")) for slide_id in slide_ids]
+#         history_paths = list(itertools.chain(*history_paths))
+#         history_paths = sorted(history_paths)
         
-        if len(history_paths) == 0:
-            raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
+#         if len(history_paths) == 0:
+#             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
         
-        history = []
-        for history_path in history_paths:
-            with open(history_path, "r") as file:
-                history.extend(jsonpickle.decode(file.read()))
-    else:
-        history_url = get_chat_history_path(chat_id)
-        if not os.path.exists(history_url):
-            raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-        with open(history_url, "r") as file:
-            history = jsonpickle.decode(file.read())
+#         history = []
+#         for history_path in history_paths:
+#             with open(history_path, "r") as file:
+#                 history.extend(jsonpickle.decode(file.read()))
+#     else:
+#         history_url = get_chat_history_path(chat_id)
+#         if not os.path.exists(history_url):
+#             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
+#         with open(history_url, "r") as file:
+#             history = jsonpickle.decode(file.read())
 
-    # TODO: LLM service
-    chat_model = genai.GenerativeModel(
-        MODEL_VERSION, system_instruction=SYSTEM_PROMPT, 
-        generation_config={"response_mime_type": "application/json"}
-    ).start_chat(history=history)
+#     # TODO: LLM service
+#     chat_model = genai.GenerativeModel(
+#         MODEL_VERSION, system_instruction=SYSTEM_PROMPT, 
+#         generation_config={"response_mime_type": "application/json"}
+#     ).start_chat(history=history)
 
-    # TODO: the weird thing is, model only generates quizzes for the last slide set it explained unless prompted explicitly 
-    # we need extra prompt engineering
-    # TODO: FileManager service & LLM service
-    response = chat_model.send_message(FLASHCARD_PROMPT)
-    response_dict = json.loads(response.text)
-    if not response_dict["success"]:
-        raise HTTPException(status_code=500, detail="Failed to generate flashcards.")
+#     # TODO: the weird thing is, model only generates quizzes for the last slide set it explained unless prompted explicitly 
+#     # we need extra prompt engineering
+#     # TODO: FileManager service & LLM service
+#     response = chat_model.send_message(FLASHCARD_PROMPT)
+#     response_dict = json.loads(response.text)
+#     if not response_dict["success"]:
+#         raise HTTPException(status_code=500, detail="Failed to generate flashcards.")
     
-    data = response_dict["data"]
+#     data = response_dict["data"]
 
-    flashcards = [item["topic"] for item in data]
-    explanations = [item["explanation"] for item in data]
+#     flashcards = [item["topic"] for item in data]
+#     explanations = [item["explanation"] for item in data]
 
-    flashcards_base_path = get_flashcards_folder_path(chat_id)
-    os.makedirs(flashcards_base_path, exist_ok=True)
-    flashcards_file_name = f"{generate_hash("", strategy='timestamp', human_readable=True)}.json"
+#     flashcards_base_path = get_flashcards_folder_path(chat_id)
+#     os.makedirs(flashcards_base_path, exist_ok=True)
+#     flashcards_file_name = f"{generate_hash("", strategy='timestamp', human_readable=True)}.json"
 
-    flashcards_file_path = os.path.join(flashcards_base_path, flashcards_file_name)
+#     flashcards_file_path = os.path.join(flashcards_base_path, flashcards_file_name)
 
-    combined_data = {
-        "flashcards": flashcards,
-        "explanations": explanations
-    }
+#     combined_data = {
+#         "flashcards": flashcards,
+#         "explanations": explanations
+#     }
 
-    with open(flashcards_file_path, "w") as file:
-        json.dump(combined_data, file, indent=4)
+#     with open(flashcards_file_path, "w") as file:
+#         json.dump(combined_data, file, indent=4)
 
-    return {"combined_data": combined_data}
+#     return {"combined_data": combined_data}

@@ -1,8 +1,6 @@
 from typing import Literal, List
 import json, pymupdf
 
-from chat_service.app.util import encode_base64
-
 class ChatFile:
     mimetype: str = None  # MIME type of the file
     raw_data: bytes = None  # file data
@@ -60,6 +58,7 @@ class ChatHistory:
 
 
     def openai(self):
+        from chat_service.app.util import encode_base64
         """
         Convert the generic chat history into OpenAI API format.
         """
@@ -101,6 +100,7 @@ class ChatHistory:
 
 
     def anthropic(self):
+        from chat_service.app.util import encode_base64
         """
         Convert the generic chat history into Anthropic API format.
         """
@@ -143,6 +143,7 @@ class ChatHistory:
     
 
     def google(self):
+        from chat_service.app.util import encode_base64
         """
         Convert the generic chat history into Google API format.
         """
