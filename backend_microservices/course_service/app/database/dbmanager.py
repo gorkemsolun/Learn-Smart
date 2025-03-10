@@ -32,7 +32,7 @@ class CourseDB:
         Raises:
             ValueError: If a course with the provided name already exists for the user.
         """
-        course = CourseDB.fetch(course_code=course_code, user_id=user_id)
+        course = CourseDB.fetch(db, course_code=course_code, user_id=user_id)
         if course:
             raise ValueError(f"Course {course_code} already exists for user {user_id}")
 

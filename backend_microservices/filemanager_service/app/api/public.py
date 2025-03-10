@@ -1,23 +1,23 @@
 import os, io
 from typing import List
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse
 
-from filemanager_service.app.security.auth import verify_api_key
+from filemanager_service.app.clients import user
 from filemanager_service.app.database.session import get_db
 from filemanager_service.app.database.dbmanager import FileDB
-import filemanager_service.app.util as util
+from filemanager_service.app import util
 from filemanager_service.app import STORAGE_DIR
 
 router = APIRouter(
-    prefix="/private", 
-    tags=["File Management - Private API"],
-    dependencies=[Depends(verify_api_key)]
+    prefix="/public", 
+    tags=["File Management - Public API"],
 )
 
 @router.post("/")
 def upload_file(user_id: int,
                 file: UploadFile = File(...), 
+                current_user = Depends(user.get_current_user),
                 db = Depends(get_db)):
     """
     Upload a file to the server.
@@ -38,6 +38,7 @@ def upload_file(user_id: int,
 @router.post("/batch")
 def batch_upload_files(user_id: int,
                        files: List[UploadFile] = File(...),
+                       current_user = Depends(user.get_current_user),
                        db = Depends(get_db)):
     """
     Upload multiple files to the server.
@@ -55,16 +56,18 @@ def batch_upload_files(user_id: int,
     return util.batch_upload_files(db, user_id, files)
 
 
-@router.get("/")
-def download_file(file_id: int, db = Depends(get_db)):
+@router.get("/{file_id}")
+def get_file_url(file_id: int, 
+                 current_user = Depends(user.get_current_user), 
+                 db = Depends(get_db)):
     """
-    Retrieve a file by its ID.
+    Retrieve the URL of a file by its ID.
 
     Args:
         file_id (int): The ID of the file to retrieve.
 
     Returns:
-        FileResponse: The response model containing the file's information.
+        dict: A dictionary with the file's URL.
 
     Raises:
         HTTPException: If the file is not found.
@@ -73,19 +76,59 @@ def download_file(file_id: int, db = Depends(get_db)):
     if not file_db:
         raise HTTPException(status_code=404, detail="File not found")
     
-    fid = file_db["file_id"]
-    file_path = os.path.join(STORAGE_DIR, str(fid))
+    if current_user["user_id"] != file_db["user_id"]:
+        raise HTTPException(status_code=403, detail="Unauthorized to access file")
+
+    return {"file_url": f"http://localhost:8004/files/{str(file_id)}"}
+
+
+# @router.get("/")
+# def download_file(file_id: int, db = Depends(get_db)):
+#     """
+#     Retrieve a file by its ID.
+
+#     Args:
+#         file_id (int): The ID of the file to retrieve.
+
+#     Returns:
+#         FileResponse: The response model containing the file's information.
+
+#     Raises:
+#         HTTPException: If the file is not found.
+#     """
+#     file_db = FileDB.fetch(db, file_id=file_id)
+#     if not file_db:
+#         raise HTTPException(status_code=404, detail="File not found")
     
-    if os.path.exists(file_path):
-        return StreamingResponse(
-            open(file_path, "rb"),
-            media_type=file_db["mime_type"],
-            headers={"Content-Disposition": f"attachment; filename={file_db['file_name']}"}
-        )
+#     fid = file_db["file_id"]
+#     file_path = os.path.join(STORAGE_DIR, str(fid))
+
+#     return FileResponse(
+#         file_path, 
+#         media_type=file_db["mime_type"], 
+#         filename=os.path.basename(file_path)
+#     )
+
+    
+    
+#     if os.path.exists(file_path):
+#         # return base64 encoded file
+#         with open(file_path, "rb") as file:
+#             file_content = file.read()
+
+#         return {
+#             "file_name": file_db["file_name"],
+#             "mime_type": file_db["mime_type"],
+#             "file_content": util.encode_base64(file_content)
+#         }
+#     else:
+#         raise HTTPException(status_code=404, detail="File not found")
 
 
 @router.delete("/")
-def delete_file(file_id: int, db = Depends(get_db)):
+def delete_file(file_id: int, 
+                current_user = Depends(user.get_current_user),
+                db = Depends(get_db)):
     """
     Delete a file by its ID from local storage.
 
@@ -102,7 +145,9 @@ def delete_file(file_id: int, db = Depends(get_db)):
 
 
 @router.delete("/batch")
-def batch_delete_files(file_ids: List[int], db = Depends(get_db)):
+def batch_delete_files(file_ids: List[int], 
+                       current_user = Depends(user.get_current_user),
+                       db = Depends(get_db)):
     """
     Delete multiple files by their IDs from local storage.
 

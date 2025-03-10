@@ -101,3 +101,5 @@ wheels/
 
 *.bat
 *.log
+
+backend_microservices/filemanager_service/app/files/

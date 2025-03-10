@@ -101,7 +101,7 @@ async def create_course(course_name: str = Form(...),
         
         if course_study_plan_fid:
             await filemanager.delete(course_study_plan_fid)
-
+        
         raise HTTPException(status_code=500, detail="Unknown error occurred while creating the course.")
     
 

@@ -1,7 +1,7 @@
 import httpx
 from fastapi import HTTPException, Header
 
-from course_service.app.clients import USER_SERVICE_URL
+from filemanager_service.app.clients import USER_SERVICE_URL
 
 async def get_current_user(authorization: str = Header(None)):
     """

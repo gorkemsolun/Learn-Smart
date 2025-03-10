@@ -15,8 +15,8 @@ export interface Course {
   course_name: string;
   course_code: string;
   course_description: string;
-  course_icon_url?: string;
-  course_syllabus_url?: string;
+  course_icon_fid?: string;
+  course_syllabus_fid?: string;
   course_syllabus?: File;
   course_icon?: File;
 }

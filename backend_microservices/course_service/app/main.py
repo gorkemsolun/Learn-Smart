@@ -20,7 +20,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(public_router, prefix="/api")
 app.include_router(private_router, prefix="/api")
 

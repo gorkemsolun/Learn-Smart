@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
-import { backend, backendAPI } from "@/environment/backend_api";
+import { backend, courseService, backendAPI, filemanagerService} from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { FileIcon, FileTextIcon, ImageIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
@@ -26,8 +26,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
-  const [disableSubmitButton, setDisableSubmitButton] =
-    useState<boolean>(false);
+  const [disableSubmitButton, setDisableSubmitButton] = useState<boolean>(false);
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const [originalCourseData, setOriginalCourseData] = useState<Course>();
 
@@ -56,8 +55,8 @@ export function CourseDialogModal(props: CourseDialogProps) {
         course_name = "",
         course_code = "",
         course_description = "",
-        course_syllabus_url = "",
-        course_icon_url = "",
+        course_syllabus_fid = "",
+        course_icon_fid = "",
       }: Course = props.course as Course;
 
       setCourseName(course_name);
@@ -72,9 +71,9 @@ export function CourseDialogModal(props: CourseDialogProps) {
         course_icon: undefined,
       });
 
-      if (course_syllabus_url) {
+      if (course_syllabus_fid) {
         const syllabusResponse = await fetch(
-          `${backend.getUri()}/${course_syllabus_url}`
+          `${backend.getUri()}/${course_syllabus_fid}`
         );
         const syllabusBlob = await syllabusResponse.blob();
         const syllabusType = syllabusBlob.type;
@@ -94,10 +93,15 @@ export function CourseDialogModal(props: CourseDialogProps) {
         }));
       }
 
-      if (course_icon_url) {
-        const iconResponse = await fetch(
-          `${backend.getUri()}/${course_icon_url}`
-        );
+      if (course_icon_fid) {
+        const response = await filemanagerService.get(`/${course_icon_fid}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const icon_url = response.data.file_url;
+        
+        const iconResponse = await fetch(icon_url);
         const iconBlob = await iconResponse.blob();
         setOriginalCourseData((prev) => ({
           ...prev,
@@ -113,7 +117,13 @@ export function CourseDialogModal(props: CourseDialogProps) {
           type: iconType,
         });
         setIcon(iconFile);
-        setOriginalCourseData((prev) => ({ ...prev, icon: iconFile }));
+        setOriginalCourseData((prev) => ({
+          ...prev,
+          course_name: prev?.course_name || "",
+          course_code: prev?.course_code || "",
+          course_description: prev?.course_description || "",
+          course_icon: iconFile,
+        }));
       }
       setOriginalCourseData((prev) => ({
         ...prev,
@@ -261,8 +271,8 @@ export function CourseDialogModal(props: CourseDialogProps) {
         });
     } else {
       // Send the form data to the backend
-      await backendAPI
-        .post(`/course/create`, formData, {
+      await courseService
+        .post(`/create`, formData, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,

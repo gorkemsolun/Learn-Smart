@@ -17,7 +17,7 @@ async def upload(file: UploadFile, user_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                FILEMANAGER_SERVICE_URL,
+                f"{FILEMANAGER_SERVICE_URL}/private/",
                 params={"user_id": user_id},
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY},
                 files={
@@ -30,10 +30,11 @@ async def upload(file: UploadFile, user_id: int):
         return int(file_id)
     
     except httpx.RequestError as e:
-        raise HTTPException(
+        """ raise HTTPException(
             status_code=500,
             detail=f"FileManager service error: {str(e)}"
-        )
+        ) """
+        raise e
 
 
 async def delete(file_id: int):

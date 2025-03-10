@@ -23,6 +23,10 @@ export const courseService = axios.create({
   baseURL: "http://127.0.0.1:8003/api/public"
 });
 
+export const filemanagerService = axios.create({
+  baseURL: "http://127.0.0.1:8004/api/public"
+});
+
 export const userService = axios.create({
   baseURL: "http://127.0.0.1:8007/api/public"
 });
