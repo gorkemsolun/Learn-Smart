@@ -36,8 +36,10 @@ async def get_user(nickname=None, email=None, user_id=None):
         user = response.json()
         return user
     
-    except httpx.RequestError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"User service error: {str(e)}"
-        )
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            return None
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error occurred while authenticating user: {str(e)}")
