@@ -184,7 +184,7 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         course_name=course_name, course_code=course_code, course_description=course_description
     ) # pydantic input validation
 
-    course = CourseDB.fetch(course_id=course_id)
+    course = CourseDB.fetch(db, course_id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
     if course["user_id"] != current_user["user_id"]:

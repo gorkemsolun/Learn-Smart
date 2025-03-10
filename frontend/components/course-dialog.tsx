@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
-import { backend, courseService, backendAPI, filemanagerService} from "@/environment/backend_api";
+import { courseService, filemanagerService} from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { FileIcon, FileTextIcon, ImageIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
@@ -29,6 +29,8 @@ export function CourseDialogModal(props: CourseDialogProps) {
   const [disableSubmitButton, setDisableSubmitButton] = useState<boolean>(false);
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const [originalCourseData, setOriginalCourseData] = useState<Course>();
+  const [syllabusUpdated, setSyllabusUpdated] = useState<boolean>(false);
+  const [iconUpdated, setIconUpdated] = useState<boolean>(false);
 
   const { toast } = useToast();
 
@@ -78,13 +80,13 @@ export function CourseDialogModal(props: CourseDialogProps) {
           },
         });
         const syllabus_url = response.data.file_url;
+        const syllabus_filename = response.data.file_name;
         const syllabusResponse = await fetch(syllabus_url);
         const syllabusBlob = await syllabusResponse.blob();
         const syllabusType = syllabusBlob.type;
-        const syllabusExtension = syllabusType.split("/")[1];
         const syllabusFile = new File(
           [syllabusBlob],
-          `syllabus.${syllabusExtension}`,
+          syllabus_filename,
           { type: syllabusType }
         );
         setSyllabus(syllabusFile);
@@ -157,6 +159,16 @@ export function CourseDialogModal(props: CourseDialogProps) {
     setter: React.Dispatch<React.SetStateAction<File | null>>,
     fileType: string
   ) {
+    if (fileType === "document") {
+      setSyllabusUpdated(true);
+    }
+    else if (fileType === "image") {
+      setIconUpdated(true);
+    }
+    else {
+      console.error("Invalid file type");
+      return;
+    }
     const file = event.target.files && event.target.files[0];
     handleFile(file, setter, fileType);
   }
@@ -225,13 +237,13 @@ export function CourseDialogModal(props: CourseDialogProps) {
 
     if (syllabus) {
       formData.append("course_syllabus_file", syllabus);
-      if (!props.isCreate) {
+      if (!props.isCreate && syllabusUpdated) {
         formData.append("course_update_syllabus", "true");
       }
     }
     if (icon) {
       formData.append("course_icon_file", icon);
-      if (!props.isCreate) {
+      if (!props.isCreate && iconUpdated) {
         formData.append("update_icon", "true");
       }
     }
@@ -249,8 +261,8 @@ export function CourseDialogModal(props: CourseDialogProps) {
     }
 
     if (!props.isCreate) {
-      await backendAPI
-        .put(`/course/${props.course.course_id}`, formData, {
+      await courseService
+        .put(`/${props.course.course_id}`, formData, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
@@ -421,8 +433,8 @@ export function CourseDialogModal(props: CourseDialogProps) {
             >
               <div className="flex flex-col items-center justify-center">
                 {icon ? (
-                  <div className="space-y-4">
-                    {<ImageIcon className="mb-4 size-[6vh]" />}
+                  <div className="mb-4 space-y-4">
+                    {<ImageIcon className="size-[6vh]" />}
                     <p>{icon.name}</p>
                   </div>
                 ) : (

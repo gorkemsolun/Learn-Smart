@@ -57,7 +57,7 @@ def batch_upload_files(user_id: int,
 
 
 @router.get("/{file_id}")
-def get_file_url(file_id: int, 
+def get_file(file_id: int, 
                  current_user = Depends(user.get_current_user), 
                  db = Depends(get_db)):
     """
@@ -79,7 +79,11 @@ def get_file_url(file_id: int,
     if current_user["user_id"] != file_db["user_id"]:
         raise HTTPException(status_code=403, detail="Unauthorized to access file")
 
-    return {"file_url": f"http://localhost:8004/files/{str(file_id)}"}
+    return {
+        "file_url": f"http://localhost:8004/files/{str(file_id)}",
+        "file_name": file_db["file_name"],
+        "mime_type": file_db["mime_type"]
+    }
 
 
 # @router.get("/")
