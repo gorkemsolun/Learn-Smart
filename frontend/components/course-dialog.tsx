@@ -72,9 +72,13 @@ export function CourseDialogModal(props: CourseDialogProps) {
       });
 
       if (course_syllabus_fid) {
-        const syllabusResponse = await fetch(
-          `${backend.getUri()}/${course_syllabus_fid}`
-        );
+        const response = await filemanagerService.get(`/${course_syllabus_fid}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const syllabus_url = response.data.file_url;
+        const syllabusResponse = await fetch(syllabus_url);
         const syllabusBlob = await syllabusResponse.blob();
         const syllabusType = syllabusBlob.type;
         const syllabusExtension = syllabusType.split("/")[1];

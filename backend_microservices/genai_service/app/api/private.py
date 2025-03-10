@@ -55,12 +55,12 @@ async def create_weekly_study_plan(syllabus: UploadFile = Form(...)):
         # system_instruction=... TODO: replace with an actual system prompt
         generation_config={"response_mime_type": "application/json"}
     )
-    syllabus_content = encode_base64(await syllabus.file.read())
+    syllabus_content = encode_base64(syllabus.file.read())
     response = model.generate_content([
         {'mime_type':'application/pdf', 'data': syllabus_content}, 
         WEEKLY_STUDY_PLAN_PROMPT
     ])
-    response_dict = json.loads(response)
+    response_dict = json.loads(response.text)
     return {"success": response_dict["success"], "data": response_dict["data"]}
 
 

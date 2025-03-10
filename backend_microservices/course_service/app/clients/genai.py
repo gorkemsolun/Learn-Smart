@@ -31,12 +31,11 @@ async def create_study_plan(course_syllabus_file: UploadFile):
 
         if not response_dict["success"]:
             raise HTTPException(status_code=500, detail=response_dict["data"])
-        
+            
         return response_dict["data"]
     
     except httpx.RequestError as e:
         raise HTTPException(
             status_code=500,
             detail=f"GenAI service error: {str(e)}"
-        )
-    
+        )    

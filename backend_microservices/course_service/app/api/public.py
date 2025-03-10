@@ -1,8 +1,7 @@
 from typing import Optional
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, File
-import os
-import tempfile
+import io, tempfile
 
 from course_service.app.database.dbmanager import CourseDB
 from course_service.app.database.session import get_db
@@ -75,8 +74,19 @@ async def create_course(course_name: str = Form(...),
                 temp_file.flush()
                 temp_file.seek(0)
 
+                content = temp_file.read()
+    
+                # Create a BytesIO object from the content
+                bytes_io = io.BytesIO(content.encode('utf-8'))
+                
+                # Create an UploadFile object
+                upload_file = UploadFile(
+                    filename=f"study_plan_{current_user['user_id']}.md",
+                    file=bytes_io,
+                )
+
                 course_study_plan_fid = await filemanager.upload(
-                    file=tempfile, user_id=current_user["user_id"]
+                    file=upload_file, user_id=current_user["user_id"]
                 )
 
         course = CourseDB.create(
@@ -86,23 +96,28 @@ async def create_course(course_name: str = Form(...),
             course_study_plan_fid=course_study_plan_fid,
             course_icon_fid=course_icon_fid
         )
-
         return course
     
     except Exception as e:
-        # TODO: We need a different mechanism. For example, if the exception is already caused by filemanager,
-        # then the below .delete() calls will likely fail too. Maybe something like garbage collection in S3 
-        # periodically.
         if course_icon_fid:
-            await filemanager.delete(course_icon_fid)
+            try:
+                await filemanager.delete(course_icon_fid)
+            except:
+                pass
 
         if course_syllabus_fid:
-            await filemanager.delete(course_syllabus_fid)
+            try:
+                await filemanager.delete(course_syllabus_fid)
+            except:
+                pass
         
         if course_study_plan_fid:
-            await filemanager.delete(course_study_plan_fid)
+            try:
+                await filemanager.delete(course_study_plan_fid)
+            except:
+                pass
         
-        raise HTTPException(status_code=500, detail="Unknown error occurred while creating the course.")
+        raise HTTPException(status_code=500, detail=f"Error occured while creating the course: {str(e)}")
     
 
 @router.get("/{course_id}")
@@ -214,8 +229,19 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
             temp_file.flush()
             temp_file.seek(0)
 
+            content = temp_file.read()
+    
+            # Create a BytesIO object from the content
+            bytes_io = io.BytesIO(content.encode('utf-8'))
+            
+            # Create an UploadFile object
+            upload_file = UploadFile(
+                filename=f"study_plan_{current_user['user_id']}.md",
+                file=bytes_io,
+            )
+
             new_study_plan_fid = await filemanager.upload(
-                file=temp_file, user_id=current_user["user_id"]
+                file=upload_file, user_id=current_user["user_id"]
             ) 
 
     try:

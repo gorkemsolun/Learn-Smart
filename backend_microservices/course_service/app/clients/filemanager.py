@@ -50,7 +50,7 @@ async def delete(file_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.delete(
-                FILEMANAGER_SERVICE_URL,
+                f"{FILEMANAGER_SERVICE_URL}/private/",
                 params={"file_id": file_id},
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
             )
@@ -62,4 +62,10 @@ async def delete(file_id: int):
         raise HTTPException(
             status_code=500,
             detail=f"Chat service error: {str(e)}"
+        )
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unknown error occured."
         )
