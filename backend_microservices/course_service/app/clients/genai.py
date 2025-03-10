@@ -24,7 +24,8 @@ async def create_study_plan(course_syllabus_file: UploadFile):
                         course_syllabus_file.file, 
                         course_syllabus_file.content_type
                     )
-                }
+                },
+                timeout=12 # set timeout to 12 seconds to create study plan
             )
         response.raise_for_status()
         response_dict = response.json()
@@ -34,8 +35,9 @@ async def create_study_plan(course_syllabus_file: UploadFile):
             
         return response_dict["data"]
     
-    except httpx.RequestError as e:
+    except httpx.HTTPError as e:
+        raise e
         raise HTTPException(
             status_code=500,
             detail=f"GenAI service error: {str(e)}"
-        )    
+        )

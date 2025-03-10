@@ -99,6 +99,7 @@ async def create_course(course_name: str = Form(...),
         return course
     
     except Exception as e:
+        raise e
         if course_icon_fid:
             try:
                 await filemanager.delete(course_icon_fid)
