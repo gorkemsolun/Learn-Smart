@@ -84,6 +84,7 @@ export interface ConfirmationDialogProps {
 }
 
 export interface CourseCardProps {
+  token: string;
   course: Course;
   onCourseDelete: (courseId: string) => void;
   onCourseUpdate: () => void;

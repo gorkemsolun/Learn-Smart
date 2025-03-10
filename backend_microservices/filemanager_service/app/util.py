@@ -64,11 +64,7 @@ def upload_file(db, user_id: int,
         file_db = FileDB.create(db, user_id, file.filename, file.content_type)
         file_id = file_db["file_id"]
         
-        _, extension = splitext(file.filename)
-
-        # Save file to local storage
-        filename = f"{file_id}.{extension}" if extension else str(file_id)
-        file_path = os.path.join(STORAGE_DIR, filename)
+        file_path = os.path.join(STORAGE_DIR, str(file_id))
         
         # Write file content
         content = file.file.read()

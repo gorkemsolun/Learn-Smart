@@ -1,13 +1,10 @@
-import os, io
 from typing import List
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
-from fastapi.responses import FileResponse
 
 from filemanager_service.app.clients import user
 from filemanager_service.app.database.session import get_db
 from filemanager_service.app.database.dbmanager import FileDB
 from filemanager_service.app import util
-from filemanager_service.app import STORAGE_DIR
 
 router = APIRouter(
     prefix="/public", 

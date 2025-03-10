@@ -6,13 +6,14 @@ import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { CourseDialogModal } from "@/components/course-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardTitle,
 } from "@/components/ui/card";
-import { backend } from "@/environment/backend_api";
+import { backend, filemanagerService } from "@/environment/backend_api";
 import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -22,11 +23,27 @@ import { useState } from "react";
 export function CourseCard(modalParameters: CourseCardProps) {
   const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
-  const courseIconUrl = modalParameters.course.course_icon_url || "";
-  const image_url: string = courseIconUrl
-    ? `${backend.getUri()}/${courseIconUrl}?t=${Date.now()}`
-    : (default_study_logo as string);
+  const [imageUrl, setImageUrl] = useState<string>(default_study_logo as string);
 
+  const token = modalParameters.token;
+  const courseIconFid = modalParameters.course.course_icon_fid;
+
+  useEffect(() => {
+    const fetchImageUrl = async () => {    
+      if (courseIconFid) {
+        // Access the filemanager service endpoint to get the image
+        const response = await filemanagerService.get(`/${courseIconFid}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          }
+        });
+        setImageUrl(response.data.file_url);
+      }
+    };
+    
+    fetchImageUrl();
+  }, [modalParameters.course.course_icon_fid]);
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -52,7 +69,7 @@ export function CourseCard(modalParameters: CourseCardProps) {
             </Badge>
           </div>
           <Image
-              src={image_url}
+              src={imageUrl}
               alt={modalParameters.course.course_name}
               width={250}
               height={250}

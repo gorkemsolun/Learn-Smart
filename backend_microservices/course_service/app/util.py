@@ -50,41 +50,7 @@ def validate_file_extension(filename, valid_extensions: list[str]):
     return (ext in [extension.lower() for extension in valid_extensions]) # whether the extension is in the list
 
 
-# async def resize_image(file: UploadFile, size=(256, 256)) -> UploadFile:
-#     """
-#     Resizes an image to the specified size.
-
-#     Args:
-#         - file (UploadFile): The image file to resize.
-#         - size (tuple): The new size of the image.
-
-#     Returns:
-#         - UploadFile: The resized image file.
-#     """
-#     # Read the file into memory
-#     contents = await file.read()
-    
-#     # Open image with PIL
-#     image = Image.open(io.BytesIO(contents))
-    
-#     # Convert to RGB (to ensure compatibility with JPEG and other formats)
-#     image = image.convert("RGB")
-    
-#     # Resize the image
-#     image = image.resize(size, Image.Resampling.LANCZOS)
-    
-#     # Save to a BytesIO buffer
-#     buffer = io.BytesIO()
-#     image.save(buffer, format="PNG")  # Change format if needed
-#     buffer.seek(0)
-    
-#     # Create a new UploadFile object
-#     new_file = UploadFile(filename=file.filename, file=buffer)
-#     new_file.content_type = "image/png"  # Set to PNG since we're saving as PNG
-
-#     return new_file
-
-async def resize_image(upload_file: UploadFile, size: tuple = (256, 256)) -> UploadFile:
+async def resize_image(upload_file: UploadFile, size: tuple = (512, 256)) -> UploadFile:
     """
     Resizes an image from an UploadFile and returns a new UploadFile with the resized image.
 
