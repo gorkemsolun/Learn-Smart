@@ -99,7 +99,6 @@ async def create_course(course_name: str = Form(...),
         return course
     
     except Exception as e:
-        raise e
         if course_icon_fid:
             try:
                 await filemanager.delete(course_icon_fid)
@@ -190,75 +189,101 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         raise HTTPException(status_code=404, detail="Course not found.")
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden - Not authorized to update this course.")
+    
+    CourseDB.update(
+        db,
+        course_id=course_id, course_name=course_name, course_code=course_code,
+        course_description=course_description, update_description=update_description
+    )
 
+    error, error_message = False, None
     new_icon_fid, new_syllabus_fid, new_study_plan_fid = None, None, None
+
     if update_icon and course_icon_file is None:
-        filemanager.delete(course["course_icon_fid"])  # delete old image
+        try:
+            await filemanager.delete(course["course_icon_fid"])  # delete old image
+        except Exception as e:
+            error = True
+            error_message = str(e)
 
     elif update_icon and course_icon_file:
         if not validate_file_extension(course_icon_file.filename, ["png", "jpg", "jpeg"]):
             raise HTTPException(status_code=400, detail="Invalid image format. Please upload a PNG, JPG, or JPEG file.")
         
-        filemanager.delete(course["course_icon_fid"])  # delete old image
-        course_icon_file = await resize_image(course_icon_file)
-        new_icon_fid = await filemanager.upload(
-            file=course_icon_file, user_id=current_user["user_id"]
-        )
+        try:
+            course_icon_file = await resize_image(course_icon_file)
+            new_icon_fid = await filemanager.upload(
+                file=course_icon_file, user_id=current_user["user_id"]
+            )
+            await filemanager.delete(course["course_icon_fid"])  # delete old image
+        except Exception as e:
+            error = True
+            error_message = str(e)
 
     if course_update_syllabus and course_syllabus_file is None:
-        filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
-        filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
+        try:
+            await filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
+            await filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
+        except Exception as e:
+            error = True
+            error_message = str(e)
         
     elif course_update_syllabus and course_syllabus_file:
         if not validate_file_extension(course_syllabus_file.filename, ["pdf", "docx"]):
             raise HTTPException(status_code=400, detail="Invalid syllabus format. Please upload a PDF or a DOCX file.")
         
-        filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
-        filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
+        try:
+            # send the syllabus to GenAI service for weekly study plan generation
+            study_plan_text = await genai.create_study_plan(course_syllabus_file)
+            with tempfile.NamedTemporaryFile(
+                suffix=".md", mode="w+", encoding="utf-8", delete=True
+            ) as temp_file:
+                temp_file.write(study_plan_text)
+                temp_file.flush()
+                temp_file.seek(0)
 
-        new_syllabus_fid = await filemanager.upload(
-            file=course_syllabus_file, user_id=current_user["user_id"]
-        )
+                content = temp_file.read()
         
-        # send the syllabus to GenAI service for weekly study plan generation
-        study_plan_text = await genai.create_study_plan(course_syllabus_file)
+                # Create a BytesIO object from the content
+                bytes_io = io.BytesIO(content.encode('utf-8'))
+                
+                # Create an UploadFile object
+                upload_file = UploadFile(
+                    filename=f"study_plan_{current_user['user_id']}.md",
+                    file=bytes_io,
+                )
 
-        with tempfile.NamedTemporaryFile(
-            suffix=".md", mode="w+", encoding="utf-8", delete=True
-        ) as temp_file:
-            temp_file.write(study_plan_text)
-            temp_file.flush()
-            temp_file.seek(0)
+                new_study_plan_fid = await filemanager.upload(
+                    file=upload_file, user_id=current_user["user_id"]
+                ) 
 
-            content = temp_file.read()
-    
-            # Create a BytesIO object from the content
-            bytes_io = io.BytesIO(content.encode('utf-8'))
-            
-            # Create an UploadFile object
-            upload_file = UploadFile(
-                filename=f"study_plan_{current_user['user_id']}.md",
-                file=bytes_io,
+            new_syllabus_fid = await filemanager.upload(
+                file=course_syllabus_file, user_id=current_user["user_id"]
             )
+            await filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
+            await filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
+        except Exception as e:
+            error = True
+            error_message = str(e)
+        
+    course = CourseDB.update(
+        db,
+        course_id=course_id, course_name=course_name, course_code=course_code,
+        course_description=(
+            "" if course_description is None and update_description else course_description
+        ),
+        course_icon_fid=new_icon_fid,
+        course_syllabus_fid=new_syllabus_fid,
+        course_study_plan_fid=new_study_plan_fid
+    )
 
-            new_study_plan_fid = await filemanager.upload(
-                file=upload_file, user_id=current_user["user_id"]
-            ) 
-
-    try:
-        course = CourseDB.update(
-            db,
-            course_id=course_id, course_name=course_name, course_code=course_code,
-            course_description=(
-                "" if course_description is None and update_description else course_description
-            ),
-            course_icon_fid=new_icon_fid,
-            course_syllabus_fid=new_syllabus_fid,
-            course_study_plan_fid=new_study_plan_fid
+    if error:
+        raise HTTPException(
+            status_code=500,
+            detail=error_message.split(":")[1].strip() if ":" in error_message else error_message
         )
-        return course
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    
+    return course
 
 
 @router.delete("/{course_id}")

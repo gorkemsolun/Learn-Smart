@@ -29,7 +29,7 @@ You have the following responsibilities:
 
 WEEKLY_STUDY_PLAN_PROMPT = """
 You are given the contents of a file. Analyze the contents to determine if it is a syllabus. 
-If the content does not constitute a syllabus, provide an error message explaining why you cannot generate a week-by-week study plan. 
+If the content does not constitute a syllabus, provide an error message using only a few words, explaining why you cannot generate a week-by-week study plan. 
 If the content is a syllabus, generate a well-structured week-by-week study plan based solely on the provided information. 
 Do not use or infer any data beyond what is given in the file. In cases where the syllabus is ambiguous or lacks detail, create a study plan to the best of your ability using the available information without assuming any specific number of weeks. 
 If the number of weeks is not explicitly mentioned and cannot be inferred, create a general study plan, NOT on a weekly basis. 

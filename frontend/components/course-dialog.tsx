@@ -84,9 +84,10 @@ export function CourseDialogModal(props: CourseDialogProps) {
         const syllabusResponse = await fetch(syllabus_url);
         const syllabusBlob = await syllabusResponse.blob();
         const syllabusType = syllabusBlob.type;
+        const syllabusExtension = syllabus_filename.split(".")[1];
         const syllabusFile = new File(
           [syllabusBlob],
-          syllabus_filename,
+          `syllabus.${syllabusExtension}`,
           { type: syllabusType }
         );
         setSyllabus(syllabusFile);
@@ -106,6 +107,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
           },
         });
         const icon_url = response.data.file_url;
+        const icon_file_name = response.data.file_name;
         
         const iconResponse = await fetch(icon_url);
         const iconBlob = await iconResponse.blob();
@@ -118,7 +120,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
           course_icon: iconFile,
         }));
         const iconType = iconBlob.type;
-        const iconExtension = iconType.split("/")[1];
+        const iconExtension = icon_file_name.split(".").pop();
         const iconFile = new File([iconBlob], `icon.${iconExtension}`, {
           type: iconType,
         });
@@ -273,10 +275,9 @@ export function CourseDialogModal(props: CourseDialogProps) {
           props.onCourseUpdate();
         })
         .catch((error) => {
-          console.log(error.response);
           toast({
             title: "Error",
-            description: "Error creating course" + error,
+            description: "Error updating course: " + error.response.data.detail,
             variant: "destructive",
             action: <ToastAction altText="Try again">Try again</ToastAction>,
           });
