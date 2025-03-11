@@ -158,3 +158,11 @@ export interface SkillTreeEditDialogProps {
   onSkillTreeUpdate: () => void;
   skillTree: SkillTreeCard;
 }
+
+export interface ChatSidebarProps {
+  isOpen: boolean;
+  selectedCourse: Course;
+  toggleSidebar: () => void;
+  activeChat: Chat | null;
+  setActiveChat: React.Dispatch<React.SetStateAction<Chat | null>>;
+}

@@ -3,7 +3,7 @@
 import { CourseCardProps } from "@/app/types";
 import default_study_logo from "@/assets/default_study_logo.png";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
-import { CourseDialogModal } from "@/components/course-dialog";
+import { CourseDialogModal } from "@/components/course/course-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

@@ -2,7 +2,7 @@
 
 import { SkillTreeListProps } from "@/app/types";
 import React from "react";
-import {SkillTreeCard} from "@/components/skill-tree-card";
+import {SkillTreeCard} from "@/components/skill-tree/skill-tree-card";
 
 export default function SkillTreeList({ skillTrees }: SkillTreeListProps = { skillTrees: [] }) {
   const onSkillTreeDelete = (id: string) => {

@@ -19,7 +19,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import SkillTreeList from "@/components/skill-tree-list";
+import SkillTreeList from "@/components/skill-tree/skill-tree-list";
 import { SkillTreeCard } from "@/app/types";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";

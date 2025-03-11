@@ -1,6 +1,6 @@
 "use client";
 
-import CourseDashboard from "@/components/course-dashboard";
+import CourseDashboard from "@/components/course/course-dashboard";
 
 export default function CourseHomePage() {
   return (

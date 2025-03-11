@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus} from "lucide-react";
-import { SkillTreeCreateDialogModal } from "@/components/skill-tree-create-dialog";
+import { SkillTreeCreateDialogModal } from "@/components/skill-tree/skill-tree-create-dialog";
 import { motion } from "framer-motion";
 import {SkillTreeCreateProps} from "@/app/types";
 

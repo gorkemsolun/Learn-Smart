@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { useLoading } from "@/hooks/useLoading"; // Import the custom hook
-import { LoadingSpinner } from "@/components/LoadingSpinner"; // Import the loading spinner
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card } from "@/components/ui/card";
 
 export default function WeeklyStudyPlan() {

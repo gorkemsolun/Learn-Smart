@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { CreateChatSheet } from "./create-chat-sheet";
-import { Sidebar } from "./sidebar";
+import ChatSidebar from "@/components/chat/chat-sidebar";
 
 export default function InstructorPage() {
   const router = useRouter();
@@ -47,7 +47,6 @@ export default function InstructorPage() {
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false); // Delete chat dialog state
 
   const [course, setCourse] = useState<Course>({} as Course);
-  const [courses, setCourses] = useState<Course[]>([]);
   const [chats, setChats] = useState<{chat_id: string, chat_title: string}[]>([]);
 
   const [imgSrc, setImgSrc] = useState<string|undefined>(undefined); // Image source for presentation slide
@@ -67,6 +66,7 @@ export default function InstructorPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [chatIDToDelete, setChatIDToDelete] = useState<string>(""); // Chat ID of the chat being deleted
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -78,13 +78,11 @@ export default function InstructorPage() {
       router.replace("/sign-in");
     }
   }, []);
-  
+
   // initialize course and chats
   useEffect(() => {
     if (token) {
       fetchCourse();
-      fetchAllCourses();
-      fetchAllChats();
     }
   }, [token]);
 
@@ -198,50 +196,6 @@ export default function InstructorPage() {
       });
   };
 
-  const fetchAllCourses = async () => {
-    if (!token) {
-      return;
-    }
-    await backendAPI
-      .get(`/users/me`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => {
-        setCourses(response.data.courses.map((course: {course_id: string, course_name: string, course_code: string}) => ({
-          course_id: course.course_id,
-          course_name: course.course_name,
-          course_code: course.course_code,
-          })
-        ));
-      })
-      .catch((error) => {
-        console.error("Error fetching course:", error);
-      });
-  };
-
-  const fetchAllChats = async () => {
-    if (!token || !courseID) {
-      return;
-    }
-
-    await backendAPI
-      .get(`/course/${courseID}/chats`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => {
-        setChats(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching chats:", error);
-      });
-  };
-
   const fetchChat = (chatID: string) => {
     if (!token || !chatID) {
       return Promise.reject(new Error("Invalid parameters"));
@@ -252,8 +206,8 @@ export default function InstructorPage() {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       },
-    })
-  }
+    });
+  };
 
   const fetchSlide = (chatID: string, slideID: string, pageNumber: number) => {
     if (!token || !chatID || !slideID || pageNumber <= 0) {
@@ -447,7 +401,7 @@ export default function InstructorPage() {
       .catch((error) => {
         console.error("Error renaming chat:", error);
       });
-  }
+  };
 
   const handleChatAction = (action: string, chatID: string, editedTitle?: string) => {
     switch (action) {
@@ -506,18 +460,14 @@ export default function InstructorPage() {
   return (
     <div>
       {/* <Navbar /> TODO: add navbar component, when hovered at the top it should display */}
-      <div className="flex h-screen bg-background">
+      <div className="flex h-screen bg-background overflow-hidden">
         {/* Sidebar */}
-        <Sidebar 
-          courses={courses.map(course => ({ course_id: course.course_id, course_title: course.course_name, course_code: course.course_code }))}
-          chats={chats}
-          selectedCourse={course.course_name}
-          selectedChatId={activeChat.chat_id}
-          isSidebarOpen={isSidebarOpen}
-          handleChatAction={handleChatAction}
-          handleCourseChange={(courseID) => {
-            router.push(`/course/${courseID}/instructor`);
-          }}
+        <ChatSidebar
+          selectedCourse={course}
+          activeChat={activeChat}
+          isOpen={isSidebarOpen}
+          setActiveChat={setActiveChat}
+          toggleSidebar={toggleSidebar}
         />
     
         {/* Main Content */}
