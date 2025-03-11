@@ -37,7 +37,7 @@ async def upload(file: UploadFile, user_id: int):
         raise e
 
 
-async def delete(file_id: int):
+async def delete(file_id: int | str):
     """
     Calls the FileManager service to delete a file.
 

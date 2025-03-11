@@ -203,9 +203,14 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
     error, error_message = False, None
     new_icon_fid, new_syllabus_fid, new_study_plan_fid = None, None, None
 
+    old_icon_id = course["course_icon_fid"]
+    old_syllabus_id = course["course_syllabus_fid"]
+    old_study_plan_id = course["course_study_plan_fid"]
+
     if update_icon and course_icon_file is None:
         try:
-            await filemanager.delete(course["course_icon_fid"])  # delete old image
+            if old_icon_id:
+                await filemanager.delete(course["course_icon_fid"])  # delete old image
         except Exception as e:
             error = True
             error_message = str(e)
@@ -219,15 +224,19 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
             new_icon_fid = await filemanager.upload(
                 file=course_icon_file, user_id=current_user["user_id"]
             )
-            await filemanager.delete(course["course_icon_fid"])  # delete old image
+            if old_icon_id:
+                await filemanager.delete(course["course_icon_fid"])  # delete old image
         except Exception as e:
             error = True
             error_message = str(e)
 
     if course_update_syllabus and course_syllabus_file is None:
         try:
-            await filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
-            await filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
+            if old_syllabus_id:
+                await filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
+            
+            if old_study_plan_id:
+                await filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
         except Exception as e:
             error = True
             error_message = str(e)
@@ -264,8 +273,12 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
             new_syllabus_fid = await filemanager.upload(
                 file=course_syllabus_file, user_id=current_user["user_id"]
             )
-            await filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
-            await filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
+
+            if old_syllabus_id:
+                await filemanager.delete(course["course_syllabus_fid"])
+            
+            if old_study_plan_id:
+                await filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
         except Exception as e:
             error = True
             error_message = str(e)
