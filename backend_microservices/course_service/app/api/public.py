@@ -117,7 +117,11 @@ async def create_course(course_name: str = Form(...),
             except:
                 pass
         
-        raise HTTPException(status_code=500, detail=f"Error occured while creating the course: {str(e)}")
+        error_message = str(e)
+        raise HTTPException(
+            status_code=500,
+            detail=error_message.split(":")[1].strip() if ":" in error_message else error_message
+        )
     
 
 @router.get("/{course_id}")

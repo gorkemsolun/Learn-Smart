@@ -313,11 +313,10 @@ export function CourseDialogModal(props: CourseDialogProps) {
             className: "bg-green-500 text-background",
           });
         })
-        .catch((error) => {
-          console.log(error.response);
+        .catch((error) => { 
           toast({
             title: "Error",
-            description: "Error creating course",
+            description: "Error creating course: " + error.response.data.detail,
             variant: "destructive",
             action: <ToastAction altText="Try again">Try again</ToastAction>,
           });
