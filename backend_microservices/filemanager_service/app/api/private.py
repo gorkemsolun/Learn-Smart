@@ -64,7 +64,7 @@ def download_file(file_id: int, db = Depends(get_db)):
         file_id (int): The ID of the file to retrieve.
 
     Returns:
-        FileResponse: The response model containing the file's information.
+        StreamingResponse: A streaming response with the file data.
 
     Raises:
         HTTPException: If the file is not found.
@@ -76,12 +76,19 @@ def download_file(file_id: int, db = Depends(get_db)):
     fid = file_db["file_id"]
     file_path = os.path.join(STORAGE_DIR, str(fid))
     
-    if os.path.exists(file_path):
-        return StreamingResponse(
-            open(file_path, "rb"),
-            media_type=file_db["mime_type"],
-            headers={"Content-Disposition": f"attachment; filename={file_db['file_name']}"}
-        )
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found in storage")
+    
+    # Use context manager to ensure file is closed properly
+    def iterfile():
+        with open(file_path, "rb") as f:
+            yield from f
+    
+    return StreamingResponse(
+        iterfile(),
+        media_type=file_db["mime_type"],
+        headers={"Content-Disposition": f"attachment; filename={file_db['file_name']}"}
+    )
 
 
 @router.delete("/")

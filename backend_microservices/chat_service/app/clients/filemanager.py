@@ -84,18 +84,12 @@ async def download(file_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                FILEMANAGER_SERVICE_URL,
+                f"{FILEMANAGER_SERVICE_URL}/private/",
                 params={"file_id": file_id},
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
             )
             response.raise_for_status()  # Raise an exception for HTTP errors
-        
-            # Read all content from streaming response
-            content = b""
-            async for chunk in response.aiter_bytes():
-                content += chunk
-            
-            return content
+            return response.content
         
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:

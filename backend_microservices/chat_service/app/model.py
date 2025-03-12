@@ -2,10 +2,6 @@ from typing import Literal, List
 import json, pymupdf
 
 class ChatFile:
-    mimetype: str = None  # MIME type of the file
-    raw_data: bytes = None  # file data
-    fid: int = None  # FID of the file
-
     def __init__(self, mimetype: str, raw_data: bytes, fid: int = None):
         """
         Initialize a File object.
@@ -16,7 +12,7 @@ class ChatFile:
             fid (int): The FID of the file.
         """
         self.mimetype = mimetype
-        self.raw_data = raw_data
+        self.data = raw_data
         self.fid = fid
 
 
@@ -69,14 +65,14 @@ class ChatHistory:
             content = []
             for file in message.files:
                 if file.mimetype.startswith("image/"):
-                    img_b64 = encode_base64(file.raw_data)
+                    img_b64 = encode_base64(file.data)
                     content.append({
                         "type": "image_url", 
                         "image_url": f"data:{file.mimetype};base64,{img_b64}"
                     })
                 elif file.mimetype.startswith("application/pdf"):
                     # convert pdf into set of images, since OpenAI doesn't support pdf files natively
-                    with pymupdf.open(stream=file.raw_data, filetype="pdf") as pdf:
+                    with pymupdf.open(stream=file.data, filetype="pdf") as pdf:
                         for page in pdf:
                             pix = page.get_pixmap()
                             img_b64 = encode_base64(pix.tobytes())
@@ -120,7 +116,7 @@ class ChatHistory:
                 else:
                     raise ValueError(f"Unsupported file type: {file.mimetype}")
 
-                data = encode_base64(file.raw_data)
+                data = encode_base64(file.data)
 
                 file_data.append({
                     "type": type,
@@ -154,7 +150,7 @@ class ChatHistory:
 
             parts = [message.content]
             for file in message.files:
-                data = encode_base64(file.raw_data)
+                data = encode_base64(file.data)
                 parts.append({
                     "file_data": {
                         "mime_type": file.mimetype, 
@@ -170,6 +166,25 @@ class ChatHistory:
         return gemini_history
     
 
+    def format(self):
+        formatted_history = []
+
+        for message in self.messages:
+            if message.role == "developer" or message.role == "edux":
+                continue
+
+            text = message.content
+            file_data = [file.__dict__ for file in message.files]
+
+            formatted_history.append({
+                "role": message.role,
+                "content": text,
+                "files": file_data
+            })
+
+        return formatted_history
+
+    
     @staticmethod
     def from_bytes(file: bytes) -> "ChatHistory":
         """
