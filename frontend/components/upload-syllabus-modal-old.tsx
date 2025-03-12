@@ -96,7 +96,7 @@ export default function UpdateUploadSyllabus({
 
     setLockSubmit(true);
 
-    courseService.put(`/${course_id}`, formData, {
+    await courseService.put(`/${course_id}`, formData, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
