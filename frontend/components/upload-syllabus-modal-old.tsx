@@ -1,5 +1,7 @@
 import { documentMimeTypes } from "@/app/constants";
-import { backendAPI } from "@/environment/backend_api";
+import { courseService } from "@/environment/backend_api";
+import { ToastAction } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import { useEffect, useRef, useState } from "react";
 import { FaFilePdf } from "react-icons/fa";
@@ -19,14 +21,13 @@ export default function UpdateUploadSyllabus({
   course_id,
 }: UpdateUploadSyllabusParameters) {
   const [syllabus, setSyllabus] = useState<File | null>(null);
-  const [syllabusError, setSyllabusError] = useState<string>("");
   const [token, setToken] = useState<string>("");
   const [lockSubmit, setLockSubmit] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { toast } = useToast();
 
   const resetFields = () => {
     setSyllabus(null);
-    setSyllabusError("");
   };
 
   useEffect(() => {
@@ -48,19 +49,27 @@ export default function UpdateUploadSyllabus({
 
       if (!isValidFileType) {
         setSyllabus(null);
-        setSyllabusError("Invalid file type. Allowed types are: PDF, DOCX");
+        toast({
+          title: "Error",
+          description:
+            fileType === "document"
+              ? "Invalid file type. Allowed types are: PDF, DOCX"
+              : "Invalid file type. Allowed types are: JPG, JPEG, PNG",
+          variant: "destructive",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
+        });
         return;
       }
 
       setSyllabus(file);
-      setSyllabusError("");
     } else {
       setSyllabus(null);
-      setSyllabusError(
-        fileType === "document"
-          ? "Invalid file type. Allowed types are: PDF, DOCX"
-          : "Invalid file type. Allowed types are: JPG, JPEG, PNG"
-      );
+      toast({
+        title: "Error",
+        description: "No file selected.",
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
     }
   }
 
@@ -72,7 +81,12 @@ export default function UpdateUploadSyllabus({
     event.preventDefault();
 
     if (!syllabus) {
-      setSyllabusError("Please upload a syllabus file.");
+      toast({
+        title: "Error",
+        description: "Please upload a syllabus file.",
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
       return;
     }
 
@@ -81,21 +95,34 @@ export default function UpdateUploadSyllabus({
     formData.append("course_update_syllabus", "true");
 
     setLockSubmit(true);
-    try {
-      const response = await backendAPI.put(`/course/${course_id}`, formData, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+
+    courseService.put(`/${course_id}`, formData, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    })
+    .then((response) => {
+      toast({
+        title: "Success",
+        description: "Syllabus uploaded successfully.",
+        variant: "default",
       });
-    } catch (error) {
-      setSyllabusError(`An unexpected error occurred. Please try again.`);
-    } finally {
+    })
+    .catch((error) => {
+      toast({
+        title: "Error",
+        description: "Error updating syllabus: " + error.response.data.detail,
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
+    })
+    .finally(() => {
       setLockSubmit(false);
       resetFields();
       onClose();
-    }
+    });
   }
 
   if (!isOpen) {
@@ -171,11 +198,6 @@ export default function UpdateUploadSyllabus({
               title="Upload syllabus"
             />
           </div>
-          {syllabusError && (
-            <p className="text-sm text-red-500 mt-2 text-center">
-              {syllabusError}
-            </p>
-          )}
           <p className="text-sm text-gray-400 mt-2 text-center">
             You can upload your course syllabus to get a personalized weekly
             study plan.
