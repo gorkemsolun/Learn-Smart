@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, Form, Body, UploadFile, HTTPException
 from typing import List
 import json
 
@@ -12,7 +12,6 @@ from genai_service.app import (
     WEEKLY_STUDY_PLAN_PROMPT, QUIZZES_PROMPT, FLASHCARD_PROMPT, GOOGLE_MODEL_VERSION
 )
 
-
 router = APIRouter(
     prefix="/private", 
     tags=["Generative AI - Private API"],
@@ -20,11 +19,7 @@ router = APIRouter(
 )
 
 @router.post("/generate/message")
-async def send_message(
-    history: List[dict] = Form(None),
-    system_prompt: str = Form(None),
-    model: str = Form("google") # google, openai, or anthropic
-    ):
+async def send_message(payload: dict = Body(...)):
     """
     Send a message in a chat and generate a response.
 
@@ -34,11 +29,14 @@ async def send_message(
         model (str): The generative AI model to use.
         current_user (dict): The current user.
     """
+    history = json.loads(payload.get("history", "[]"))
+    system_prompt = payload.get("system_prompt")
+    model = payload.get("model", "google")
 
     client = ChatClient.create(model=model, system_prompt=system_prompt)
     response = client.invoke(history=history)
 
-    return {"status": "success", "response": response}
+    return response
 
 
 @router.post("/generate/weekly_study_plan")

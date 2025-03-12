@@ -1,4 +1,5 @@
 import { HierarchyNode, SimulationNodeDatum } from "d3";
+import { List } from "postcss/lib/list";
 import { ReactNode } from "react";
 
 export interface User {
@@ -22,10 +23,9 @@ export interface Course {
 }
 
 export interface Message {
-  message_id: number;
-  role: "user" | "model";
+  role: "user" | "assistant";
   text: string;
-  media_url?: string | null;
+  media_urls?: string[] | null;
 }
 
 export interface Chat {

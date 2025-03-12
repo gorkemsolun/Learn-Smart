@@ -25,7 +25,7 @@ async def send_message(history: ChatHistory, model: str,
         raise ValueError("Invalid model specified.")
     
     try:
-        form_data = {
+        payload = {
             "history": json.dumps(history_dict), # Convert dict to JSON string
             "system_prompt": system_prompt,
             "model": model
@@ -34,11 +34,15 @@ async def send_message(history: ChatHistory, model: str,
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{GENAI_SERVICE_URL}/private/generate/message",
-                headers={"X-API-Key": GENAI_CLIENT_KEY},
-                data=form_data
+                headers={
+                    "X-API-Key": GENAI_CLIENT_KEY,
+                    "Content-Type": "application/json"
+                    },
+                json=payload,
+                timeout=60
             )
             response.raise_for_status()
-            return response.text
+            return response.json()
             
     except httpx.HTTPError as e:
         raise HTTPException(

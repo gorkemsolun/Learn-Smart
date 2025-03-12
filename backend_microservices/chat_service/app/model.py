@@ -1,5 +1,5 @@
 from typing import Literal, List
-import json, pymupdf
+import json, pymupdf, pickle
 
 class ChatFile:
     def __init__(self, mimetype: str, raw_data: bytes, fid: int = None):
@@ -174,12 +174,12 @@ class ChatHistory:
                 continue
 
             text = message.content
-            file_data = [file.__dict__ for file in message.files]
+            file_data = [file.fid for file in message.files]
 
             formatted_history.append({
                 "role": message.role,
                 "content": text,
-                "files": file_data
+                "fids": file_data
             })
 
         return formatted_history
@@ -195,7 +195,6 @@ class ChatHistory:
             ChatHistory: The loaded ChatHistory object.
         """
         try:
-            json_str = file.decode('utf-8')
-            return json.loads(json_str)
+            return pickle.loads(file)
         except (UnicodeDecodeError, json.JSONDecodeError) as e:
-            raise ValueError(f"Failed to parse JSON data: {str(e)}")
+            raise ValueError(f"Failed to parse chat history: {str(e)}")

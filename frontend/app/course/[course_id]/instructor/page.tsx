@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Menu, ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Course, Chat, Slide, Message } from '@/app/types';
-import { backend, backendAPI } from '@/environment/backend_api';
+import { 
+  backendAPI, chatService, 
+  courseService, userService, filemanagerService
+} from '@/environment/backend_api';
 import ChatInterface from "@/components/chat-interface";
 import {
   ResizableHandle,
@@ -56,7 +59,6 @@ export default function InstructorPage() {
 
   const [activeChat, setActiveChat] = useState<Chat>({} as Chat); // Currently open chat
   const [activeMessages, setActiveMessages] = useState<Message[]>([]); // Messages in the active chat
-  const [lastMessageID, setLastMessageID] = useState(0); // ID of the last message sent in the active chat
 
   const [inputMessage, setInputMessage] = useState(''); // Text field input in the chat
   const [inputFile, setInputFile] = useState<File | null>(null); // File input in the chat
@@ -69,6 +71,7 @@ export default function InstructorPage() {
   const [chatIDToDelete, setChatIDToDelete] = useState<string>(""); // Chat ID of the chat being deleted
 
   // Check if user is authenticated
+  // TODO: use Auth hook instead 
   useEffect(() => {
     const authToken = Cookies.get("authToken");
     if (authToken) {
@@ -111,7 +114,6 @@ export default function InstructorPage() {
                 const history = response.data.history;
                 setImgSrc(`data:image/png;base64,${slideBase64}`);
                 setActiveMessages(history);
-                setLastMessageID(history[history.length - 1].message_id);
               })
               .catch((error) => {
                 console.error("Error fetching slide:", error);
@@ -130,14 +132,28 @@ export default function InstructorPage() {
         const chatID = activeChat.chat_id;
         if (chatID) {
           fetchChat(activeChat.chat_id).
-          then((response) => {
-            const history = response.data.history;
-            setActiveMessages(history);
-            setLastMessageID(history[history.length - 1].message_id);
-          })
-          .catch((error) => {
-            console.error("Error fetching chat messages:", error);
-          });
+            then((response) => {
+              const history = response.data.history;
+
+              // convert fids in the history to urls
+              const historyWithUrls = history.map((message: any) => {
+                const media_urls = message.fids?.map(async (fid: string) => {
+                  const response = await fetchURL(fid);
+                  return response.data.file_url;
+                });
+                return {
+                  text: message.content,
+                  role: message.role,
+                  media_urls: media_urls,
+                };
+              });
+              
+              console.log("Active chat messages:", historyWithUrls);
+              setActiveMessages(historyWithUrls);
+            })
+            .catch((error) => {
+              console.error("Error fetching chat messages:", error);
+            });
         }
       }
     }
@@ -159,7 +175,6 @@ export default function InstructorPage() {
             const history = response.data.history;
             setImgSrc(`data:image/png;base64,${slideBase64}`);
             setActiveMessages(history);
-            setLastMessageID(history[history.length - 1].message_id);
           })
           .catch((error) => {
             console.error("Error fetching slide:", error);
@@ -179,12 +194,25 @@ export default function InstructorPage() {
   }, [activeMessages]);
 
   // functions
+  const fetchURL = (fid: string) => {
+    if (!token || !fid) {
+      return Promise.reject(new Error("Invalid parameters"));
+    }
+  
+    return filemanagerService.get(`/${fid}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
   const fetchCourse = async () => {
     if (!token || !courseID) {
       return;
     }
-    await backendAPI
-      .get(`/course/${courseID}`, {
+    await courseService
+      .get(`/${courseID}`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
@@ -202,8 +230,8 @@ export default function InstructorPage() {
     if (!token) {
       return;
     }
-    await backendAPI
-      .get(`/users/me`, {
+    await userService
+      .get(`/me`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
@@ -227,7 +255,7 @@ export default function InstructorPage() {
       return;
     }
 
-    await backendAPI
+    await chatService
       .get(`/course/${courseID}/chats`, {
         headers: {
           Accept: "application/json",
@@ -247,7 +275,7 @@ export default function InstructorPage() {
       return Promise.reject(new Error("Invalid parameters"));
     }
   
-    return backendAPI.get(`/chat/${chatID}`, {
+    return chatService.get(`/chat/${chatID}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -295,7 +323,6 @@ export default function InstructorPage() {
         setImgSrc(`data:image/png;base64,${slideBase64}`);
         setCurrentSlidePage(currentSlidePage - 1);
         setActiveMessages(history);
-        setLastMessageID(history[history.length - 1].message_id);
       })
       .catch((error) => {
         toast({
@@ -322,7 +349,6 @@ export default function InstructorPage() {
         setImgSrc(`data:image/png;base64,${slideBase64}`);
         setCurrentSlidePage(currentSlidePage + 1);
         setActiveMessages(history);
-        setLastMessageID(history[history.length - 1].message_id);
       })
       .catch((error) => {
         toast({
@@ -339,7 +365,7 @@ export default function InstructorPage() {
   const handleChatSelection = async (chatID: string) => {
     if (!token || !chatID) return;
     console.log("Selected chat:", chatID);
-    await backendAPI
+    await chatService
       .get(`/chat/${chatID}`, {
         headers: {
           Accept: "application/json",
@@ -366,8 +392,7 @@ export default function InstructorPage() {
     const newMessage: Message = {
       text: inputMessage,
       role: "user",
-      message_id: lastMessageID + 1,
-      media_url: inputFile ? URL.createObjectURL(inputFile) : null,
+      media_urls: inputFile ? [URL.createObjectURL(inputFile)] : [],
     };
     setActiveMessages((messages: Message[]) => [...messages, newMessage]);
     setIsLoading(true);
@@ -377,7 +402,7 @@ export default function InstructorPage() {
     ? `/chat/${activeChat.chat_id}/send_message?slide_id=${currentSlide.slide_id}&page_number=${currentSlidePage}`
     : `/chat/${activeChat.chat_id}/send_message`;
 
-    backendAPI
+    chatService
       .post(url, formData, {
         headers: {
           Accept: "application/json",
@@ -386,16 +411,13 @@ export default function InstructorPage() {
         },
       })
       .then((response) => {
+        console.log("Message: ", response.data);
         const modelResponse = {
           text: response.data.text,
           role: response.data.role,
-          media_url: response.data.media_url
-            ? `${backend.getUri()}/${response.data.media_url}`
-            : null,
-          message_id: lastMessageID + 2,
+          media_url: null,
         };
         setActiveMessages((messages) => [...messages, modelResponse]);
-        setLastMessageID(lastMessageID + 2);
       })
       .catch((error) => {
         console.error("Error sending message:", error);
@@ -482,7 +504,6 @@ export default function InstructorPage() {
         if (chatIDToDelete === activeChat.chat_id) {
           setActiveChat({} as Chat);
           setActiveMessages([]);
-          setLastMessageID(0);
           setImgSrc(undefined);
           setCurrentSlidePage(1);
           setCurrentSlide({} as Slide);

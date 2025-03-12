@@ -17,7 +17,7 @@ async def upload(file: UploadFile, user_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                FILEMANAGER_SERVICE_URL,
+                f"{FILEMANAGER_SERVICE_URL}/private/",
                 params={"user_id": user_id},
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY},
                 files={
@@ -52,7 +52,7 @@ async def batch_upload(files: list[UploadFile], user_id: int):
         async with httpx.AsyncClient() as client:
             for file in files:
                 response = await client.post(
-                    FILEMANAGER_SERVICE_URL,
+                    f"{FILEMANAGER_SERVICE_URL}/private/",
                     params={"user_id": user_id},
                     headers={"X-API-Key": FILEMANAGER_CLIENT_KEY},
                     files={
@@ -118,7 +118,7 @@ async def delete(file_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.delete(
-                FILEMANAGER_SERVICE_URL,
+                f"{FILEMANAGER_SERVICE_URL}/private/",
                 params={"file_id": file_id},
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
             )
@@ -146,7 +146,7 @@ async def batch_delete(file_ids: list[int]):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.delete(
-                f"{FILEMANAGER_SERVICE_URL}/batch",
+                f"{FILEMANAGER_SERVICE_URL}/private/batch",
                 params={"file_ids": file_ids},
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
             )

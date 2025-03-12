@@ -89,7 +89,7 @@ async def get_chat_info(chat_id: int,
     Raises:
         HTTPException: If the chat is not found or the user is not authorized to access the chat.
     """
-    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    chat, _ = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
     return chat
 
 
@@ -110,7 +110,7 @@ async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
     Raises:
         HTTPException: If the chat is not found or the user is not authorized to update the chat.
     """
-    chat, crs = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    chat, crs = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
     if not chat["slides_mode"]:
         raise HTTPException(status_code=400, detail="Slides mode is not enabled for this chat.")
 
@@ -169,7 +169,7 @@ async def get_quizzes_of_chat(chat_id: int,
     Raises:
         HTTPException: If the course is not found or the user is not authorized to access the quizzes.
     """
-    get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
     
     quizzes = QuizDB.fetch(db, chat_id=chat_id, all=True)
     return quizzes
@@ -196,7 +196,7 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
         HTTPException: If the file extension is invalid.
 
     """
-    course_dict = course.get_course(course_id)
+    course_dict = await course.get_course(course_id)
     if not course_dict:
         raise HTTPException(status_code=404, detail="Course not found.")
     if course_dict["user_id"] != current_user["user_id"]:
@@ -253,7 +253,6 @@ async def send_message(chat_id: int,
                        files: List[UploadFile] = File(None),
                        model: str = Form("google"),
                        current_user: dict = Depends(user.get_current_user),
-                       authorization: str = Header(None),
                        db: Session = Depends(get_db)):
     """
     Send a message to a chat.
@@ -272,7 +271,7 @@ async def send_message(chat_id: int,
     Returns:
         dict: A dictionary containing the response text and the role of the sender.
     """
-    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    chat, _ = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
     
     # Validate slide/page parameters
     if chat["slides_mode"]:
@@ -284,11 +283,11 @@ async def send_message(chat_id: int,
             raise HTTPException(404, "Slide or page not found.")
         history_fid = page["chat_history_fid"]
         if not history_fid:
-            raise HTTPException(500, "Unknown error occurred.")
+            raise HTTPException(500, "No history file found.")
     else:
         if slide_id is not None:
             raise HTTPException(400, "Slides mode is not enabled for this chat.")
-        history_fid = chat.get("history_fid")
+        history_fid = chat["history_fid"]
 
     # Process message and get updated history
     new_history_fid, response = await handle_chat_message(
@@ -296,22 +295,22 @@ async def send_message(chat_id: int,
         files=files,
         text=text,
         model=model,
-        authorization=authorization,
         user_id=current_user["user_id"]
     )
 
     # Update database records
     if chat["slides_mode"]:
         SlidePageDB.update(page_id=page_id, chat_history_fid=new_history_fid)
-        ChatDB.update(chat_id=chat_id, last_opened_slide_id=slide_id)
+        ChatDB.update(db, chat_id=chat_id, last_opened_slide_id=slide_id)
     else:
         ChatDB.update(
+            db,
             chat_id=chat_id,
             history_fid=new_history_fid,
             last_opened_slide_id=None
         )
 
-    return {"text": response, "role": "model"}
+    return {"text": response, "role": "assistant"}
 
 
 @router.delete("/chat/{chat_id}")
@@ -331,7 +330,7 @@ async def delete_chat(chat_id: int,
         HTTPException: If the chat is not found or the user is not authorized to delete the chat.
     """
 
-    chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    chat, _ = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
 
     fids_to_delete = [] # file IDs to delete
     if chat["slides_mode"]:
@@ -375,14 +374,14 @@ async def delete_all_flashcards(chat_id: int,
         dict: A message indicating all flashcards were successfully deleted.
     """
 
-    get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
     FlashcardDB.delete(db, chat_id=chat_id, all=True)
 
     return {"status": "success", "message": "All flashcards have been successfully deleted."}
 
 
 @router.put("/chat/{chat_id}")
-def update_chat_title(chat_id: int, chat_title: str, 
+async def update_chat_title(chat_id: int, chat_title: str, 
                       current_user: dict = Depends(user.get_current_user),
                       db: Session = Depends(get_db)):
     """
@@ -399,11 +398,11 @@ def update_chat_title(chat_id: int, chat_title: str,
     Raises:
         HTTPException: If the chat is not found or the user is not authorized to update the chat.
     """
-    get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
     return ChatDB.update(db, chat_id=chat_id, chat_title=chat_title)   
 
 
-@router.get("/chat/{page_id}")
+@router.get("/chat/page/{page_id}")
 async def get_slide(page_id: int, 
                     model: str,
                     current_user: dict = Depends(user.get_current_user),
@@ -417,7 +416,7 @@ async def get_slide(page_id: int,
         raise HTTPException(status_code=404, detail="Slide not found.")
     
     chat_id = page_db["chat_id"]
-    get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
 
     slide_id = page_db["slide_id"]
     slide = SlideDB.fetch(db, slide_id=slide_id)
@@ -467,7 +466,7 @@ async def get_chat(chat_id: int,
     Raises:
         HTTPException: If the chat is not found or the user is not authorized to access the chat.
     """
-    chat, course = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+    chat, course = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
     
     if not chat["slides_mode"]:
         history_fid = chat["history_fid"]
@@ -516,7 +515,7 @@ async def get_slide_info(slide_id: int,
     if not slide:
         raise HTTPException(status_code=404, detail="Slide not found.")
     
-    get_authorized_chat_and_course(slide["chat_id"], current_user["user_id"])
+    await get_authorized_chat_and_course(db, slide["chat_id"], current_user["user_id"])
     return slide
 
 # Quiz
@@ -540,7 +539,7 @@ async def get_quiz(quiz_id: int,
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
     
-    get_authorized_chat_and_course(quiz["chat_id"], current_user["user_id"])
+    await get_authorized_chat_and_course(db, quiz["chat_id"], current_user["user_id"])
     
     fid = quiz["quiz_fid"] # file ID of the quiz
 
@@ -572,7 +571,7 @@ async def rename_quiz(quiz_id: int,
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
     
-    get_authorized_chat_and_course(quiz["chat_id"], current_user["user_id"])
+    await get_authorized_chat_and_course(db, quiz["chat_id"], current_user["user_id"])
 
     updated_quiz = QuizDB.update(db, quiz_id=quiz_id, quiz_title=new_title)
     return {"status": "success", "quiz": updated_quiz}
@@ -598,7 +597,7 @@ async def delete_quiz(quiz_id: int,
         if not quiz:
             raise HTTPException(status_code=404, detail="Quiz not found.")
         
-        get_authorized_chat_and_course(quiz["chat_id"], current_user["user_id"])
+        await get_authorized_chat_and_course(db, quiz["chat_id"], current_user["user_id"])
 
         QuizDB.delete(db, quiz_id=quiz_id)
         await filemanager.delete(quiz["quiz_fid"])
@@ -688,57 +687,12 @@ async def rename_flashcard(
 
 
 
-
-
-
-
-
-
-# @router.get("/{chat_id}")
-# async def get_chat(chat_id: int, 
-#                    current_user: dict = Depends(auth.get_current_user),
-#                    db: Session = Depends(get_db)):    
-#     """
-#     Get the details of a specific chat by its ID.
-
-#     Args:
-#         chat_id (int): The ID of the chat to retrieve.
-
-#     Returns:
-#         dict: A dictionary containing the chat details, including history or slides.
-#         If the chat history is not in slides-mode, the entire chat history is returned in the dict.
-#         Otherwise, the slides information are returned in the dict.
-
-#     Raises:
-#         HTTPException: If the chat is not found or the user is not authorized to access the chat.
-#     """
-#     chat, course = get_authorized_chat_and_course(chat_id, current_user["user_id"])
-    
-#     if not chat["slides_mode"]:
-#         # TODO: gRPC call from FileManager service
-#         messages = get_formatted_history(chat_history_path, metadata_path)
-#         chat["course_name"] = course["course_name"]
-#         chat["history"] = messages
-#         return chat
-    
-#     slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
-#     if not slides: # this should never happen in a slides-mode chat
-#         raise HTTPException(status_code=404, detail="Slides not found.")
-    
-#     for slide in slides:
-#         slide.pop("chat_id")
-#         slide.pop("slides_file_url")
-
-#     chat["slides"] = slides
-#     return chat
-
-
 # @router.post("/{chat_id}/create_quiz")
 # async def create_quiz(chat_id: int, 
 #                       current_user: dict = Depends(auth.get_current_user),
 #                       db: Session = Depends(get_db)):
 #     # TODO: convert this to gRPC call
-#     chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+#     chat, _ = await get_authorized_chat_and_course(chat_id, current_user["user_id"])
 #     if chat["slides_mode"]:
 #         slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
 #         slide_ids = [slide["slide_id"] for slide in slides]
@@ -796,7 +750,7 @@ async def rename_flashcard(
 #                             current_user: dict = Depends(auth.get_current_user),
 #                             db: Session = Depends(get_db)):
 #     # TODO: convert this to gRPC call
-#     chat, _ = get_authorized_chat_and_course(chat_id, current_user["user_id"])
+#     chat, _ = await get_authorized_chat_and_course(chat_id, current_user["user_id"])
 #     if chat["slides_mode"]:
 #         slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
 #         slide_ids = [slide["slide_id"] for slide in slides]

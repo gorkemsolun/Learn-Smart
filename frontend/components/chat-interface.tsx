@@ -6,6 +6,7 @@ import { Send, Menu, Paperclip, File, FileText, FileImage, FileAudio, FileVideo 
 import ReactMarkdown from 'react-markdown'
 import { Skeleton } from "./ui/skeleton"
 import { useState, useRef } from 'react'
+import { Message } from '@/app/types'
 
 import { backend } from "@/environment/backend_api"
 import { useAuthRedirect } from "@/hooks/useAuthRedirect"
@@ -95,36 +96,40 @@ export default function ChatInterface({
         </>
       )}
       <ScrollArea className="flex-grow overflow-y-auto mb-4 border border-border rounded-lg p-4">
-        {messages.map((message) => (
+        {messages.map((message: Message, index) => (
           <div 
-            key={message.message_id} 
+            key={index} 
             className={`mb-6 flex flex-col ${
               message.role === 'user' ? 'items-end' : 'items-start'
             }`}
           >
-            {/* Render image outside and aligned with the text */}
-            {message.media_url && message.media_url.match(/\.(jpeg|jpg|gif|png)$/) && (
-              <div className="mb-2">
-                <img 
-                  src={`${message.media_url.includes('blob:') ? message.media_url : `${backend.getUri()}/${message.media_url}`}`} 
-                  alt="Uploaded content" 
-                  className="max-w-xs sm:max-w-sm h-auto rounded-lg"
-                  loading="lazy"
-                />
-              </div>
-            )}
-            {/* Render non-image media (e.g., files) outside the message balloon */}
-            {message.media_url && !message.media_url.match(/\.(jpeg|jpg|gif|png)$/) && (
-              <div className="mb-2 flex items-center space-x-2">
-                {getFileIcon(message.media_url)}
-                <a 
-                  href={`${message.media_url.includes('blob:') ? message.media_url : `${backend.getUri()}/${message.media_url}`}`} 
-                  className="text-blue-500 hover:underline"
-                >
-                  {message.media_url.split('/').pop()}
-                </a>
-              </div>
-            )}
+            {/* Render image files */}
+            {message.media_urls?.map((url, idx) => {
+              const isImage = url.match(/\.(jpeg|jpg|gif|png)$/i);
+              
+              return isImage ? (
+                <div key={idx} className="mb-2">
+                  <img 
+                    src={url}
+                    alt="Uploaded content" 
+                    className="max-w-xs sm:max-w-sm h-auto rounded-lg"
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <div key={idx} className="mb-2 flex items-center space-x-2">
+                  {getFileIcon(url)}
+                  <a 
+                    href={url.startsWith('blob:') ? url : `${backend.getUri()}/api/public/files/${url}`}
+                    className="text-blue-500 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {url.split('/').pop()}
+                  </a>
+                </div>
+              );
+            })}
             {/* Message balloon */}
             <div 
               className={`p-3 rounded-lg ${

@@ -19,7 +19,7 @@ class ChatClientBase:
         self.system_prompt = system_prompt
 
 
-    def invoke(self, history: List[dict] = None, max_tokens: int = 2500,
+    def invoke(self, history: List[dict], max_tokens: int = 2500,
                generation_config = None):
         """
         Send a message to the API and return the response.
@@ -42,7 +42,7 @@ class AnthropicChatClient(ChatClientBase):
         self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
-    def invoke(self, history: List[dict] = None, max_tokens: int = 2500) -> str:
+    def invoke(self, history: List[dict], max_tokens: int = 2500) -> str:
         """
         Send a message to the Anthropic API and return the response.
         Args:
@@ -77,7 +77,7 @@ class OpenAIChatClient(ChatClientBase):
         self.client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 
-    def invoke(self, history: List[dict] = None, max_tokens: int = 2500) -> str:
+    def invoke(self, history: List[dict], max_tokens: int = 2500) -> str:
         """
         Send a message to the OpenAI API and return the response.
         Args:
@@ -110,7 +110,7 @@ class GoogleChatClient(ChatClientBase):
         super().__init__(model, system_prompt)
 
 
-    def invoke(self, history: List[dict] = None, max_tokens: int = 2500,
+    def invoke(self, history: List[dict], max_tokens: int = 2500,
                generation_config = None) -> str:
         """
         Send a message to the Google API and return the response.
@@ -122,15 +122,22 @@ class GoogleChatClient(ChatClientBase):
         Returns:
             - content (str): The response from the API.
         """
+        if not generation_config:
+            generation_config = genai.GenerationConfig(
+                max_output_tokens=max_tokens
+            )
+
         model = genai.GenerativeModel(
             model_name=self.model,
             system_instruction=self.system_prompt,
-            generation_config=generation_config
+            generation_config=generation_config,
         )
-        message = history[-1] # Last message is the user message
+
+        message = history[-1].get("parts")[0] # Last message is the user message
         response = model.start_chat(
             history=history[:-1], # include all messages except the last one
-        ).send_message(message, max_tokens=max_tokens)
+        ).send_message(message)
+
         content = response.text
         return content
 

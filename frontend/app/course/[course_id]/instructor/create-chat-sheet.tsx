@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { Chat } from "@/app/types";
 import FileUpload from "@/components/ui/file-upload";
-import { backendAPI } from "@/environment/backend_api";
+import { chatService } from "@/environment/backend_api";
 import { useParams } from "next/navigation";
 
 interface CreateChatSheetProps {
@@ -42,7 +42,7 @@ export function CreateChatSheet({ isOpen, closeModal, authToken, onChatCreated }
       formData.append("slides", file);
     }
     try {
-      const response = await backendAPI.post(
+      const response = await chatService.post(
         `/chat/create?course_id=${course_id}&chat_title=${chatName}`,
         file ? formData : {}, // Send formData if there's a file, else send an empty object
         {
@@ -75,7 +75,7 @@ export function CreateChatSheet({ isOpen, closeModal, authToken, onChatCreated }
         <SheetHeader>
           <SheetTitle>Create a New Chat</SheetTitle>
           <SheetDescription>
-            Enter a name for your new chat and click create when ready.
+            Enter a name for your new chat and click on create when ready.
           </SheetDescription>
         </SheetHeader>
         <div className="grid gap-4 py-4">

@@ -1,7 +1,7 @@
 from typing import Optional, Tuple, List
 import asyncio
 import tempfile
-import os, json, base64
+import os, base64, pickle
 import uuid
 from sqlalchemy import text
 
@@ -88,7 +88,7 @@ def splitext(filename: str) -> tuple[str, str]:
     return base_name, extension
 
 
-def get_authorized_chat_and_course(chat_id: int, user_id: int) -> tuple[dict, dict]:
+async def get_authorized_chat_and_course(db, chat_id: int, user_id: int) -> tuple[dict, dict]:
     """
     Fetches the chat and course information for the given chat ID and course ID, and verifies the user ID.
 
@@ -102,11 +102,11 @@ def get_authorized_chat_and_course(chat_id: int, user_id: int) -> tuple[dict, di
     Returns:
         tuple: A tuple containing dictionaries of chat and course information.
     """
-    chat = ChatDB.fetch(chat_id=chat_id)
+    chat = ChatDB.fetch(db, chat_id=chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found.")
     
-    course_dict = course.get_course(course_id=chat["course_id"])
+    course_dict = await course.get_course(course_id=chat["course_id"])
     if not course_dict:
         raise HTTPException(status_code=404, detail="Course not found.")
     
@@ -116,7 +116,7 @@ def get_authorized_chat_and_course(chat_id: int, user_id: int) -> tuple[dict, di
     return chat, course_dict
 
 
-async def load_chat_history(history_fid: Optional[str]) -> ChatHistory:
+async def load_chat_history(history_fid=None) -> ChatHistory:
     """
     Loads the chat history from a JSON file.
 
@@ -144,42 +144,23 @@ async def save_chat_history(history: ChatHistory, user_id: int) -> str:
     Returns:
         str: The file ID of the uploaded chat history file.
     """
+    """
+    Saves the chat history using pickle serialization.
+    """
     with tempfile.NamedTemporaryFile(
-        mode='w+', encoding='utf-8', suffix='.json', delete=True
+        mode='w+b', suffix='.pkl', delete=True
     ) as tf:
-        json.dump(history.messages, tf)
+        # Use pickle to serialize the entire object structure
+        pickle.dump(history, tf)
+        tf.flush()
         tf.seek(0)
         
         history_file = UploadFile(
-            filename=f"chat_history_{uuid.uuid4()}.json",
+            filename=f"chat_history_{uuid.uuid4()}.pkl",
             file=tf,
-            content_type="application/json"
         )
         
         return await filemanager.upload(file=history_file, user_id=user_id)
-
-
-async def create_chat_files(
-        files: List[UploadFile], file_ids: List[str]) -> List[ChatFile]:
-    """
-    Create ChatFile objects from a list of UploadFile objects.
-
-    Args:
-        files (List[UploadFile]): The list of UploadFile objects.
-        file_ids (List[str]): The list of file IDs.
-
-    Returns:
-        List[ChatFile]: The list of ChatFile objects.
-    """
-    chat_files = []
-    for file, fid in zip(files, file_ids):
-        await file.seek(0)  # Reset file pointer
-        chat_files.append(ChatFile(
-            mimetype=file.content_type,
-            raw_data=await file.read(),
-            fid=fid
-        ))
-    return chat_files
 
 
 async def handle_chat_message(
@@ -187,7 +168,6 @@ async def handle_chat_message(
     files: List[UploadFile],
     text: str,
     model: str,
-    authorization: str,
     user_id: int
 ) -> Tuple[str, str]:
     """
@@ -208,23 +188,36 @@ async def handle_chat_message(
     history = await load_chat_history(history_fid)
     
     # Handle file uploads and message creation
-    file_ids = filemanager.batch_upload(files=files, user_id=user_id)
-    chat_files = await create_chat_files(files, file_ids)
+    if files:
+        file_ids = filemanager.batch_upload(files=files, user_id=user_id)
+
+        chat_files = []
+        for file, fid in zip(files, file_ids):
+            await file.seek(0)  # Reset file pointer
+            chat_files.append(ChatFile(
+                mimetype=file.content_type,
+                raw_data=await file.read(),
+                fid=fid
+            ))
+    else:
+        chat_files = None
     
     # Add messages and generate response
     history.add_message(role="user", content=text, files=chat_files)
-    response = genai.send_message(history=history, model=model, authorization=authorization)
+    response = await genai.send_message(history=history, model=model)
     history.add_message(role="assistant", content=response)
-    
+
     # Save updated history
     new_history_fid = await save_chat_history(history, user_id)
     
     # Cleanup old history file
     if history_fid:
-        filemanager.delete(file_id=history_fid)
+        try:
+            await filemanager.delete(file_id=history_fid)
+        except:
+            pass
     
     return new_history_fid, response
-
 
 
 def encode_base64(file: bytes) -> str:
