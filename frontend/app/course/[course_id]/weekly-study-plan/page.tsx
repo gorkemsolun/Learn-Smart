@@ -1,6 +1,6 @@
 "use client";
 
-import { backend, backendAPI } from "@/environment/backend_api";
+import { courseService, filemanagerService } from "@/environment/backend_api";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -29,24 +29,25 @@ export default function WeeklyStudyPlan() {
       startLoading(); // Start loading
 
       // Fetch course details to get the study plan URL
-      const courseResponse = await backendAPI.get(`/course/${course_id}`, {
+      const courseResponse = await courseService.get(`/${course_id}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const studyPlanUrl = courseResponse.data.course_study_plan_url;
-
-      // Fetch the actual study plan content
-      const studyPlanResponse = await backend.get(studyPlanUrl, {
+      const studyPlanFID = courseResponse.data.course_study_plan_fid;
+      const response = await filemanagerService.get(`/${studyPlanFID}`, {
         headers: {
-          Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
 
-      setStudyPlan(studyPlanResponse.data);
+      // Fetch the actual study plan content
+      const studyPlanResponse = await fetch(response.data.file_url);
+      const data = await studyPlanResponse.text();
+
+      setStudyPlan(data);
     } catch (error) {
       console.error("Oops! Something went wrong while fetching the study plan:", error);
     } finally {

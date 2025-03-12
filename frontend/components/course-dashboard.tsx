@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ToastAction } from "@/components/ui/toast";
-import { backendAPI } from "@/environment/backend_api";
+import { courseService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 import { useParams, useRouter } from "next/navigation";
@@ -54,7 +54,7 @@ export default function CourseHomepage() {
     startLoading();
     try {
       // TODO: PUT THIS CODE DUPLICATION TO A GENERALIZED FOLDER
-      const response = await backendAPI.get(`/course/${course_id}`, {
+      const response = await courseService.get(`/${course_id}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
