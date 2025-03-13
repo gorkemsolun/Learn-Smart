@@ -40,6 +40,10 @@ class ChatHistory:
     def __init__(self, messages: List[ChatMessage] = None):
         self.messages = messages or []
 
+    
+    def __iter__(self):
+        return iter(self.messages)
+
 
     def add_message(self, role: Literal["assistant", "user", "developer", "edux"], 
                     content: str, files: List[ChatFile] = None):

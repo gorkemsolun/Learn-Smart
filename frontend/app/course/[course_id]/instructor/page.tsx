@@ -471,7 +471,7 @@ export default function InstructorPage() {
   const handleChatRename = (chatID: string, editedTitle: string) => {
     if (!editedTitle.trim()) return;
 
-    backendAPI
+    chatService
       .put(`/chat/${chatID}`, null, {
         params: { chat_title: editedTitle },
         headers: {
@@ -513,7 +513,7 @@ export default function InstructorPage() {
 
   const confirmDeleteChat = () => {
     if (chatIDToDelete) {
-      backendAPI.delete(`/chat/${chatIDToDelete}`, {
+      chatService.delete(`/chat/${chatIDToDelete}`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,

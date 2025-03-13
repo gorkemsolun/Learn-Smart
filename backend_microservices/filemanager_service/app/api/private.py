@@ -1,5 +1,6 @@
-import os, io
+import os
 from typing import List
+from pydantic import BaseModel
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 
@@ -14,6 +15,9 @@ router = APIRouter(
     tags=["File Management - Private API"],
     dependencies=[Depends(verify_api_key)]
 )
+
+class FileDeleteRequest(BaseModel):
+    file_ids: list[int]
 
 @router.post("/")
 def upload_file(user_id: int,
@@ -114,7 +118,7 @@ def delete_file(file_id: int, db = Depends(get_db)):
 
 
 @router.delete("/batch")
-def batch_delete_files(file_ids: List[int], db = Depends(get_db)):
+def batch_delete_files(request: FileDeleteRequest, db = Depends(get_db)):
     """
     Delete multiple files by their IDs from local storage.
 
@@ -127,5 +131,5 @@ def batch_delete_files(file_ids: List[int], db = Depends(get_db)):
     Raises:
         HTTPException: If there is an error deleting the files.
     """
-    file_dbs = [FileDB.fetch(db, file_id=fid) for fid in file_ids]
+    file_dbs = [FileDB.fetch(db, file_id=fid) for fid in request.file_ids]
     return util.batch_delete_files(db, file_dbs)

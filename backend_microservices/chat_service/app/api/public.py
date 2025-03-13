@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, UploadFile, Depends, Form, File, Header
 from sqlalchemy.orm import Session
 from typing import List
-import os, io, glob, json, jsonpickle, itertools
+import io, json
 import pymupdf
 
 from chat_service.app.clients import user, course, filemanager, genai
@@ -331,8 +331,8 @@ async def delete_chat(chat_id: int,
     """
 
     chat, _ = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
-
     fids_to_delete = [] # file IDs to delete
+
     if chat["slides_mode"]:
         slides = SlideDB.delete(db, chat_id=chat_id, all=True)
 
@@ -344,8 +344,17 @@ async def delete_chat(chat_id: int,
                 fids_to_delete.append(page["content_fid"])
                 fids_to_delete.append(page["chat_history_fid"])
 
+    # TODO: Delete all the files uploaded to all the slide chats
+
     else:
-        fids_to_delete.append(chat["history_fid"])
+        history_fid = chat["history_fid"]
+        if history_fid:
+            fids_to_delete.append(history_fid)
+        history = await load_chat_history(history_fid)
+
+        for message in history:
+            if message.files:
+                fids_to_delete.extend([file.fid for file in message.files])
 
     quizzes = QuizDB.delete(db, chat_id=chat_id, all=True)
     fids_to_delete.extend([quiz["quiz_fid"] for quiz in quizzes])

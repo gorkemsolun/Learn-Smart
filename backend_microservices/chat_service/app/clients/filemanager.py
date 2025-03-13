@@ -145,9 +145,10 @@ async def batch_delete(file_ids: list[int]):
     """
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.delete(
+            response = await client.request(
+                "DELETE",
                 f"{FILEMANAGER_SERVICE_URL}/private/batch",
-                params={"file_ids": file_ids},
+                json={"file_ids": file_ids},
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
             )
             response.raise_for_status()  # Raise an exception for HTTP errors
