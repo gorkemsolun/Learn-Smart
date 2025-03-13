@@ -133,14 +133,9 @@ class GoogleChatClient(ChatClientBase):
             generation_config=generation_config,
         )
 
-        message = history[-1].get("parts")[0] # Last message is the user message
-        response = model.start_chat(
-            history=history[:-1], # include all messages except the last one
-        ).send_message(message)
-
+        response = model.start_chat(history=history).send_message(" ") # empty message to trigger chat completion
         content = response.text
         return content
-
 
 class ChatClient:
     """

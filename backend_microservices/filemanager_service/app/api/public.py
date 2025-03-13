@@ -29,6 +29,8 @@ def upload_file(user_id: int,
     Raises:
         HTTPException: If there is an error uploading the file.
     """
+    if current_user["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized to upload file")
     return util.upload_file(db, user_id, file)
 
 
@@ -50,13 +52,15 @@ def batch_upload_files(user_id: int,
     Raises:
         HTTPException: If there is an error uploading the files.
     """
+    if current_user["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized to upload file")
     return util.batch_upload_files(db, user_id, files)
 
 
 @router.get("/{file_id}")
 def get_file(file_id: int, 
-                 current_user = Depends(user.get_current_user), 
-                 db = Depends(get_db)):
+             current_user = Depends(user.get_current_user), 
+             db = Depends(get_db)):
     """
     Retrieve the URL of a file by its ID.
 
@@ -75,55 +79,15 @@ def get_file(file_id: int,
     
     if current_user["user_id"] != file_db["user_id"]:
         raise HTTPException(status_code=403, detail="Unauthorized to access file")
+    
+    filename = file_db["file_name"]
+    _, ext = util.splitext(filename)
 
     return {
-        "file_url": f"http://localhost:8004/files/{str(file_id)}",
-        "file_name": file_db["file_name"],
+        "file_url": f"http://localhost:8004/files/{str(file_id)}.{ext}",
+        "file_name": filename,
         "mime_type": file_db["mime_type"]
     }
-
-
-# @router.get("/")
-# def download_file(file_id: int, db = Depends(get_db)):
-#     """
-#     Retrieve a file by its ID.
-
-#     Args:
-#         file_id (int): The ID of the file to retrieve.
-
-#     Returns:
-#         FileResponse: The response model containing the file's information.
-
-#     Raises:
-#         HTTPException: If the file is not found.
-#     """
-#     file_db = FileDB.fetch(db, file_id=file_id)
-#     if not file_db:
-#         raise HTTPException(status_code=404, detail="File not found")
-    
-#     fid = file_db["file_id"]
-#     file_path = os.path.join(STORAGE_DIR, str(fid))
-
-#     return FileResponse(
-#         file_path, 
-#         media_type=file_db["mime_type"], 
-#         filename=os.path.basename(file_path)
-#     )
-
-    
-    
-#     if os.path.exists(file_path):
-#         # return base64 encoded file
-#         with open(file_path, "rb") as file:
-#             file_content = file.read()
-
-#         return {
-#             "file_name": file_db["file_name"],
-#             "mime_type": file_db["mime_type"],
-#             "file_content": util.encode_base64(file_content)
-#         }
-#     else:
-#         raise HTTPException(status_code=404, detail="File not found")
 
 
 @router.delete("/")
@@ -142,7 +106,14 @@ def delete_file(file_id: int,
     Raises:
         HTTPException: If the file is not found or cannot be deleted.
     """
-    return util.delete_file(db, file_id)
+    file_db = FileDB.fetch(db, file_id=file_id)
+    if not file_db:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    if current_user["user_id"] != file_db["user_id"]:
+        raise HTTPException(status_code=403, detail="Unauthorized to delete file")
+    
+    return util.delete_file(db, file_db)
 
 
 @router.delete("/batch")
@@ -161,4 +132,11 @@ def batch_delete_files(file_ids: List[int],
     Raises:
         HTTPException: If there is an error deleting the files.
     """
-    return util.batch_delete_files(db, file_ids)
+    file_dbs = [FileDB.fetch(db, file_id=fid) for fid in file_ids]
+    if not all(file_dbs):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    if not all(current_user["user_id"] == file_db["user_id"] for file_db in file_dbs):
+        raise HTTPException(status_code=403, detail="Unauthorized to delete file")
+    
+    return util.batch_delete_files(db, file_dbs)

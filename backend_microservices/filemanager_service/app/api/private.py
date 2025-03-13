@@ -74,7 +74,8 @@ def download_file(file_id: int, db = Depends(get_db)):
         raise HTTPException(status_code=404, detail="File not found")
     
     fid = file_db["file_id"]
-    file_path = os.path.join(STORAGE_DIR, str(fid))
+    _, ext = util.splitext(file_db["file_name"])
+    file_path = os.path.join(STORAGE_DIR, f"{str(fid)}.{ext}")
     
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found in storage")
@@ -105,7 +106,11 @@ def delete_file(file_id: int, db = Depends(get_db)):
     Raises:
         HTTPException: If the file is not found or cannot be deleted.
     """
-    return util.delete_file(db, file_id)
+    file_db = FileDB.fetch(db, file_id=file_id)
+    if not file_db:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return util.delete_file(db, file_db)
 
 
 @router.delete("/batch")
@@ -122,4 +127,5 @@ def batch_delete_files(file_ids: List[int], db = Depends(get_db)):
     Raises:
         HTTPException: If there is an error deleting the files.
     """
-    return util.batch_delete_files(db, file_ids)
+    file_dbs = [FileDB.fetch(db, file_id=fid) for fid in file_ids]
+    return util.batch_delete_files(db, file_dbs)

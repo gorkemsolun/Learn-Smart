@@ -108,6 +108,12 @@ export default function UpdateUploadSyllabus({
         title: "Success",
         description: "Syllabus uploaded successfully.",
         variant: "default",
+          action: (
+            <ToastAction altText="Dismiss" className="hover:bg-background/20">
+              Dismiss
+            </ToastAction>
+          ),
+          className: "bg-green-500 text-background",
       });
     })
     .catch((error) => {

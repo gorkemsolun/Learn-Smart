@@ -43,8 +43,7 @@ def encode_base64(file_content: bytes) -> str:
     file_content = base64.b64encode(file_content).decode("utf-8")
 
 
-def upload_file(db, user_id: int,
-                file: UploadFile):
+def upload_file(db, user_id: int, file: UploadFile):
     """
     Upload a file to the server.
 
@@ -64,7 +63,8 @@ def upload_file(db, user_id: int,
         file_db = FileDB.create(db, user_id, file.filename, file.content_type)
         file_id = file_db["file_id"]
         
-        file_path = os.path.join(STORAGE_DIR, str(file_id))
+        _, ext = splitext(file.filename)
+        file_path = os.path.join(STORAGE_DIR, f"{str(file_id)}.{ext}")
         
         # Write file content
         content = file.file.read()
@@ -108,7 +108,8 @@ def batch_upload_files(db, user_id: int,
             file_id = file_db["file_id"]
             
             # Save file to local storage
-            file_path = os.path.join(STORAGE_DIR, str(file_id))
+            _, ext = splitext(file.filename)
+            file_path = os.path.join(STORAGE_DIR, f"{str(file_id)}.{ext}")
             
             # Write file content
             content = file.file.read()
@@ -139,12 +140,12 @@ def batch_upload_files(db, user_id: int,
     return {"status": "success", "file_ids": file_ids}
 
 
-def delete_file(db, file_id: int):
+def delete_file(db, file_db: dict):
     """
     Delete a file by its ID from local storage.
 
     Args:
-        file_id (int): The ID of the file to delete.
+        file_db (dict): The file database entry.
 
     Returns:
         dict: A dictionary with status and file ID.
@@ -152,13 +153,10 @@ def delete_file(db, file_id: int):
     Raises:
         HTTPException: If the file is not found or cannot be deleted.
     """
-    file_db = FileDB.fetch(db, file_id=file_id)
-    if not file_db:
-        raise HTTPException(status_code=404, detail="File not found")
-    
     try:
         fid = file_db["file_id"]
-        file_path = os.path.join(STORAGE_DIR, str(fid))
+        _, ext = splitext(file_db["file_name"])
+        file_path = os.path.join(STORAGE_DIR, f"{str(fid)}.{ext}")
         
         # Delete from database
         FileDB.delete(db, file_id=fid)
@@ -173,12 +171,12 @@ def delete_file(db, file_id: int):
         raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
 
 
-def batch_delete_files(db, file_ids: List[int]):
+def batch_delete_files(db, file_dbs: List[dict]):
     """
     Delete multiple files by their IDs from local storage.
 
     Args:
-        file_ids (List[int]): The IDs of the files to delete.
+        file_dbs (List[dict]): The file database entries.
 
     Returns:
         dict: A dictionary of success information and the file IDs.
@@ -187,17 +185,16 @@ def batch_delete_files(db, file_ids: List[int]):
         HTTPException: If there is an error deleting the files.
     """
     deleted_files = []
-    for fid in file_ids:
-        file_db = FileDB.fetch(db, file_id=fid)
-        if not file_db:
-            raise HTTPException(status_code=404, detail=f"File with ID {fid} not found")
-        
+    for file_db in file_dbs:
+        fid = file_db["file_id"]
         try:
             # Delete from database
             FileDB.delete(db, file_id=fid)
             
             # Delete from local storage if exists
-            file_path = os.path.join(STORAGE_DIR, str(fid))
+            _, ext = splitext(file_db["file_name"])
+            file_path = os.path.join(STORAGE_DIR, f"{str(fid)}.{ext}")
+            
             if os.path.exists(file_path):
                 os.remove(file_path)
                 

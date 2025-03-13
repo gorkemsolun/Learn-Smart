@@ -143,7 +143,7 @@ class ChatHistory:
         """
         Convert the generic chat history into Google API format.
         """
-        gemini_history = []
+        google_history = []
         for message in self.messages:
             if message.role == "developer":
                 continue
@@ -152,7 +152,7 @@ class ChatHistory:
             for file in message.files:
                 data = encode_base64(file.data)
                 parts.append({
-                    "file_data": {
+                    "inline_data": {
                         "mime_type": file.mimetype, 
                         "data": data
                     }
@@ -161,9 +161,9 @@ class ChatHistory:
             role = ("model" if message.role == "assistant"
                     else "user" if message.role == "edux"
                     else message.role)
-            gemini_history.append({"role": role, "parts": parts})
+            google_history.append({"role": role, "parts": parts})
 
-        return gemini_history
+        return google_history
     
 
     def format(self):

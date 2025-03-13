@@ -186,10 +186,10 @@ async def handle_chat_message(
     """
     # Load or create chat history
     history = await load_chat_history(history_fid)
-    
+
     # Handle file uploads and message creation
     if files:
-        file_ids = filemanager.batch_upload(files=files, user_id=user_id)
+        file_ids = await filemanager.batch_upload(files=files, user_id=user_id)
 
         chat_files = []
         for file, fid in zip(files, file_ids):
@@ -204,6 +204,9 @@ async def handle_chat_message(
     
     # Add messages and generate response
     history.add_message(role="user", content=text, files=chat_files)
+
+    print("history.google()", history.google())
+
     response = await genai.send_message(history=history, model=model)
     history.add_message(role="assistant", content=response)
 

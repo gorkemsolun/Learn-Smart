@@ -247,10 +247,10 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
 
 @router.post("/chat/{chat_id}/send_message")
 async def send_message(chat_id: int,
-                       slide_id: int = None,
-                       page_id: int = None,
+                       slide_id: Optional[int] = None,
+                       page_id: Optional[int] = None,
                        text: str = Form(...),
-                       files: List[UploadFile] = File(None),
+                       files: List[UploadFile] = File([]),
                        model: str = Form("google"),
                        current_user: dict = Depends(user.get_current_user),
                        db: Session = Depends(get_db)):

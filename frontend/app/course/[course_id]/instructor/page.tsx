@@ -387,7 +387,7 @@ export default function InstructorPage() {
     const formData = new FormData();
     formData.append("text", inputMessage);
 
-    if (inputFile) formData.append("file", inputFile);
+    if (inputFile) formData.append("files", inputFile);
 
     const newMessage: Message = {
       text: inputMessage,
