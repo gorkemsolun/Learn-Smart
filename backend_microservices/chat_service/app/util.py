@@ -22,7 +22,6 @@ def init(restart: bool = False):
             print("Dropping tables...")
             db.execute(text("DROP TABLE IF EXISTS chats;"))
             
-        print("Creating tables...")
         Base.metadata.create_all(bind=db.bind)
         
     finally:
@@ -204,8 +203,6 @@ async def handle_chat_message(
     
     # Add messages and generate response
     history.add_message(role="user", content=text, files=chat_files)
-
-    print("history.google()", history.google())
 
     response = await genai.send_message(history=history, model=model)
     history.add_message(role="assistant", content=response)

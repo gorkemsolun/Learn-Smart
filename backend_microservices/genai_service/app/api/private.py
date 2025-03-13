@@ -33,8 +33,6 @@ async def send_message(payload: dict = Body(...)):
     system_prompt = payload.get("system_prompt")
     model = payload.get("model", "google")
 
-    print("history", history)
-
     client = ChatClient.create(model=model, system_prompt=system_prompt)
     response = client.invoke(history=history)
 

@@ -64,24 +64,6 @@ export default function ChatInterface({
       default:
         return <File className="h-6 w-6" />
     }
-
-    /* switch (extension) {
-      case 'pdf':
-        return <FileText className="h-6 w-6" />
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-        return <FileImage className="h-6 w-6" />
-      case 'mp3':
-      case 'wav':
-        return <FileAudio className="h-6 w-6" />
-      case 'mp4':
-      case 'mov':
-        return <FileVideo className="h-6 w-6" />
-      default:
-        return <File className="h-6 w-6" />
-    } */
   }
 
   return (
@@ -144,7 +126,7 @@ export default function ChatInterface({
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {url.split('/').pop()}
+                    {message.filenames && message.filenames[idx]}
                   </a>
                 </div>
               );

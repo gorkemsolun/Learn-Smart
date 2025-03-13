@@ -19,7 +19,6 @@ def init(restart: bool = False):
             print("Dropping tables...")
             db.execute(text("DROP TABLE IF EXISTS files;"))
             
-        print("Creating tables...")
         Base.metadata.create_all(bind=db.bind)
         
     finally:

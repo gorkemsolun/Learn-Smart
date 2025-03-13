@@ -139,26 +139,33 @@ export default function InstructorPage() {
               const historyWithUrls = await Promise.all(
                 history.map(async (message: any) => {
                   let media_urls: string[] = [];
+                  let media_types: string[] = [];
+                  let filenames: string[] = [];
                   
                   if (message.fids?.length) {
                     // Wait for all URL fetches to complete
-                    media_urls = await Promise.all(
+                    const media_data = await Promise.all(
                       message.fids.map(async (fid: string) => {
-                        const response = await fetchURL(fid);
-                        return response.data.file_url;
+                        const response = await fetchMediaData(fid);
+                        return response.data;
                       })
                     );
+                    
+                    // Extract URLs, types and filenames from media data
+                    media_urls = media_data.map(data => data.file_url);
+                    media_types = media_data.map(data => data.mime_type);
+                    filenames = media_data.map(data => data.file_name);
                   }
-        
+          
                   return {
                     text: message.content,
                     role: message.role,
-                    media_urls: media_urls,
+                    media_urls,
+                    media_types,
+                    filenames,
                   };
                 })
-              );
-              
-              console.log("Active chat messages:", historyWithUrls);
+              );              
               setActiveMessages(historyWithUrls);
             })
             .catch((error) => {
@@ -204,7 +211,7 @@ export default function InstructorPage() {
   }, [activeMessages]);
 
   // functions
-  const fetchURL = (fid: string) => {
+  const fetchMediaData = (fid: string) => {
     if (!token || !fid) {
       return Promise.reject(new Error("Invalid parameters"));
     }
@@ -402,6 +409,7 @@ export default function InstructorPage() {
     const newMessage: Message = {
       text: inputMessage,
       role: "user",
+      filenames: inputFile ? [inputFile.name] : [],
       media_urls: inputFile ? [URL.createObjectURL(inputFile)] : [],
       media_types: inputFile ? [inputFile.type] : [], // Now an array of MIME types
     };

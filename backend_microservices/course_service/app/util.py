@@ -17,7 +17,6 @@ def init(restart: bool = False):
             db.execute(text("DROP TABLE IF EXISTS courses;"))
             
         # create "users" table
-        print("Creating tables...")
         Base.metadata.create_all(bind=db.bind)
         
     finally:
