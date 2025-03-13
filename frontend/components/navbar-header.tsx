@@ -58,18 +58,18 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
         time_spent: timeDifferenceInSeconds,
         timestamp: new Date(signInTime).toISOString(),
     };
-    try {
-      const response = await backendAPI.post(`/analytics/log`, data,{
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+    await backendAPI.post(`/analytics/log`, data,{
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((response) => {
       console.log(response.data);
-    } catch (error) {
+    })
+    .catch((error) => {
       console.error(error.response);
-    }
+    });
   };
 
   const handleHomePageClick = async () => {
