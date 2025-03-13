@@ -43,9 +43,9 @@ export interface Slide {
   chat_id: string;
   slide_id: string;
   slides_file_name: string;
-  slides_file_url?: string;
+  slides_fid?: string;
   pages_count: number;
-  last_slide_number: number;
+  last_opened_page_number: number;
 }
 
 export interface Notification {

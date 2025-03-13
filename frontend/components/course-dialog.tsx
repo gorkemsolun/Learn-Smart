@@ -339,7 +339,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
       <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
         <div className="space-y-1">
           <DialogTitle className="mb-2">
-            {props.isCreate ? "Create" : "Edit"} Individual Study
+            {props.isCreate ? "Create" : "Edit"} Course
           </DialogTitle>
           <DialogDescription></DialogDescription>
           <label className="text-xs font-semibold text-foreground/70">

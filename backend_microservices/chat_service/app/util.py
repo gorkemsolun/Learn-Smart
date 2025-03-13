@@ -117,7 +117,7 @@ async def get_authorized_chat_and_course(db, chat_id: int, user_id: int) -> tupl
 
 async def load_chat_history(history_fid=None) -> ChatHistory:
     """
-    Loads the chat history from a JSON file.
+    Loads the chat history from a history file ID.
 
     Args:
         history_fid (Optional[str]): The file ID of the chat history.
@@ -163,7 +163,7 @@ async def save_chat_history(history: ChatHistory, user_id: int) -> str:
 
 
 async def handle_chat_message(
-    history_fid: Optional[str],
+    history_fid: Optional[int],
     files: List[UploadFile],
     text: str,
     model: str,

@@ -102,18 +102,19 @@ export default function InstructorPage() {
         fetchSlideInfo(slideID)
           .then((response) => {
             const slide: Slide = response.data;
-            const lastSlideNumber = slide.last_slide_number; // last page seen by user
+            const lastPageNumber = slide.last_opened_page_number; // last page seen by user
             
             setActiveFile({ filename: slide.slides_file_name, slide_id: slide.slide_id });
             
             setCurrentSlide(slide);
-            setCurrentSlidePage((lastSlideNumber));
-            fetchSlide(activeChat.chat_id, slideID, lastSlideNumber)
-              .then((response) => {
+            setCurrentSlidePage((lastPageNumber));
+            fetchSlidePage(slideID, lastPageNumber)
+              .then(async (response) => {
                 const slideBase64 = response.data.slide;
                 const history = response.data.history;
+                const formattedHistory = await formatHistory(history);
                 setImgSrc(`data:image/png;base64,${slideBase64}`);
-                setActiveMessages(history);
+                setActiveMessages(formattedHistory);
               })
               .catch((error) => {
                 console.error("Error fetching slide:", error);
@@ -136,37 +137,8 @@ export default function InstructorPage() {
               const history = response.data.history;
         
               // Convert fids to urls and wait for all promises to resolve
-              const historyWithUrls = await Promise.all(
-                history.map(async (message: any) => {
-                  let media_urls: string[] = [];
-                  let media_types: string[] = [];
-                  let filenames: string[] = [];
-                  
-                  if (message.fids?.length) {
-                    // Wait for all URL fetches to complete
-                    const media_data = await Promise.all(
-                      message.fids.map(async (fid: string) => {
-                        const response = await fetchMediaData(fid);
-                        return response.data;
-                      })
-                    );
-                    
-                    // Extract URLs, types and filenames from media data
-                    media_urls = media_data.map(data => data.file_url);
-                    media_types = media_data.map(data => data.mime_type);
-                    filenames = media_data.map(data => data.file_name);
-                  }
-          
-                  return {
-                    text: message.content,
-                    role: message.role,
-                    media_urls,
-                    media_types,
-                    filenames,
-                  };
-                })
-              );              
-              setActiveMessages(historyWithUrls);
+              const formattedHistory = await formatHistory(history);
+              setActiveMessages(formattedHistory);
             })
             .catch((error) => {
               console.error("Error fetching chat messages:", error);
@@ -182,16 +154,17 @@ export default function InstructorPage() {
       fetchSlideInfo(activeFile.slide_id)
       .then((response) => {
         const slide: Slide = response.data;
-        const lastSlideNumber = slide.last_slide_number; // last page seen by user
+        const lastSlideNumber = slide.last_opened_page_number; // last page seen by user
         
         setCurrentSlide(slide);
         setCurrentSlidePage((lastSlideNumber));
-        fetchSlide(activeChat.chat_id, activeFile.slide_id, lastSlideNumber)
-          .then((response) => {
+        fetchSlidePage(activeFile.slide_id, lastSlideNumber)
+          .then(async (response) => {
             const slideBase64 = response.data.slide;
             const history = response.data.history;
             setImgSrc(`data:image/png;base64,${slideBase64}`);
-            setActiveMessages(history);
+            const formattedHistory = await formatHistory(history);
+            setActiveMessages(formattedHistory);
           })
           .catch((error) => {
             console.error("Error fetching slide:", error);
@@ -210,7 +183,7 @@ export default function InstructorPage() {
     }
   }, [activeMessages]);
 
-  // functions
+  // Functions
   const fetchMediaData = (fid: string) => {
     if (!token || !fid) {
       return Promise.reject(new Error("Invalid parameters"));
@@ -222,6 +195,39 @@ export default function InstructorPage() {
         Authorization: `Bearer ${token}`,
       },
     });
+  }
+
+  const formatHistory = async (history: Message[]) => {
+    return await Promise.all(
+      history.map(async (message: any) => {
+        let media_urls: string[] = [];
+        let media_types: string[] = [];
+        let filenames: string[] = [];
+        
+        if (message.fids?.length) {
+          // Wait for all URL fetches to complete
+          const media_data = await Promise.all(
+            message.fids.map(async (fid: string) => {
+              const response = await fetchMediaData(fid);
+              return response.data;
+            })
+          );
+          
+          // Extract URLs, types and filenames from media data
+          media_urls = media_data.map(data => data.file_url);
+          media_types = media_data.map(data => data.mime_type);
+          filenames = media_data.map(data => data.file_name);
+        }
+
+        return {
+          text: message.content,
+          role: message.role,
+          media_urls,
+          media_types,
+          filenames,
+        };
+      })
+    );
   }
 
   const fetchCourse = async () => {
@@ -300,13 +306,13 @@ export default function InstructorPage() {
     })
   }
 
-  const fetchSlide = (chatID: string, slideID: string, pageNumber: number) => {
-    if (!token || !chatID || !slideID || pageNumber <= 0) {
+  const fetchSlidePage = (slideID: string, pageNumber: number) => {
+    if (!token || !slideID || pageNumber <= 0) {
       console.error("Invalid parameters");
       return Promise.reject(new Error("Invalid parameters"));
     }
   
-    return backendAPI.get(`/chat/${chatID}/slide/${slideID}/page/${pageNumber}`, {
+    return chatService.get(`/chat/slide/${slideID}/page/${pageNumber}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -319,7 +325,7 @@ export default function InstructorPage() {
       return Promise.reject(new Error("Invalid parameters"));
     }
   
-    return backendAPI.get(`/chat/slides/${slideID}`, {
+    return chatService.get(`/slides/${slideID}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -333,13 +339,14 @@ export default function InstructorPage() {
       return;
     }
     setIsLoading(true);
-    fetchSlide(activeChat.chat_id, activeChat.last_opened_slide_id, currentSlidePage - 1)
-      .then((response) => {
+    fetchSlidePage(activeChat.last_opened_slide_id, currentSlidePage - 1)
+      .then(async (response) => {
         const slideBase64 = response.data.slide;
         const history = response.data.history;
         setImgSrc(`data:image/png;base64,${slideBase64}`);
         setCurrentSlidePage(currentSlidePage - 1);
-        setActiveMessages(history);
+        const formattedHistory = await formatHistory(history);
+        setActiveMessages(formattedHistory);
       })
       .catch((error) => {
         toast({
@@ -353,19 +360,20 @@ export default function InstructorPage() {
       });
   };  
 
-  const handleNextSlide = () => {
+  const handleNextPage = () => {
     if (!activeChat || !activeChat.last_opened_slide_id) {
       console.error("Invalid active chat or slide ID");
       return;
     }
     setIsLoading(true);
-    fetchSlide(activeChat.chat_id, activeChat.last_opened_slide_id, currentSlidePage + 1)
-      .then((response) => {
+    fetchSlidePage(activeChat.last_opened_slide_id, currentSlidePage + 1)
+      .then(async (response) => {
         const slideBase64 = response.data.slide;
         const history = response.data.history;
         setImgSrc(`data:image/png;base64,${slideBase64}`);
         setCurrentSlidePage(currentSlidePage + 1);
-        setActiveMessages(history);
+        const formattedHistory = await formatHistory(history);
+        setActiveMessages(formattedHistory);
       })
       .catch((error) => {
         toast({
@@ -612,7 +620,7 @@ export default function InstructorPage() {
                           <Button onClick={handlePreviousSlide} disabled={isLoading || currentSlidePage === 1}>
                             <ArrowLeft className="mr-2 size-4" /> Previous
                           </Button>
-                          <Button onClick={handleNextSlide} disabled={isLoading || currentSlidePage === currentSlide.pages_count}>
+                          <Button onClick={handleNextPage} disabled={isLoading || currentSlidePage === currentSlide.pages_count}>
                             Next <ArrowRight className="ml-2 size-4" />
                           </Button>
                         </div>

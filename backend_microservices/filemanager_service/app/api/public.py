@@ -90,7 +90,7 @@ def get_file(file_id: int,
     }
 
 
-@router.delete("/")
+@router.delete("/{file_id}")
 def delete_file(file_id: int, 
                 current_user = Depends(user.get_current_user),
                 db = Depends(get_db)):

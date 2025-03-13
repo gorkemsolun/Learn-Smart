@@ -143,7 +143,7 @@ async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
 
     slide = SlideDB.create(
         db, chat_id=chat["chat_id"], course_id=crs["course_id"], slides_file_name=slides.filename, 
-        slides_fid=slides_fid, pages_count=page_count, last_opened_page_id=1
+        slides_fid=slides_fid, pages_count=page_count, last_opened_page_number=1
     )
     chat = ChatDB.update(db, chat_id=chat["chat_id"], last_opened_slide_id=slide["slide_id"])
 
@@ -176,7 +176,9 @@ async def get_quizzes_of_chat(chat_id: int,
 
 
 @router.post("/chat/create")
-async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File(None),
+async def create_chat(course_id: int, 
+                      chat_title: str, 
+                      slides: UploadFile = File(None),
                       current_user: dict = Depends(user.get_current_user),
                       db: Session = Depends(get_db)):
     """
@@ -215,10 +217,8 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
                 status_code=400, 
                 detail="Invalid file type. Only .pptx and .pdf files are allowed."
             )
-        
-        content = await slides.read()
-        final_filename = f"{splitext(slides.filename)[0]}.pdf" # convert to PDF if it's a PPTX file
 
+        content = await slides.read()
         if slides.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
             pdf_content = await convert_pptx_to_pdf(content)
         else:
@@ -228,14 +228,12 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
             page_count = doc.page_count
 
         with io.BytesIO(pdf_content) as pdf_file_io:
-            converted_file = UploadFile(
-                filename=final_filename, file=pdf_file_io, content_type='application/pdf'
-            )
-            slides_fid = await filemanager.upload(file=converted_file, user_id=current_user["user_id"])
+            upload_file = UploadFile(filename=slides.filename, file=pdf_file_io)
+            slides_fid = await filemanager.upload(file=upload_file, user_id=current_user["user_id"])
 
         slide = SlideDB.create(
             db, chat_id=chat["chat_id"], course_id=course_id, slides_file_name=slides.filename, 
-            slides_fid=slides_fid, pages_count=page_count, last_opened_page_id=1
+            slides_fid=slides_fid, pages_count=page_count, last_opened_page_number=1
         )
         chat = ChatDB.update(db, chat_id=chat["chat_id"], last_opened_slide_id=slide["slide_id"])
 
@@ -248,7 +246,7 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
 @router.post("/chat/{chat_id}/send_message")
 async def send_message(chat_id: int,
                        slide_id: Optional[int] = None,
-                       page_id: Optional[int] = None,
+                       page_number: Optional[int] = None,
                        text: str = Form(...),
                        files: List[UploadFile] = File([]),
                        model: str = Form("google"),
@@ -260,7 +258,7 @@ async def send_message(chat_id: int,
     Args:
         chat_id (int): The ID of the chat.
         slide_id (int, optional): The ID of the slide. Defaults to None.
-        page_id (int, optional): The ID of the page. Defaults to None.
+        page_number (int, optional): The page number. Defaults to None.
         text (str): The message text.
         files (List[UploadFile], optional): The files to send. Defaults to None.
         model (str, optional): The generative AI model to use. Defaults to "google".
@@ -275,17 +273,20 @@ async def send_message(chat_id: int,
     
     # Validate slide/page parameters
     if chat["slides_mode"]:
-        if slide_id is None:
-            raise HTTPException(400, "Slide ID is required for this chat.")
+        if slide_id is None or page_number is None:
+            raise HTTPException(400, "Slide ID and page number are required for this chat.")
+        page = SlidePageDB.fetch(db, slide_id=slide_id, page_number=page_number)
+        if not page:
+            raise HTTPException(404, "Page not found.")
+        slide_id = page["slide_id"]
         slide = SlideDB.fetch(db, slide_id=slide_id)
-        page = SlidePageDB.fetch(db, page_id=page_id) if page_id else None
-        if not slide or not page:
+        if not slide:
             raise HTTPException(404, "Slide or page not found.")
         history_fid = page["chat_history_fid"]
-        if not history_fid:
+        if not history_fid: # should NOT happen since an explanation is generated first
             raise HTTPException(500, "No history file found.")
     else:
-        if slide_id is not None:
+        if slide_id is not None or page_number is not None:
             raise HTTPException(400, "Slides mode is not enabled for this chat.")
         history_fid = chat["history_fid"]
 
@@ -300,15 +301,11 @@ async def send_message(chat_id: int,
 
     # Update database records
     if chat["slides_mode"]:
-        SlidePageDB.update(page_id=page_id, chat_history_fid=new_history_fid)
-        ChatDB.update(db, chat_id=chat_id, last_opened_slide_id=slide_id)
-    else:
-        ChatDB.update(
-            db,
-            chat_id=chat_id,
-            history_fid=new_history_fid,
-            last_opened_slide_id=None
+        SlidePageDB.update(
+            db, slide_id=slide_id, page_number=page_number, chat_history_fid=new_history_fid
         )
+    else:
+        ChatDB.update(db,chat_id=chat_id, history_fid=new_history_fid)
 
     return {"text": response, "role": "assistant"}
 
@@ -363,7 +360,9 @@ async def delete_chat(chat_id: int,
     fids_to_delete.extend([flashcard["flashcard_fid"] for flashcard in flashcards])
 
     ChatDB.delete(db, chat_id=chat_id)
-    await filemanager.batch_delete(file_ids=fids_to_delete)
+
+    if fids_to_delete:
+        await filemanager.batch_delete(file_ids=fids_to_delete)
 
     return {"status": "success", "message": "Chat deleted successfully."}
 
@@ -411,50 +410,77 @@ async def update_chat_title(chat_id: int, chat_title: str,
     return ChatDB.update(db, chat_id=chat_id, chat_title=chat_title)   
 
 
-@router.get("/chat/page/{page_id}")
-async def get_slide(page_id: int, 
-                    model: str,
+@router.get("/chat/slide/{slide_id}/page/{page_number}")
+async def get_slide(slide_id: int, 
+                    page_number: int,
+                    model: str = "google",
                     current_user: dict = Depends(user.get_current_user),
                     db: Session = Depends(get_db)):
     """
     Get a specific slide and its explanation by its ID and page number.
     """
-    # TODO: convert this to gRPC call
-    page_db = SlidePageDB.fetch(db, page_id=page_id)
-    if not page_db:
+    slide_db = SlideDB.fetch(db, slide_id=slide_id)
+    if not slide_db:
         raise HTTPException(status_code=404, detail="Slide not found.")
-    
-    chat_id = page_db["chat_id"]
+
+    chat_id = slide_db["chat_id"]
     await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
 
-    slide_id = page_db["slide_id"]
-    slide = SlideDB.fetch(db, slide_id=slide_id)
-    if not slide:
-        raise HTTPException(status_code=404, detail="Slide not found.")
+    page_db = SlidePageDB.fetch(db, slide_id=slide_id, page_number=page_number)
+    if not page_db:
+        slides_fid = slide_db["slides_fid"]
+        slides_content = await filemanager.download(file_id=slides_fid)
+        
+        # Convert page to image using PyMuPDF
+        with io.BytesIO(slides_content) as pdf_stream:
+            doc = pymupdf.open(stream=pdf_stream, filetype="pdf")
+            page = doc[page_number - 1]  # PyMuPDF uses 0-based indexing
+            
+            # Get page as image
+            pix = page.get_pixmap(matrix=pymupdf.Matrix(2, 2))  # 2x zoom for better quality
+            page_content = pix.tobytes(output="png")
+            
+            # Create a new page in the database
+            upload_file = UploadFile(
+                filename=f"slide_{slide_id}_page_{page_number}.png",
+                file=io.BytesIO(page_content),
+            )
+            page_fid = await filemanager.upload(
+                file=upload_file,
+                user_id=current_user["user_id"]
+            )
+            
+        history = await load_chat_history()
+        history.add_message(
+            role="edux", content=EXPLAIN_SLIDE_PROMPT,
+            # TODO: mimetype="image/png" is hardcoded here
+            files=[ChatFile(mimetype="image/png", raw_data=page_content, fid=page_fid)]
+        )
+        explanation = await genai.send_message(history, model=model)
+        history.add_message(role="assistant", content=explanation)
 
-    page_fid = page_db["content_fid"]
-    page_content = await filemanager.download(file_id=page_fid) 
+        history_fid = await save_chat_history(history, current_user["user_id"])
+        
+        # Create the page record
+        page_db = SlidePageDB.create(
+            db,
+            slide_id=slide_id,
+            page_number=page_number,
+            content_fid=page_fid,
+            chat_history_fid=history_fid
+        )
+
+    else:
+        page_fid = page_db["content_fid"]
+        history_fid = page_db["chat_history_fid"]
+        history = await load_chat_history(history_fid)
+        page_content = await filemanager.download(file_id=page_fid) 
+
+    ChatDB.update(db, chat_id=chat_id, last_opened_slide_id=slide_id)
+    SlideDB.update(db, slide_id=slide_id, last_opened_page_number=page_number)
+
     page_base64 = base64.b64encode(page_content).decode("utf-8") # convert bytes to base64
-
-    history_fid = page_db["chat_history_fid"]
-    history_content = load_chat_history(history_fid)
-    history = ChatHistory.from_bytes(history_content)
-
-    history.add_message(
-        role="edux", content=EXPLAIN_SLIDE_PROMPT,
-        # TODO: mimetype="image/png" is hardcoded here
-        files=ChatFile(mimetype="image/png", raw_data=page_content, fid=page_fid)
-    )
-    explanation = genai.send_message(history, model=model)
-    history.add_message(role="assistant", content=explanation)
-
-    new_history_fid = save_chat_history(history, current_user["user_id"])
-    await filemanager.delete(history_fid) # delete the old history file
-
-    SlidePageDB.update(page_id=page_id, chat_history_fid=new_history_fid)
-    SlideDB.update(slide_id=slide_id, last_opened_page_id=page_id)
-
-    return {"slide": page_base64, "history": history.messages}
+    return {"slide": page_base64, "history": history.format()}
 
 
 @router.get("/chat/{chat_id}")

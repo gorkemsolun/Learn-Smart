@@ -27,6 +27,8 @@ async def delete_chats(course_id: int,
     Raises:
         HTTPException: If the course is not found or the user is not authorized to delete the chats.
     """
+    # TODO: Delete all files uploaded to all chats in the course
+    
     chats = ChatDB.fetch(db, course_id=course_id, all=True)
     for chat in chats:
         if chat["slides_mode"]:
@@ -38,12 +40,10 @@ async def delete_chats(course_id: int,
                 SlideDB.delete(db, slide_id=slide["slide_id"])
 
                 pages = SlidePageDB.fetch(db, slide_id=slide["slide_id"], all=True)
-
-                # TODO: Can we parallelize this operation?
                 for page in pages:
-                    fids_to_delete.append(page["content_fid"])
-                    fids_to_delete.append(page["chat_history_fid"])
-                    SlidePageDB.delete(db, page_id=page["content_id"])
+                    fids_to_delete.extend([page["content_fid"], page["chat_history_fid"]])
+
+                SlidePageDB.delete(db, slide_id=slide["slide_id"], all=True)
 
             await filemanager.batch_delete(fids_to_delete)
 

@@ -51,7 +51,7 @@ class Slide(Base):
     slides_file_name = Column(String(255), nullable=False)  # slides' original file name, e.g. Lecture_1.pptx
     slides_fid = Column(Integer, nullable=False)  # slides file ID
     pages_count = Column(Integer, nullable=False)  # the total number of pages in the slides file
-    last_opened_page_id = Column(Integer, nullable=False)  # the last fetched page ID (e.g. page ID: 3 of a slides file)
+    last_opened_page_number = Column(Integer, nullable=False)  # the last fetched page ID (e.g. page ID: 3 of a slides file)
 
     pages = relationship("SlidePage", back_populates="slide", cascade="all, delete-orphan")
 
@@ -70,7 +70,7 @@ class Slide(Base):
             "slides_file_name": self.slides_file_name,
             "slides_fid": self.slides_fid,
             "pages_count": self.pages_count,
-            "last_opened_page_id": self.last_opened_page_id
+            "last_opened_page_number": self.last_opened_page_number
         }
     
 
@@ -80,16 +80,13 @@ class SlidePage(Base):
     """
     __tablename__ = 'slide_pages'
     
-    page_id = Column(Integer, primary_key=True, index=True)
-    slide_id = Column(Integer, ForeignKey('slides.slide_id'), nullable=False)
-    page_number = Column(Integer, nullable=False)
+    slide_id = Column(Integer, ForeignKey('slides.slide_id'), primary_key=True)
+    page_number = Column(Integer, primary_key=True)
     content_fid = Column(Integer, nullable=False) # File ID of the page content (since the page content is stored as a file)
-    chat_history_fid = Column(Integer, nullable=False)
+    chat_history_fid = Column(Integer, nullable=False) # File ID of the chat history for the page
     
     # Relationship to parent Slide
     slide = relationship("Slide", back_populates="pages")
-    
-    __table_args__ = (UniqueConstraint('slide_id', 'page_number', name='_slide_page_number_uc'),)
 
     def to_dict(self):
         """
@@ -100,7 +97,6 @@ class SlidePage(Base):
         """
 
         return {
-            "page_id": self.page_id,
             "slide_id": self.slide_id,
             "page_number": self.page_number,
             "content_fid": self.content_fid,

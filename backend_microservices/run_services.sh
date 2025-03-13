@@ -2,7 +2,6 @@
 
 # Set PYTHONPATH
 export PYTHONPATH="/home/bil/edux/backend_microservices"
-echo "PYTHONPATH set to $PYTHONPATH"
 
 # Define services and their respective ports
 declare -A services=(
@@ -44,7 +43,7 @@ done
 
 # Print summary based on success
 if [ $success_count -eq $total_services ]; then
-    echo "All services started successfully!"
+    echo -e "All services started successfully!\n"
 else
-    echo "WARNING: Started $success_count out of $total_services services."
+    echo -e "WARNING: Started $success_count out of $total_services services.\n"
 fi

@@ -50,8 +50,7 @@ async def delete(file_id: int | str):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.delete(
-                f"{FILEMANAGER_SERVICE_URL}/private/",
-                params={"file_id": file_id},
+                f"{FILEMANAGER_SERVICE_URL}/private/{file_id}",
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
             )
             response.raise_for_status()  # Raise an exception for HTTP errors

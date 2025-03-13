@@ -40,16 +40,17 @@ export function CreateChatSheet({ isOpen, closeModal, authToken, onChatCreated }
     const formData = new FormData();
     if (file) {
       formData.append("slides", file);
+    } else {
+      formData.append("slides", "");
     }
     try {
       const response = await chatService.post(
         `/chat/create?course_id=${course_id}&chat_title=${chatName}`,
-        file ? formData : {}, // Send formData if there's a file, else send an empty object
+        formData,
         {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${authToken}`,
-            ...(file && { "Content-Type": "multipart/form-data" }), // Only include multipart if file exists
           },
         }
       );

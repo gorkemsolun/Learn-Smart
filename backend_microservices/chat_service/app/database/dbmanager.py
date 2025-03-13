@@ -199,7 +199,7 @@ class SlideDB:
         slides_file_name: str,
         slides_fid: int,
         pages_count: int,
-        last_opened_page_id: int,
+        last_opened_page_number: int,
     ) -> dict:
         """
         Create a new slide object and save it in the database.
@@ -210,7 +210,7 @@ class SlideDB:
         - slides_file_name (str): The filename of the slides.
         - slides_fid (int): The FID of the slides.
         - pages_count (int): The total number of pages in the slides file.
-        - last_opened_page_id (int): The last fetched page ID.
+        - last_opened_page_number (int): The last fetched page number in the slides.
 
         Returns:
         - dict: A dictionary representation of the created slide object.
@@ -221,7 +221,7 @@ class SlideDB:
             slides_file_name=slides_file_name,
             slides_fid=slides_fid,
             pages_count=pages_count,
-            last_opened_page_id=last_opened_page_id,
+            last_opened_page_number=last_opened_page_number,
         )
 
         # save the slide object in the database
@@ -289,7 +289,7 @@ class SlideDB:
             - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
                 - slides_file_name (str): The new filename for the slide.
                 - slides_fid (int): The new FID for the slide.
-                - last_opened_page_id (int): The new last fetched page ID.
+                - last_opened_page_number (int): The new last fetched page number.
 
         Returns:
             - dict: A dictionary representing the updated slide details.
@@ -299,7 +299,7 @@ class SlideDB:
         """
         slides_file_name = kwargs.get("slides_file_name", None)
         slides_fid = kwargs.get("slides_fid", None)
-        last_opened_page_id = kwargs.get("last_opened_page_id", None)
+        last_opened_page_number = kwargs.get("last_opened_page_number", None)
 
         slide = db.query(Slide).filter(Slide.slide_id == slide_id).first()
         if not slide:
@@ -309,8 +309,8 @@ class SlideDB:
             slide.slides_file_name = slides_file_name
         if slides_fid:
             slide.slides_fid = slides_fid
-        if last_opened_page_id:
-            slide.last_opened_page_id = last_opened_page_id
+        if last_opened_page_number:
+            slide.last_opened_page_number = last_opened_page_number
 
         db.commit()
         db.refresh(slide)
@@ -373,7 +373,7 @@ class SlidePageDB:
 
     @staticmethod
     def create(db: Session, slide_id: int, page_number: int, 
-               content_fid: int, chat_history_fid: int):
+               content_fid: int, chat_history_fid: int = None):
         """
         Create a new slide page object and save it in the database.
 
@@ -406,8 +406,8 @@ class SlidePageDB:
 
         Args:
         - db (Session): The database session.
-        - page_id (int): The ID of the slide page.
         - slide_id (int): The ID of the slide associated with the page.
+        - page_number (int): The page number of the slide page.
         - all (bool): Flag indicating whether to fetch all matching slide page records. Default is False.
 
         Returns:
@@ -416,16 +416,16 @@ class SlidePageDB:
                         None if no matching record is found and `all` is False.
                         An empty list if no matching records are found and `all` is True.
         """
-        page_id = kwargs.get("page_id", None)
         slide_id = kwargs.get("slide_id", None)
+        page_number = kwargs.get("page_number", None)
         all = kwargs.get("all", False)
 
-        if not any([page_id, slide_id]):
+        if not any([page_number, slide_id]):
             raise ValueError("No query parameters provided")
 
         filters = []
-        if page_id:
-            filters.append(SlidePage.page_id == page_id)
+        if page_number:
+            filters.append(SlidePage.page_number == page_number)
         if slide_id:
             filters.append(SlidePage.slide_id == slide_id)
 
@@ -439,13 +439,14 @@ class SlidePageDB:
     
 
     @staticmethod
-    def update(db: Session, page_id: int, **kwargs):
+    def update(db: Session, slide_id: int, page_number: int, **kwargs):
         """
         Update the slide page details in the database.
 
         Args:
         - db (Session): The database session.
-        - page_id (int): The ID of the slide page to update.
+        - slide_id (int): The ID of the slide associated with the page.
+        - page_number (int): The page number of the slide page.
         - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
             - content_fid (int): The new content file ID.
             - chat_history_fid (int): The new chat history file ID.
@@ -459,9 +460,11 @@ class SlidePageDB:
         content_fid = kwargs.get("content_fid", None)
         chat_history_fid = kwargs.get("chat_history_fid", None)
 
-        page = db.query(SlidePage).filter(SlidePage.page_id == page_id).first()
+        page = db.query(SlidePage).filter(
+            SlidePage.slide_id == slide_id, SlidePage.page_number == page_number
+        ).first()
         if not page:
-            raise ValueError(f"No slide page with ID {page_id} found")
+            raise ValueError(f"No slide page with slide ID {slide_id} and page number {page_number} found")
 
         if content_fid:
             page.content_fid = content_fid
@@ -482,23 +485,23 @@ class SlidePageDB:
         Args:
         - db (Session): The database session.
         - **kwargs: Additional keyword arguments for specifying query parameters.
-            - page_id (int): The ID of the slide page to be deleted.
             - slide_id (int): The ID of the slide associated with the page to be deleted.
+            - page_number (int): The page number of the slide page to be deleted.
             - all (bool): Flag indicating whether to delete all matching slide pages or just the first one. Default is False.
 
         Returns:
         - list: A list of dictionaries representing the deleted slide pages.
         """
-        page_id = kwargs.get("page_id", None)
         slide_id = kwargs.get("slide_id", None)
+        page_number = kwargs.get("page_number", None)
         all = kwargs.get("all", False)
 
-        if not any([page_id, slide_id]):
+        if not any([page_number, slide_id]):
             raise ValueError("No query parameters provided")
 
         filters = []
-        if page_id:
-            filters.append(SlidePage.page_id == page_id)
+        if page_number:
+            filters.append(SlidePage.page_number == page_number)
         if slide_id:
             filters.append(SlidePage.slide_id == slide_id)
 

@@ -16,7 +16,7 @@ router = APIRouter(
     dependencies=[Depends(verify_api_key)]
 )
 
-class FileDeleteRequest(BaseModel):
+class BatchFileDeleteRequest(BaseModel):
     file_ids: list[int]
 
 @router.post("/")
@@ -59,7 +59,7 @@ def batch_upload_files(user_id: int,
     return util.batch_upload_files(db, user_id, files)
 
 
-@router.get("/")
+@router.get("/{file_id}")
 def download_file(file_id: int, db = Depends(get_db)):
     """
     Retrieve a file by its ID.
@@ -96,7 +96,25 @@ def download_file(file_id: int, db = Depends(get_db)):
     )
 
 
-@router.delete("/")
+@router.delete("/batch")
+def batch_delete_files(request: BatchFileDeleteRequest, db = Depends(get_db)):
+    """
+    Delete multiple files by their IDs from local storage.
+
+    Args:
+        file_ids (List[int]): The IDs of the files to delete.
+
+    Returns:
+        dict: A dictionary of success information and the file IDs.
+
+    Raises:
+        HTTPException: If there is an error deleting the files.
+    """
+    file_dbs = [FileDB.fetch(db, file_id=fid) for fid in request.file_ids]
+    return util.batch_delete_files(db, file_dbs)
+
+
+@router.delete("/{file_id}")
 def delete_file(file_id: int, db = Depends(get_db)):
     """
     Delete a file by its ID from local storage.
@@ -115,21 +133,3 @@ def delete_file(file_id: int, db = Depends(get_db)):
         raise HTTPException(status_code=404, detail="File not found")
     
     return util.delete_file(db, file_db)
-
-
-@router.delete("/batch")
-def batch_delete_files(request: FileDeleteRequest, db = Depends(get_db)):
-    """
-    Delete multiple files by their IDs from local storage.
-
-    Args:
-        file_ids (List[int]): The IDs of the files to delete.
-
-    Returns:
-        dict: A dictionary of success information and the file IDs.
-
-    Raises:
-        HTTPException: If there is an error deleting the files.
-    """
-    file_dbs = [FileDB.fetch(db, file_id=fid) for fid in request.file_ids]
-    return util.batch_delete_files(db, file_dbs)

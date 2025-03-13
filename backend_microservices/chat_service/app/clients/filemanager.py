@@ -84,9 +84,9 @@ async def download(file_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{FILEMANAGER_SERVICE_URL}/private/",
-                params={"file_id": file_id},
-                headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
+                f"{FILEMANAGER_SERVICE_URL}/private/{file_id}",
+                headers={"X-API-Key": FILEMANAGER_CLIENT_KEY},
+                timeout=10
             )
             response.raise_for_status()  # Raise an exception for HTTP errors
             return response.content
@@ -118,8 +118,7 @@ async def delete(file_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.delete(
-                f"{FILEMANAGER_SERVICE_URL}/private/",
-                params={"file_id": file_id},
+                f"{FILEMANAGER_SERVICE_URL}/private/{file_id}",
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
             )
             response.raise_for_status()  # Raise an exception for HTTP errors
@@ -144,6 +143,7 @@ async def batch_delete(file_ids: list[int]):
         - bool: True if all files were deleted successfully.
     """
     try:
+        import json
         async with httpx.AsyncClient() as client:
             response = await client.request(
                 "DELETE",
@@ -151,6 +151,7 @@ async def batch_delete(file_ids: list[int]):
                 json={"file_ids": file_ids},
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY}
             )
+
             response.raise_for_status()  # Raise an exception for HTTP errors
         
         return True

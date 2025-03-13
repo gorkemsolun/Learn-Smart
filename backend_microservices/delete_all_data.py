@@ -114,8 +114,9 @@ def main():
     # Delete all files in file storage
     delete_files()
 
-    print("All data have been cleared, and the default user has been created.")
+    print("All data have been cleared, and a default user has been created:")
     print("\n- Email: user@example.com\n- Nickname: user\n- Password: 123")
+    print()
 
 if __name__ == "__main__":
     main()
