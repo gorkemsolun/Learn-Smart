@@ -131,22 +131,32 @@ export default function InstructorPage() {
 
         const chatID = activeChat.chat_id;
         if (chatID) {
-          fetchChat(activeChat.chat_id).
-            then((response) => {
+          fetchChat(activeChat.chat_id)
+            .then(async (response) => {
               const history = response.data.history;
-
-              // convert fids in the history to urls
-              const historyWithUrls = history.map((message: any) => {
-                const media_urls = message.fids?.map(async (fid: string) => {
-                  const response = await fetchURL(fid);
-                  return response.data.file_url;
-                });
-                return {
-                  text: message.content,
-                  role: message.role,
-                  media_urls: media_urls,
-                };
-              });
+        
+              // Convert fids to urls and wait for all promises to resolve
+              const historyWithUrls = await Promise.all(
+                history.map(async (message: any) => {
+                  let media_urls: string[] = [];
+                  
+                  if (message.fids?.length) {
+                    // Wait for all URL fetches to complete
+                    media_urls = await Promise.all(
+                      message.fids.map(async (fid: string) => {
+                        const response = await fetchURL(fid);
+                        return response.data.file_url;
+                      })
+                    );
+                  }
+        
+                  return {
+                    text: message.content,
+                    role: message.role,
+                    media_urls: media_urls,
+                  };
+                })
+              );
               
               console.log("Active chat messages:", historyWithUrls);
               setActiveMessages(historyWithUrls);
@@ -393,10 +403,12 @@ export default function InstructorPage() {
       text: inputMessage,
       role: "user",
       media_urls: inputFile ? [URL.createObjectURL(inputFile)] : [],
+      media_types: inputFile ? [inputFile.type] : [], // Now an array of MIME types
     };
     setActiveMessages((messages: Message[]) => [...messages, newMessage]);
     setIsLoading(true);
     setInputMessage("");
+    setInputFile(null);
 
     const url = activeChat.slides_mode
     ? `/chat/${activeChat.chat_id}/send_message?slide_id=${currentSlide.slide_id}&page_number=${currentSlidePage}`
@@ -510,6 +522,7 @@ export default function InstructorPage() {
           setPresentationFiles([]);
           setActiveFile({ filename: '', slide_id: '' });
           setInputMessage('');
+          setInputFile(null);
           setIsLoading(false);
         }
       })

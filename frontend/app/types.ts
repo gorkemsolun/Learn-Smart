@@ -25,7 +25,8 @@ export interface Course {
 export interface Message {
   role: "user" | "assistant";
   text: string;
-  media_urls?: string[] | null;
+  media_urls?: string[];
+  media_types?: string[];
 }
 
 export interface Chat {

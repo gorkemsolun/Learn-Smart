@@ -5,10 +5,9 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Send, Menu, Paperclip, File, FileText, FileImage, FileAudio, FileVideo } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Skeleton } from "./ui/skeleton"
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Message } from '@/app/types'
 
-import { backend } from "@/environment/backend_api"
 import { useAuthRedirect } from "@/hooks/useAuthRedirect"
 import { useGenerateFlashcard } from "@/hooks/useCreateFlashcards"
 
@@ -47,9 +46,26 @@ export default function ChatInterface({
     handleSubmit(event)
   }
 
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase()
-    switch (extension) {
+  const getFileIcon = (mimeType: string | undefined) => {
+    switch (mimeType) {
+      case 'application/pdf':
+        return <FileText className="h-6 w-6" />
+      case 'image/jpeg':
+      case 'image/jpg':
+      case 'image/png':
+      case 'image/gif':
+        return <FileImage className="h-6 w-6" />
+      case 'audio/mp3':
+      case 'audio/wav':
+        return <FileAudio className="h-6 w-6" />
+      case 'video/mp4':
+      case 'video/mov':
+        return <FileVideo className="h-6 w-6" />
+      default:
+        return <File className="h-6 w-6" />
+    }
+
+    /* switch (extension) {
       case 'pdf':
         return <FileText className="h-6 w-6" />
       case 'jpg':
@@ -65,7 +81,7 @@ export default function ChatInterface({
         return <FileVideo className="h-6 w-6" />
       default:
         return <File className="h-6 w-6" />
-    }
+    } */
   }
 
   return (
@@ -105,7 +121,10 @@ export default function ChatInterface({
           >
             {/* Render image files */}
             {message.media_urls?.map((url, idx) => {
-              const isImage = url.match(/\.(jpeg|jpg|gif|png)$/i);
+              const mimeType = message.media_types && message.media_types[idx];
+              const isImage = mimeType 
+                ? mimeType.startsWith('image/')
+                : /\.(jpeg|jpg|gif|png|webp)$/i.test(url);
               
               return isImage ? (
                 <div key={idx} className="mb-2">
@@ -118,9 +137,9 @@ export default function ChatInterface({
                 </div>
               ) : (
                 <div key={idx} className="mb-2 flex items-center space-x-2">
-                  {getFileIcon(url)}
+                  {getFileIcon(mimeType)}
                   <a 
-                    href={url.startsWith('blob:') ? url : `${backend.getUri()}/api/public/files/${url}`}
+                    href={url}
                     className="text-blue-500 hover:underline"
                     target="_blank"
                     rel="noopener noreferrer"
