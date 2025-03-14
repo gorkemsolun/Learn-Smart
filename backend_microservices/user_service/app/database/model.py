@@ -1,4 +1,7 @@
-from sqlalchemy import Column, DateTime, Integer, String, func
+from sqlalchemy import (
+    Column, DateTime, Integer, String, func, ForeignKey, Date, PrimaryKeyConstraint
+)
+from sqlalchemy.orm import relationship
 
 from user_service.app.database.session import Base
 
@@ -26,6 +29,8 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     user_icon_fid = Column(Integer, nullable=True) # file id
 
+    analytics = relationship("Analytics", back_populates="user")
+
     def to_dict(self):
         """
         Converts the user object to a dictionary.
@@ -46,3 +51,36 @@ class User(Base):
 
     # attributes might be added
     # possible feature: email verification and we'd need some more attributes here
+
+
+class Analytics(Base):
+    """
+    Model for tracking daily user analytics, with a composite primary key of user_id and date.
+    """
+
+    __tablename__ = "analytics"
+
+    user_id = Column(Integer, ForeignKey('users.user_id'))
+    date = Column(Date, nullable=False, index=True)
+    timestamp = Column(DateTime, nullable=False, index=True)
+    time_spent = Column(Integer, nullable=False, default=0)
+
+    user = relationship("User", back_populates="analytics")
+
+    __table_args__ = (
+        PrimaryKeyConstraint("user_id", "date", name="pk_user_date"),
+    )
+
+    def to_dict(self):
+        """
+        Converts the Analytics object into a dictionary.
+
+        Returns:
+        - dict: A dictionary representation of the object.
+        """
+        return {
+            "user_id": self.user_id,
+            "date": self.date.isoformat(),
+            "timestamp": self.timestamp.isoformat(),
+            "time_spent": self.time_spent,
+        }

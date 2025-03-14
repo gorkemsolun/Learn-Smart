@@ -1,11 +1,10 @@
-from fastapi import HTTPException, Header, Depends
-from sqlalchemy.orm import Session
+from fastapi import HTTPException, Header
 from sqlalchemy import text
 
 from user_service.app.clients import auth
 from user_service.app.database.session import get_db, Base, engine
-from user_service.app.database.dbmanager import UserDB # put inside get_authenticated_user function to avoid circular import
-from user_service.app.database.model import User # registers all tables in SQLAlchemy, import required for table creation
+from user_service.app.database.dbmanager import UserDB
+from user_service.app.database.model import User, Analytics # registers all tables in SQLAlchemy, import required for table creation
 
 def init(restart: bool = False):
     gen = get_db()
@@ -16,6 +15,7 @@ def init(restart: bool = False):
             # drop "users" table
             print("Dropping tables...")
             db.execute(text("DROP TABLE IF EXISTS users;"))
+            db.execute(text("DROP TABLE IF EXISTS analytics;"))
             db.commit()
 
         Base.metadata.create_all(bind=engine)

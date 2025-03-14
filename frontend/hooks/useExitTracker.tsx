@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import Cookies from "js-cookie";
-import { backendAPI } from "@/environment/backend_api";
+import { backendAPI, userService } from "@/environment/backend_api";
 
 export default function useExitTracker() {
   const hasExited = useRef(false);
@@ -37,7 +37,7 @@ export default function useExitTracker() {
       };
 
       try {
-        await backendAPI.post(`/analytics/log`, data, {
+        await userService.post(`/analytics`, data, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,

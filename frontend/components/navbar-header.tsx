@@ -15,7 +15,7 @@ import { ExitIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import {backendAPI} from "@/environment/backend_api";
+import {userService} from "@/environment/backend_api";
 import {useState} from "react";
 
 const components: { title: string; href: string; description: string }[] = [
@@ -58,7 +58,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
         time_spent: timeDifferenceInSeconds,
         timestamp: new Date(signInTime).toISOString(),
     };
-    await backendAPI.post(`/analytics/log`, data,{
+    await userService.post(`/analytics`, data,{
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

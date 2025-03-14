@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
+from datetime import datetime, date
 
 class UserCreationRequest(BaseModel):
     """
@@ -43,3 +44,27 @@ class UserUpdateRequest(BaseModel):
     nickname: Optional[str] = None
     email: Optional[EmailStr] = None  # EmailStr is a Pydantic email validator
     password: Optional[str] = None
+
+class AnalyticsRequest(BaseModel):
+    """
+    Schema for incoming analytics requests.
+
+    Attributes:
+        date (date): The date of the usage in 'YYYY-MM-DD' format.
+        time_spent (int): The time spent in seconds.
+    """
+    date: date
+    time_spent: int
+    timestamp: datetime
+
+class AnalyticsResponse(BaseModel):
+    """
+    Schema for outgoing analytics responses.
+
+    Attributes:
+        date (Optional[date]): The date of the usage in 'YYYY-MM-DD' format.
+        time_spent (Optional[int]): The total time spent in seconds.
+    """
+    date: Optional[date]
+    time_spent: Optional[int]
+    timestamp: Optional[datetime]

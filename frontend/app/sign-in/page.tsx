@@ -17,7 +17,7 @@ import {FcGoogle} from "react-icons/fc";
 import {useRouter} from "next/navigation";
 import {useToast} from "@/hooks/use-toast";
 import {useEffect, useState} from "react";
-import {userService, authService} from "@/environment/backend_api";
+import {authService} from "@/environment/backend_api";
 import ImageSlider from "@/components/image-slider";
 
 export default function SignIn() {

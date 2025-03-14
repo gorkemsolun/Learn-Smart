@@ -1,7 +1,7 @@
 from sqlalchemy.orm.session import Session
 from sqlalchemy import and_
 
-from user_service.app.database.model import User 
+from user_service.app.database.model import User, Analytics
 from user_service.app.clients import auth as auth
 
 class UserDB:
@@ -169,3 +169,122 @@ class UserDB:
         """
         
         pass
+
+class AnalyticsDB:
+    """
+    Database interface for analytics tracking.
+    Tracks and stores daily usage time for each user in the application.
+    """
+
+    @staticmethod
+    def log_usage(db: Session, **kwargs):
+        """
+        Logs the usage time for a specific user on a specific date.
+
+        Args:
+        - user_id (int): The ID of the user.
+        - date (str): The date of the usage in 'YYYY-MM-DD' format.
+        - time_spent (int): Time spent in seconds to be added to the log.
+
+        Returns:
+        - dict: A dictionary representing the updated analytics log.
+        """
+        user_id = kwargs.get("user_id")
+        date = kwargs.get("date")
+        timestamp = kwargs.get("timestamp")
+        time_spent = kwargs.get("time_spent")
+
+        analytics_entry = Analytics(user_id=user_id, date=date, time_spent=time_spent, timestamp = timestamp)
+        db.add(analytics_entry)
+
+        db.commit()
+        db.refresh(analytics_entry)
+
+        return analytics_entry.to_dict()
+
+
+    @staticmethod
+    def get_usage(db: Session, **kwargs):
+        """
+        Gets usage analytics for a user. Optionally, fetch for a specific date.
+
+        Args:
+        - user_id (int): The ID of the user.
+        - date (str, optional): The date in 'YYYY-MM-DD' format. If None, fetches all logs for the user.
+
+        Returns:
+        - list[dict]: A list of dictionaries representing analytics logs, or a single dictionary if date is specified.
+        """
+        user_id = kwargs.get("user_id")
+        date = kwargs.get("date")
+
+        if date:
+            analytics_entry = (
+                db.query(Analytics)
+                .filter(Analytics.user_id == user_id, Analytics.date == date)
+                .first()
+            )
+            return analytics_entry.to_dict() if analytics_entry else None
+
+        analytics_entries = db.query(Analytics).filter(Analytics.user_id == user_id).all()
+        return [entry.to_dict() for entry in analytics_entries]
+
+
+    @staticmethod
+    def update_usage(db: Session, **kwargs):
+        """
+        Updates the usage time for a specific user on a specific date.
+
+        Args:
+        - user_id (int): The ID of the user.
+        - date (str): The date of the usage in 'YYYY-MM-DD' format.
+        - time_spent (int): New time spent value in seconds.
+
+        Returns:
+        - dict: A dictionary representing the updated analytics log.
+        """
+        user_id = kwargs.get("user_id")
+        date = kwargs.get("date")
+        time_spent = kwargs.get("time_spent")
+        timestamp = kwargs.get("timestamp")
+
+        analytics_entry = (
+            db.query(Analytics)
+            .filter(Analytics.user_id == user_id, Analytics.date == date)
+            .first()
+        )
+
+        if not analytics_entry:
+            raise ValueError("Analytics entry not found for the specified user and date")
+
+        analytics_entry.time_spent = time_spent
+        analytics_entry.timestamp = timestamp
+
+        db.commit()
+        db.refresh(analytics_entry)
+
+        return analytics_entry.to_dict()
+
+
+    @staticmethod
+    def delete_usage(db: Session, **kwargs):
+        """
+        Deletes usage analytics for a user. Optionally, delete for a specific date.
+
+        Args:
+        - user_id (int): The ID of the user.
+        - date (str, optional): The date in 'YYYY-MM-DD' format. If None, deletes all logs for the user.
+
+        Returns:
+        - None
+        """
+        user_id = kwargs.get("user_id")
+        date = kwargs.get("date")
+
+        query = db.query(Analytics).filter(Analytics.user_id == user_id)
+
+        if date:
+            query = query.filter(Analytics.date == date)
+
+        query.delete()
+        db.commit()

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { userService, backendAPI } from "@/environment/backend_api";
+import { userService } from "@/environment/backend_api";
 
 import HubIcon from "@mui/icons-material/Hub";
 import ChatIcon from "@mui/icons-material/Chat";
@@ -54,7 +54,7 @@ export default function UserDashboard() {
     setLoading(true);
     try {
       // Fetch courses first
-      const coursesResponse = await userService.get("/me", {
+      const coursesResponse = await userService.get("/user", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -66,13 +66,11 @@ export default function UserDashboard() {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Fetch analytics
-      // TODO: Uncomment the following code after implementing the analytics service
-      // /* const analyticsResponse = await backendAPI.get("/analytics/", {
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     Authorization: `Bearer ${token}`,
-      //   },
-      // }); */
+      const analyticsResponse = await userService.get("/analytics", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const getLast7Days = () => {
         return [...Array(7)].map((_, i) => dayjs().subtract(6 - i, "day").format("YYYY-MM-DD"));
@@ -80,25 +78,26 @@ export default function UserDashboard() {
 
       const last7Days = getLast7Days(); // Get the last 7 days in order
 
-      // TODO: Uncomment the following code after implementing the analytics service
-      // const formattedData = analyticsResponse.data.map((item: { date: string; time_spent: number; timestamp: string }) => ({
-      //   day: mapDateToDay(item.date),
-      //   date: item.date,
-      //   timeSpent: item.time_spent,
-      //   timestamp: item.timestamp,
-      // }));
+      const formattedData = analyticsResponse.data.map((item: { date: string; time_spent: number; timestamp: string }) => ({
+        day: mapDateToDay(item.date),
+        date: item.date,
+        timeSpent: item.time_spent,
+        timestamp: item.timestamp,
+      }));
 
-      // const chartData = last7Days.map((date) => {
-      //   const found = formattedData.find((item) => item.date === date);
-      //   return {
-      //     day: mapDateToDay(date),
-      //     date,
-      //     timeSpent: found ? found.timeSpent : 0,
-      //     timestamp: found ? found.timestamp : new Date(date).toISOString(),
-      //   };
-      // });
-      // setChartData(chartData);
+      const chartData = last7Days.map((date) => {
+        const found = formattedData.find((item) => item.date === date);
+        return {
+          day: mapDateToDay(date),
+          date,
+          timeSpent: found ? found.timeSpent : 0,
+          timestamp: found ? found.timestamp : new Date(date).toISOString(),
+        };
+      });
+      setChartData(chartData);
 
+      
+      /* 
       // Mock data until analytics service is implemented
       setChartData([
         { day: "Mon", timeSpent: 0 },
@@ -108,7 +107,7 @@ export default function UserDashboard() {
         { day: "Fri", timeSpent: 0 },
         { day: "Sat", timeSpent: 0 },
         { day: "Sun", timeSpent: 0 },
-      ]);
+      ]); */
 
     } catch (error) {
       console.error("Error fetching dashboard data:", error);

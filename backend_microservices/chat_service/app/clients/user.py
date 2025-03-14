@@ -19,7 +19,7 @@ async def get_current_user(authorization: str = Header(None)):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{USER_SERVICE_URL}/public/authenticate", 
+                f"{USER_SERVICE_URL}/public/user/authenticate", 
                 headers={"Authorization": authorization}
             )
 

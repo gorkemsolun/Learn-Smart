@@ -7,8 +7,7 @@ import { Menu, ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Course, Chat, Slide, Message } from '@/app/types';
 import { 
-  backendAPI, chatService, 
-  courseService, userService, filemanagerService
+  chatService, courseService, userService, filemanagerService
 } from '@/environment/backend_api';
 import ChatInterface from "@/components/chat-interface";
 import {
@@ -254,7 +253,7 @@ export default function InstructorPage() {
       return;
     }
     await userService
-      .get(`/me`, {
+      .get(`/user/me`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,

@@ -68,7 +68,7 @@ export default function SignUp() {
 
     await userService
       .post(
-        "/create",
+        "/user",
         {
           nickname: username,
           email: email,
