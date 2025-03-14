@@ -72,7 +72,7 @@ class ChatHistory:
                     img_b64 = encode_base64(file.data)
                     content.append({
                         "type": "image_url", 
-                        "image_url": {  # This needs to be an object, not a string
+                        "image_url": { 
                             "url": f"data:{file.mimetype};base64,{img_b64}"
                         }
                     })
@@ -84,7 +84,7 @@ class ChatHistory:
                             img_b64 = encode_base64(pix.tobytes())
                             content.append({
                                 "type": "image_url",
-                                "image_url": {  # This needs to be an object, not a string
+                                "image_url": { 
                                     "url": f"data:image/png;base64,{img_b64}"
                                 }
                             })
@@ -113,9 +113,8 @@ class ChatHistory:
             if message.role == "developer":
                 continue
 
-            text = message.content
+            content = []
 
-            file_data = []
             for file in message.files:
                 if file.mimetype.startswith("image/"):
                     type = "image"
@@ -126,7 +125,7 @@ class ChatHistory:
 
                 data = encode_base64(file.data)
 
-                file_data.append({
+                content.append({
                     "type": type,
                     "source": {
                         "type": "base64",
@@ -135,16 +134,18 @@ class ChatHistory:
                     }
                 })
 
+            content.append({
+                "type": "text",
+                "text": message.content
+            })
+
             anthropic_history.append({
                 "role": "user" if message.role == "edux" else message.role,
-                "content": file_data.append({   
-                    "type": "text",
-                    "text": text
-                })
+                "content": content 
             })
         
         return anthropic_history
-    
+
 
     def google(self):
         from chat_service.app.util import encode_base64

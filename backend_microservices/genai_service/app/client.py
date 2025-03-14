@@ -25,7 +25,7 @@ class ChatClientBase:
         """
         Send a message to the API and return the response.
         """
-        raise NotImplementedError
+        raise NotImplementedError("invoke() method must be called from a subclass.")
 
 
 class AnthropicChatClient(ChatClientBase):

@@ -32,7 +32,7 @@ async def send_message(payload: dict = Body(...)):
     history = json.loads(payload.get("history", "[]"))
     system_prompt = payload.get("system_prompt")
     model = payload.get("model", "google")
-    
+
     client = ChatClient.create(model=model, system_prompt=system_prompt)
     response = client.invoke(history=history)
 
