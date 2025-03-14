@@ -6,7 +6,8 @@ import anthropic
 
 from genai_service.app import (
     ANTHROPIC_API_KEY, OPENAI_API_KEY, 
-    GOOGLE_MODEL_VERSION, ANTHROPIC_MODEL_VERSION, OPENAI_MODEL_VERSION
+    GOOGLE_MODEL_VERSION, ANTHROPIC_MODEL_VERSION, OPENAI_MODEL_VERSION,
+    SYSTEM_PROMPT
 )
 
 class ChatClientBase:
@@ -16,7 +17,7 @@ class ChatClientBase:
     def __init__(self, model: str, system_prompt: str = None):
         self.client = None
         self.model = model
-        self.system_prompt = system_prompt
+        self.system_prompt = system_prompt or SYSTEM_PROMPT
 
 
     def invoke(self, history: List[dict], max_tokens: int = 2500,
