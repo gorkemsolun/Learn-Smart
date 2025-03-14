@@ -72,7 +72,9 @@ class ChatHistory:
                     img_b64 = encode_base64(file.data)
                     content.append({
                         "type": "image_url", 
-                        "image_url": f"data:{file.mimetype};base64,{img_b64}"
+                        "image_url": {  # This needs to be an object, not a string
+                            "url": f"data:{file.mimetype};base64,{img_b64}"
+                        }
                     })
                 elif file.mimetype.startswith("application/pdf"):
                     # convert pdf into set of images, since OpenAI doesn't support pdf files natively
@@ -82,7 +84,9 @@ class ChatHistory:
                             img_b64 = encode_base64(pix.tobytes())
                             content.append({
                                 "type": "image_url",
-                                "image_url": f"data:image/png;base64,{img_b64}"
+                                "image_url": {  # This needs to be an object, not a string
+                                    "url": f"data:image/png;base64,{img_b64}"
+                                }
                             })
                 else:
                     raise ValueError(f"Unsupported file type: {file.mimetype}")

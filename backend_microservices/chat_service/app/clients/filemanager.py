@@ -86,7 +86,7 @@ async def download(file_id: int):
             response = await client.get(
                 f"{FILEMANAGER_SERVICE_URL}/private/{file_id}",
                 headers={"X-API-Key": FILEMANAGER_CLIENT_KEY},
-                timeout=10
+                timeout=None
             )
             response.raise_for_status()  # Raise an exception for HTTP errors
             return response.content

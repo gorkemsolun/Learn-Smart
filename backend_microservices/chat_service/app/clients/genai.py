@@ -39,7 +39,7 @@ async def send_message(history: ChatHistory, model: str,
                     "Content-Type": "application/json"
                     },
                 json=payload,
-                timeout=60
+                timeout=None
             )
             response.raise_for_status()
             return response.json()

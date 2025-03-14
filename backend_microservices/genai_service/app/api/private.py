@@ -26,13 +26,13 @@ async def send_message(payload: dict = Body(...)):
     Args:
         history (List[dict]): The chat history.
         system_prompt (str): The system prompt to use.
-        model (str): The generative AI model to use.
+        model (str): The generative AI model to use. One of "google", "openai" or "anthropic".
         current_user (dict): The current user.
     """
     history = json.loads(payload.get("history", "[]"))
     system_prompt = payload.get("system_prompt")
     model = payload.get("model", "google")
-
+    
     client = ChatClient.create(model=model, system_prompt=system_prompt)
     response = client.invoke(history=history)
 

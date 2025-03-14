@@ -88,6 +88,8 @@ class OpenAIChatClient(ChatClientBase):
         Returns:
             - content (str): The response from the API.
         """
+        history.insert(0, {"role": "developer", "content": self.system_prompt})
+
         response = self.client.chat.completions.create(
             model=self.model,
             messages=history,
