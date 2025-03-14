@@ -29,6 +29,6 @@ if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
   exit 1
 fi
 
-bash stop_services.sh
-python delete_all_data.py --user "$USERNAME" --password "$PASSWORD"
-bash run_services.sh
+bash scripts/stop_services.sh
+python scripts/delete_all_data.py --user "$USERNAME" --password "$PASSWORD"
+bash scripts/run_services.sh
