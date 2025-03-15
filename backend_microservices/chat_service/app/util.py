@@ -203,7 +203,6 @@ async def handle_chat_message(
     
     # Add messages and generate response
     history.add_message(role="user", content=text, files=chat_files)
-
     response = await genai.send_message(history=history, model=model)
     history.add_message(role="assistant", content=response)
 

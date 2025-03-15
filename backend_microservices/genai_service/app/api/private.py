@@ -6,7 +6,7 @@ import google.generativeai as genai
 
 from genai_service.app.client import ChatClient
 
-from genai_service.app.util import validate_quiz_format, encode_base64
+from genai_service.app.util import validate_quiz_format, validate_flashcards_format, encode_base64
 from genai_service.app.security.auth import verify_api_key
 from genai_service.app import (
     WEEKLY_STUDY_PLAN_PROMPT, GOOGLE_MODEL_VERSION
@@ -92,37 +92,30 @@ async def create_quiz(payload: dict = Body(...)):
     return {"success": True, "quiz": data}
 
 
-# @router.post("/generate/flashcards")
-# async def create_flashcards(history_urls: List[str] = Form(...)):
-#     """
-#     Create flashcards based on a chat history.
+@router.post("/generate/flashcards")
+async def create_flashcards(payload: dict = Body(...)):
+    """
+    Create flashcards based on a chat history.
 
-#     Args:
-#         history_urls (List[str]): The URLs of the chat histories.
-#         current_user (dict): The current user.
-#     """
-#     client = ChatClient.create(model="google")
+    Args:
+        history (List[dict]): The chat history.
+        current_user (dict): The current user.
+    """
+    history = json.loads(payload.get("history", "[]"))
 
-#     # placeholder, fetch from S3/FileManager
-#     histories: List[ChatHistory] = [ChatHistory.from_binary(open(url, "rb")) for url in history_urls] 
-#     messages_merged = [message for history in histories for message in history.messages]
-#     history_merged = ChatHistory(messages=messages_merged)
+    client = ChatClient.create(model="google")
+    response = client.invoke(
+        history=history,
+        generation_config={"response_mime_type": "application/json"}
+    )
 
-#     response, _ = client.invoke(
-#         query=FLASHCARD_PROMPT, 
-#         history=history_merged,
-#         generation_config={"response_mime_type": "application/json"}
-#     )
-
-#     response_dict = json.loads(response)
-#     if not response_dict["success"]:
-#         raise HTTPException(status_code=500, detail="Failed to generate flashcards.")
+    response_dict = json.loads(response)
+    if not response_dict["success"]:
+        raise HTTPException(status_code=500, detail="Failed to generate flashcards.")
     
-#     data = response_dict["data"]
-#     flashcards = {
-#         "topics": [item["topic"] for item in data],
-#         "explanations": [item["explanation"] for item in data]
-#     }
+    data = response_dict["data"]
+    if not validate_flashcards_format(data):
+        raise HTTPException(status_code=500, detail="Flashcards format could not be validated.")
     
-#     return {"success": True, "flashcards": flashcards}
+    return {"success": True, "flashcards": data}
     

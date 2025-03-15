@@ -48,3 +48,34 @@ def validate_quiz_format(data: list) -> bool:
             return False
 
     return True
+
+
+def validate_flashcards_format(data: list) -> bool:
+    """
+    Validates the response structure for generated flashcards.
+
+    Args:
+        - response (dict): The response data.
+
+    Returns:
+        - bool: True if valid, False otherwise.
+    """
+
+    # If success is True, data must be a list of flashcards
+    if not isinstance(data, list):
+        return False
+
+    for flashcard in data:
+        if not isinstance(flashcard, dict):
+            return False
+
+        # Validate 'topic' key
+        if 'topic' not in flashcard or not isinstance(flashcard['topic'], str) or not flashcard['topic'].strip():
+            return False
+
+        # Validate 'explanation' key
+        if 'explanation' not in flashcard or not isinstance(flashcard['explanation'], str) or not flashcard['explanation'].strip():
+            return False
+
+    return True  # Valid success case
+

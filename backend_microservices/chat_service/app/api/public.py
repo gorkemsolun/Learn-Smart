@@ -767,68 +767,57 @@ async def rename_flashcard(
     return {"message": f"Flashcard has been successfully renamed to {new_name}."}
 
 
-
-
-# @router.post("/{chat_id}/create_flashcards")
-# async def create_flashcards(chat_id: int, 
-#                             current_user: dict = Depends(auth.get_current_user),
-#                             db: Session = Depends(get_db)):
-#     # TODO: convert this to gRPC call
-#     chat, _ = await get_authorized_chat_and_course(chat_id, current_user["user_id"])
-#     if chat["slides_mode"]:
-#         slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
-#         slide_ids = [slide["slide_id"] for slide in slides]
-
-#         # TODO: FileManager service
-#         history_paths = [glob.glob(get_slide_history_path(slide_id, "*")) for slide_id in slide_ids]
-#         history_paths = list(itertools.chain(*history_paths))
-#         history_paths = sorted(history_paths)
-        
-#         if len(history_paths) == 0:
-#             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-        
-#         history = []
-#         for history_path in history_paths:
-#             with open(history_path, "r") as file:
-#                 history.extend(jsonpickle.decode(file.read()))
-#     else:
-#         history_url = get_chat_history_path(chat_id)
-#         if not os.path.exists(history_url):
-#             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-#         with open(history_url, "r") as file:
-#             history = jsonpickle.decode(file.read())
-
-#     # TODO: LLM service
-#     chat_model = genai.GenerativeModel(
-#         MODEL_VERSION, system_instruction=SYSTEM_PROMPT, 
-#         generation_config={"response_mime_type": "application/json"}
-#     ).start_chat(history=history)
-
-#     # TODO: the weird thing is, model only generates quizzes for the last slide set it explained unless prompted explicitly 
-#     # we need extra prompt engineering
-#     # TODO: FileManager service & LLM service
-#     response = chat_model.send_message(FLASHCARD_PROMPT)
-#     response_dict = json.loads(response.text)
-#     if not response_dict["success"]:
-#         raise HTTPException(status_code=500, detail="Failed to generate flashcards.")
+@router.post("/flashcards")
+async def create_flashcards(chat_id: int, 
+                            current_user: dict = Depends(user.get_current_user),
+                            db: Session = Depends(get_db)):
+    """
+    Create flashcards based on a chat history.
     
-#     data = response_dict["data"]
+    Args:
+        chat_id (int): The ID of the chat.
+        current_user (dict): The current user.
 
-#     flashcards = [item["topic"] for item in data]
-#     explanations = [item["explanation"] for item in data]
+    Returns:
+        dict: A dictionary containing the flashcard title and data.
+    """
+    chat, course = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
+    if chat["slides_mode"]:
+        history_fids = []
+        slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
+        slide_ids = [slide["slide_id"] for slide in slides]
 
-#     flashcards_base_path = get_flashcards_folder_path(chat_id)
-#     os.makedirs(flashcards_base_path, exist_ok=True)
-#     flashcards_file_name = f"{generate_hash("", strategy='timestamp', human_readable=True)}.json"
+        for slide_id in slide_ids:
+            pages = SlidePageDB.fetch(db, slide_id=slide_id, all=True)
+            history_fids.extend([page["chat_history_fid"] for page in pages])
 
-#     flashcards_file_path = os.path.join(flashcards_base_path, flashcards_file_name)
+        if len(history_fids) == 0:
+            raise HTTPException(status_code=400, detail="No messages found in the chat history to generate flashcards.")
+        
+        history_fids = sorted(history_fids)
+        histories = []
+        for history_fid in history_fids:
+            history_bytes = await filemanager.download(file_id=history_fid)
+            history = ChatHistory.from_bytes(history_bytes)
+            histories.append(history)
 
-#     combined_data = {
-#         "flashcards": flashcards,
-#         "explanations": explanations
-#     }
+        history = ChatHistory.merge(histories)
 
-#     with open(flashcards_file_path, "w") as file:
-#         json.dump(combined_data, file, indent=4)
+    else:
+        history_fid = chat["history_fid"]
+        if not history_fid:
+            raise HTTPException(status_code=400, detail="No chat history found to generate flashcards.")
+        history_bytes = await filemanager.download(file_id=history_fid)
+        history = ChatHistory.from_bytes(history_bytes)
 
-#     return {"combined_data": combined_data}
+    history.add_message(role="edux", content=FLASHCARD_PROMPT)
+    flashcards = await genai.generate_flashcards(history)
+    flashcards_bytes = json.dumps(flashcards).encode('utf-8')
+    flashcards_fid = await filemanager.upload(UploadFile(file=io.BytesIO(flashcards_bytes), filename="flashcards.json"), user_id=current_user["user_id"])
+
+    flashcard_db = FlashcardDB.create(
+        db, chat_id=chat_id, course_id=course["course_id"], 
+        flashcard_fid=flashcards_fid, num_flashcards=len(flashcards)
+    )
+
+    return {"title": flashcard_db["flashcard_title"], "data": flashcards}

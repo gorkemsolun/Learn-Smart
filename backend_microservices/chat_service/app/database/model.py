@@ -153,7 +153,11 @@ class Flashcard(Base):
     flashcard_id = Column(Integer, primary_key=True, index=True)
     chat_id = Column(Integer, nullable=False)  # the chat ID to which the flashcard belongs
     course_id = Column(Integer, nullable=False)  # the course ID to which the flashcard belongs
-    flashcard_title = Column(String(150), nullable=False) # flashcard title
+    flashcard_title = Column(
+        String(150), 
+        nullable=False,
+        default=lambda: f"Flashcard {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}"
+    )
     flashcard_fid = Column(Integer, nullable=False)  # flashcard file ID
     num_flashcards = Column(Integer, nullable=False)  # the number of flashcards in the set
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -697,7 +697,6 @@ class FlashcardDB:
     def create(db: Session, 
                chat_id: int, 
                course_id: int,
-               flashcard_title: str,
                flashcard_fid: int,
                num_flashcards: int):
         """
@@ -717,7 +716,6 @@ class FlashcardDB:
         flashcard = Flashcard(
             chat_id=chat_id,
             course_id=course_id,
-            flashcard_title=flashcard_title,
             flashcard_fid=flashcard_fid,
             num_flashcards=num_flashcards
         )
