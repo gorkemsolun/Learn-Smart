@@ -12,12 +12,16 @@ def encode_base64(file: bytes) -> str:
 def validate_quiz_format(data: list) -> bool:
     """
     Validates the response structure for the generated quiz.
+
     Args:
         - data (list): The response data.
+
+    Returns:
+        - bool: True if valid, False otherwise.
     """
     if not isinstance(data, list):
         return False
-    
+
     for item in data:
         if not isinstance(item, dict):
             return False
@@ -27,20 +31,20 @@ def validate_quiz_format(data: list) -> bool:
             return False
 
         # Validate 'choices' key
-        if 'choices' not in item or not isinstance(item['choices'], list):
+        if 'choices' not in item or not isinstance(item['choices'], dict):
             return False
         
-        # Ensure 'choices' contains 5 elements
-        if len(item['choices']) != 5:
+        # Ensure 'choices' contains exactly 5 elements and keys are 'A' to 'E'
+        if len(item['choices']) != 5 or set(item['choices'].keys()) != {'A', 'B', 'C', 'D', 'E'}:
             return False
-        
+
         # Validate each choice in 'choices'
-        for choice in item['choices']:
-            if not isinstance(choice, str):
+        for key, value in item['choices'].items():
+            if not isinstance(key, str) or not isinstance(value, str):
                 return False
         
         # Validate 'answer' key
-        if 'answer' not in item or not item['answer'].upper() in ['A', 'B', 'C', 'D', 'E']:
+        if 'answer' not in item or not isinstance(item['answer'], str) or item['answer'].upper() not in ['A', 'B', 'C', 'D', 'E']:
             return False
 
     return True

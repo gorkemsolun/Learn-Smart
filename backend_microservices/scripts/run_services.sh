@@ -15,7 +15,11 @@ declare -A services=(
 
 # Base directory where the services are located
 BASE_DIR="/home/bil/edux/backend_microservices"
-mkdir "$BASE_DIR/logs"
+# Create logs directory if it doesn't exist
+LOGS_DIR="$BASE_DIR/logs"
+if [ ! -d "$LOGS_DIR" ]; then
+    mkdir -p "$LOGS_DIR"
+fi
 
 # Track successful starts
 success_count=0

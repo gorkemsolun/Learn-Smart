@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, Depends, Form, File, Header
+from fastapi import APIRouter, HTTPException, UploadFile, Depends, Form, File
 from sqlalchemy.orm import Session
 from typing import List
 import io, json
@@ -10,7 +10,7 @@ from chat_service.app.database.dbmanager import (
 )
 from chat_service.app.database.session import get_db
 from chat_service.app.util import *
-from chat_service.app import EXPLAIN_SLIDE_PROMPT
+from chat_service.app import EXPLAIN_SLIDE_PROMPT, QUIZZES_PROMPT, FLASHCARD_PROMPT
 
 router = APIRouter(prefix="/public", tags=["Chat - Public API"])
 
@@ -639,6 +639,53 @@ async def delete_quiz(quiz_id: int,
 
         return {"status": "success", "message": "Quiz deleted successfully."}
 
+
+@router.post("/quiz")
+async def create_quiz(chat_id: int, 
+                      current_user: dict = Depends(user.get_current_user),
+                      db: Session = Depends(get_db)):
+
+    chat, course = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
+    if chat["slides_mode"]:
+        history_fids = []
+        slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
+        slide_ids = [slide["slide_id"] for slide in slides]
+
+        for slide_id in slide_ids:
+            pages = SlidePageDB.fetch(db, slide_id=slide_id, all=True)
+            history_fids.extend([page["chat_history_fid"] for page in pages])
+
+        if len(history_fids) == 0:
+            raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
+        
+        history_fids = sorted(history_fids)
+        histories = []
+        for history_fid in history_fids:
+            history_bytes = await filemanager.download(file_id=history_fid)
+            history = ChatHistory.from_bytes(history_bytes)
+            histories.append(history)
+
+        history = ChatHistory.merge(histories)
+
+    else:
+        history_fid = chat["history_fid"]
+        if not history_fid:
+            raise HTTPException(status_code=400, detail="No chat history found to generate quiz.")
+        history_bytes = await filemanager.download(file_id=history_fid)
+        history = ChatHistory.from_bytes(history_bytes)
+
+    history.add_message(role="edux", content=QUIZZES_PROMPT)
+    quiz = await genai.generate_quiz(history)
+    quiz_bytes = json.dumps(quiz).encode('utf-8')
+    quiz_fid = await filemanager.upload(UploadFile(file=io.BytesIO(quiz_bytes), filename="quiz.json"), user_id=current_user["user_id"])
+
+    quiz_db = QuizDB.create(
+        db, chat_id=chat_id, course_id=course["course_id"], 
+        quiz_fid=quiz_fid, num_questions=len(quiz)
+    )
+        
+    return {"title": quiz_db["quiz_title"], "data": quiz}
+
 # Flashcard
 @router.delete("/flashcards/{flashcard_id}")
 async def delete_flashcard(flashcard_id: int, 
@@ -720,64 +767,6 @@ async def rename_flashcard(
     return {"message": f"Flashcard has been successfully renamed to {new_name}."}
 
 
-
-
-# @router.post("/{chat_id}/create_quiz")
-# async def create_quiz(chat_id: int, 
-#                       current_user: dict = Depends(auth.get_current_user),
-#                       db: Session = Depends(get_db)):
-#     # TODO: convert this to gRPC call
-#     chat, _ = await get_authorized_chat_and_course(chat_id, current_user["user_id"])
-#     if chat["slides_mode"]:
-#         slides = SlideDB.fetch(db, chat_id=chat_id, all=True)
-#         slide_ids = [slide["slide_id"] for slide in slides]
-
-#         # TODO: FileManager service
-#         history_paths = [glob.glob(get_slide_history_path(slide_id, "*")) for slide_id in slide_ids]
-#         history_paths = list(itertools.chain(*history_paths))
-#         history_paths = sorted(history_paths)
-        
-#         if len(history_paths) == 0:
-#             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-#         history = []
-#         for history_path in history_paths:
-#             with open(history_path, "r") as file:
-#                 history.extend(jsonpickle.decode(file.read()))
-#     else:
-#         history_url = get_chat_history_path(chat_id)
-#         if not os.path.exists(history_url):
-#             raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-#         with open(history_url, "r") as file:
-#             history = jsonpickle.decode(file.read())
-
-#     # TODO: LLM service
-#     model = genai.GenerativeModel(
-#         MODEL_VERSION, system_instruction=SYSTEM_PROMPT, 
-#         generation_config={"response_mime_type": "application/json"}
-#     ).start_chat(history=history)
-
-#     # TODO: the weird thing is, model only generates quizzes for the last slide set it explained unless prompted explicitly 
-#     # we need extra prompt engineering
-#     # TODO: FileManager service & LLM service
-#     response = model.send_message([QUIZZES_PROMPT])
-#     response_dict = json.loads(response.text)
-#     if not response_dict["success"]:
-#         raise HTTPException(status_code=500, detail="Failed to generate quiz.")
-    
-#     data = response_dict["data"]
-#     if not validate_llm_quiz_response(data):
-#         raise HTTPException(status_code=500, detail="An error occurred while generating the quiz.")
-
-#     quizzes_base_path = get_quizzes_folder_path(chat_id)
-#     os.makedirs(quizzes_base_path, exist_ok=True)
-
-#     quiz_file_name = f"{generate_hash("", strategy='timestamp', human_readable=True)}.json"
-#     quiz_file_path = os.path.join(quizzes_base_path, quiz_file_name)
-
-#     with open(quiz_file_path, 'w') as file:
-#         json.dump(data, file, indent=4)
-        
-#     return {"filename": splitext(quiz_file_name)[0], "quiz": data}
 
 
 # @router.post("/{chat_id}/create_flashcards")

@@ -529,7 +529,6 @@ class QuizDB:
     def create(db: Session, 
                chat_id: int, 
                course_id: int,
-               quiz_title: str,
                quiz_fid: int,
                num_questions: int):
         """
@@ -549,7 +548,6 @@ class QuizDB:
         quiz = Quiz(
             chat_id=chat_id,
             course_id=course_id,
-            quiz_title=quiz_title,
             quiz_fid=quiz_fid,
             num_questions=num_questions
         )

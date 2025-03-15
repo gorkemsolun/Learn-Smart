@@ -253,7 +253,7 @@ export default function InstructorPage() {
       return;
     }
     await userService
-      .get(`/user/me`, {
+      .get(`/user`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,

@@ -207,3 +207,19 @@ class ChatHistory:
             return pickle.loads(file)
         except (UnicodeDecodeError, json.JSONDecodeError) as e:
             raise ValueError(f"Failed to parse chat history: {str(e)}")
+
+
+    @staticmethod
+    def merge(histories: List["ChatHistory"]) -> "ChatHistory":
+        """
+        Merge multiple chat histories into a single chat history.
+        Args:
+            - histories (List[ChatHistory]): The list of chat histories to merge.
+        Returns:
+            ChatHistory: The merged chat history.
+        """
+        merged_messages = []
+        for history in histories:
+            merged_messages.extend(history.messages)
+            
+        return ChatHistory(messages=merged_messages)

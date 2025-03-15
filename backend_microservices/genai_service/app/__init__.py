@@ -12,7 +12,6 @@ ANTHROPIC_MODEL_VERSION = "claude-3-5-sonnet-20241022"
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
@@ -56,103 +55,6 @@ Return your analysis strictly as a JSON object in the following schema:
 {
   "success": false,
   "data": "The provided content is personal notes, not a syllabus."
-}
-```
-""".strip()
-
-FLASHCARD_PROMPT = """
-You are required to generate flashcards from the student's chat history to facilitate effective review and reinforcement of key concepts.
-
-**Instructions:**
-
-- Generate between 3 to 4 relevant flashcards.
-- Each flashcard must include a clear "topic" and a concise, accurate "explanation".
-- Prioritize:
-  - Concepts explicitly discussed in detail within the chat history.
-  - Topics or concepts the student demonstrated difficulty understanding.
-
-- **Do NOT** use information beyond the chat history.
-- If the chat history lacks sufficient educational content for flashcard generation, explicitly state the reason clearly.
-
-Return your response strictly as a JSON object in the following schema:
-
-**Success Case:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "topic": "Process Scheduling",
-      "explanation": "The process by which an operating system decides the order in which processes access CPU resources, optimizing CPU usage and minimizing wait times."
-    },
-    {
-      "topic": "CPU Burst",
-      "explanation": "A period when a process continuously uses CPU resources before performing I/O or terminating."
-    }
-  ]
-}
-```
-
-**Failure Case:**
-```json
-{
-  "success": false,
-  "data": "Chat history does not contain sufficient educational content to generate meaningful flashcards."
-}
-```
-""".strip()
-
-QUIZZES_PROMPT = """
-You are required to generate a contextually relevant multiple-choice quiz based exclusively on the provided student chat history.  
-
-**Instructions:**
-
-- Create between 2 and 10 quiz questions based strictly on the depth and breadth of discussed course content.
-- Each question must clearly reflect key concepts explicitly covered in the chat.
-- Provide exactly five answer choices (labeled clearly as A, B, C, D, E) per question, ensuring choices are plausible and clearly distinct.
-- Indicate the correct answer explicitly, labeled with letters (A, B, C, D, or E).
-
-- **Do NOT** infer or include any information beyond provided chat content.
-- If insufficient course-related content is present for quiz generation, clearly indicate the reason for failure.
-
-Return your response strictly as a JSON object following the schema below:
-
-**Success Case:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "question": "What is process scheduling in operating systems?",
-      "choices": [
-        "Managing file storage space.",
-        "Allocating CPU time to processes.",
-        "Protecting data integrity.",
-        "Ensuring memory optimization.",
-        "Handling peripheral device communication."
-      ],
-      "answer": "B"
-    },
-    {
-      "question": "Which term describes the interval a process spends actively using the CPU?",
-      "choices": [
-        "Context Switch",
-        "I/O Burst",
-        "CPU Burst",
-        "Deadlock",
-        "Throughput"
-      ],
-      "answer": "C"
-    }
-  ]
-}
-```
-
-**Failure Case:**
-```json
-{
-  "success": false,
-  "data": "The chat history lacks sufficient course-related information to create quiz questions."
 }
 ```
 """.strip()

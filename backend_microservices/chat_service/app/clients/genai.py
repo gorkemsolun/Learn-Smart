@@ -49,3 +49,38 @@ async def send_message(history: ChatHistory, model: str,
             status_code=500,
             detail=f"GenAI service error: {str(e)}"
         )
+
+
+async def generate_quiz(history: ChatHistory) -> dict:
+    """
+    Create a quiz based on a chat history.
+
+    Args:
+        history (ChatHistory): The chat history.
+
+    Returns:
+        dict: The generated quiz.
+    """
+    try:
+        payload = {
+            "history": json.dumps(history.google())
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{GENAI_SERVICE_URL}/private/generate/quiz",
+                headers={
+                    "X-API-Key": GENAI_CLIENT_KEY,
+                    "Content-Type": "application/json"
+                    },
+                json=payload,
+                timeout=None
+            )
+            response.raise_for_status()
+            return response.json().get("quiz")
+            
+    except httpx.HTTPError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"GenAI service error: {str(e)}"
+        )

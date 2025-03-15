@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, UniqueConstraint, DateTime, String, Boolean, ForeignKey, func
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from chat_service.app.database.session import Base 
 
 class Chat(Base):
@@ -114,7 +115,11 @@ class Quiz(Base):
     quiz_id = Column(Integer, primary_key=True, index=True)
     chat_id = Column(Integer, nullable=False)  # the chat ID to which the quiz belongs
     course_id = Column(Integer, nullable=False)  # the course ID to which the quiz belongs
-    quiz_title = Column(String(150), nullable=False) # quiz title 
+    quiz_title = Column(
+        String(150), 
+        nullable=False,
+        default=lambda: f"Quiz {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}"
+    )
     quiz_fid = Column(Integer, nullable=False)  # quiz file ID
     num_questions = Column(Integer, nullable=False)  # the number of questions in the quiz
     created_at = Column(DateTime(timezone=True), server_default=func.now())
