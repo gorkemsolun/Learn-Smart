@@ -72,6 +72,40 @@ async def get_quizzes_of_course(course_id: int,
     
     return ret
 
+
+@router.get("/course/{course_id}/flashcards")
+async def get_flashcards_of_course(course_id: int,
+                                   current_user: dict = Depends(user.get_current_user),
+                                   db: Session = Depends(get_db)):
+    """
+    Get all flashcards for a specific course.
+
+    Args:
+        course_id (int): The ID of the course.
+
+    Returns:
+        list: A list of dictionaries, each containing the flashcard details.
+
+    Raises:
+        HTTPException: If the course is not found or the user is not authorized to access the flashcards.
+    """
+    courses = await course.get_user_courses(current_user["user_id"])
+    if course_id not in [course["course_id"] for course in courses]:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    
+    chats = ChatDB.fetch(db, course_id=course_id, all=True)
+
+    ret = []
+    for chat in chats:
+        flashcards = FlashcardDB.fetch(db, chat_id=chat["chat_id"], all=True)
+        ret.append({
+            "chat_id": chat["chat_id"],
+            "chat_title": chat["chat_title"],
+            "flashcards": flashcards
+        })
+
+    return ret
+
 # Chat
 @router.get("/chat/{chat_id}/info")
 async def get_chat_info(chat_id: int,
@@ -687,7 +721,7 @@ async def create_quiz(chat_id: int,
     return {"title": quiz_db["quiz_title"], "data": quiz}
 
 # Flashcard
-@router.delete("/flashcards/{flashcard_id}")
+@router.delete("/flashcard/{flashcard_id}")
 async def delete_flashcard(flashcard_id: int, 
                            current_user: dict = Depends(user.get_current_user),
                            db: Session = Depends(get_db)):
@@ -713,7 +747,7 @@ async def delete_flashcard(flashcard_id: int,
     return {"status": "success", "message": "Flashcard deleted successfully."}
 
 
-@router.get("/flashcards/{flashcard_id}")
+@router.get("/flashcard/{flashcard_id}")
 async def get_flashcard(flashcard_id: int, 
                         current_user: dict = Depends(user.get_current_user),
                         db: Session = Depends(get_db)):
@@ -739,7 +773,7 @@ async def get_flashcard(flashcard_id: int,
     return flashcard_dict
 
 
-@router.put("/flashcards/{flashcard_id}")
+@router.put("/flashcard/{flashcard_id}")
 async def rename_flashcard(
     flashcard_id: int,
     new_name: str,
@@ -767,7 +801,7 @@ async def rename_flashcard(
     return {"message": f"Flashcard has been successfully renamed to {new_name}."}
 
 
-@router.post("/flashcards")
+@router.post("/flashcard")
 async def create_flashcards(chat_id: int, 
                             current_user: dict = Depends(user.get_current_user),
                             db: Session = Depends(get_db)):
