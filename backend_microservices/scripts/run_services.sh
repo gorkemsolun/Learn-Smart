@@ -15,6 +15,7 @@ declare -A services=(
 
 # Base directory where the services are located
 BASE_DIR="/home/bil/edux/backend_microservices"
+mkdir "$BASE_DIR/logs"
 
 # Track successful starts
 success_count=0
