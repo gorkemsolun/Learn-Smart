@@ -13,6 +13,7 @@ export default function Profile() {
   const [token, setToken] = useState<string>(
     Cookies.get("authToken") as string
   );
+  const [editMode, setEditMode] = useState<boolean>(false);
   const [user, setUser] = useState<User>({
     user_id: "",
     role: "",
@@ -46,30 +47,35 @@ export default function Profile() {
     email: string,
     password: string
   ) {
-    return new Promise<void>(async (resolve) => {
-      await backendAPI
-        .put(
-          `/users/update`,
-          {
-            name: name,
-            nickname: nickname,
-            email: email,
-            password: password,
-          },
-          {
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+    if (editMode) {
+      /* return new Promise<void>(async (resolve) => {
+        await backendAPI
+          .put(
+            `/users/update`,
+            {
+              name: name,
+              nickname: nickname,
+              email: email,
+              password: password,
             },
-          }
-        )
-        .then((response) => {
-          setUser(response.data as User);
-        });
+            {
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+          .then((response) => {
+            setUser(response.data as User);
+          });
 
-      resolve();
-    });
+        resolve();
+      }); */
+      setEditMode(false);
+    } else {
+      setEditMode(true);
+    }
   }
 
   return (
@@ -116,12 +122,12 @@ export default function Profile() {
           }}
           className="hover:text-primary-dark text-primary mr-16 transition-colors"
         >
-          Edit Profile
+          {editMode ? "Save Changes" : "Edit Profile"}
         </Button>
       </div>
-      <div className="mr-24 mt-8 flex w-full items-center justify-center">
+      <div className="mt-8 flex w-full items-start justify-start">
         <div className="mx-32 p-4">
-          <div className="my-4">
+          <div className="mb-4">
             <label className="text-foreground/70 text-xs font-semibold">
               Username
             </label>
@@ -131,6 +137,7 @@ export default function Profile() {
               value={user.nickname}
               onChange={(e) => setUser({ ...user, nickname: e.target.value })}
               required
+              disabled={!editMode}
             />
           </div>
 
@@ -144,10 +151,11 @@ export default function Profile() {
               value={user.password}
               onChange={(e) => setUser({ ...user, password: e.target.value })}
               required
+              disabled={!editMode}
             />
           </div>
         </div>
-        <div className="p-4">
+        <div className="flex flex-col justify-start p-4">
           <div>
             <label className="text-foreground/70 text-xs font-semibold">
               Email
@@ -158,6 +166,7 @@ export default function Profile() {
               value={user.email}
               onChange={(e) => setUser({ ...user, email: e.target.value })}
               required
+              disabled={!editMode}
             />
           </div>
         </div>
