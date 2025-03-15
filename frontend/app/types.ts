@@ -1,5 +1,5 @@
 import { HierarchyNode, SimulationNodeDatum } from "d3";
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 
 export interface User {
   user_id: string;
@@ -166,4 +166,11 @@ export interface ChatSidebarProps {
   activeChat: Chat | null;
   setActiveChat: React.Dispatch<React.SetStateAction<Chat | null>>;
   chats: Chat[];
+}
+
+export interface ChatResizablePanelsProps {
+  activeChat: { chat_title: string } | null;
+  message: string;
+  setMessage: (message: string) => void;
+  handleSendMessage: (event: React.FormEvent) => void;
 }
