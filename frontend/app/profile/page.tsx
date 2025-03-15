@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckPasswordDialog } from "@/components/check-password-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { backendAPI } from "@/environment/backend_api";
@@ -8,12 +9,12 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { User } from "../types";
 
-// TODO: Backend
 export default function Profile() {
   const [token, setToken] = useState<string>(
     Cookies.get("authToken") as string
   );
   const [editMode, setEditMode] = useState<boolean>(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState<boolean>(false);
   const [user, setUser] = useState<User>({
     user_id: "",
     role: "",
@@ -48,33 +49,11 @@ export default function Profile() {
     password: string
   ) {
     if (editMode) {
-      /* return new Promise<void>(async (resolve) => {
-        await backendAPI
-          .put(
-            `/users/update`,
-            {
-              name: name,
-              nickname: nickname,
-              email: email,
-              password: password,
-            },
-            {
-              headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
-          .then((response) => {
-            setUser(response.data as User);
-          });
-
-        resolve();
-      }); */
+      // TODO ADD HERE THE SAVING LOGIC
       setEditMode(false);
     } else {
-      setEditMode(true);
+      // Instead of immediately entering edit mode, show the check password dialog.
+      setShowPasswordDialog(true);
     }
   }
 
@@ -171,6 +150,17 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {showPasswordDialog && (
+        <CheckPasswordDialog
+          isOpen={showPasswordDialog}
+          onClose={() => setShowPasswordDialog(false)}
+          onCheckSuccess={() => {
+            setEditMode(true);
+            setShowPasswordDialog(false);
+          }}
+        />
+      )}
     </div>
   );
 }

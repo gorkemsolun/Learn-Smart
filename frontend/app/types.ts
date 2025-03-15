@@ -158,3 +158,9 @@ export interface SkillTreeEditDialogProps {
   onSkillTreeUpdate: () => void;
   skillTree: SkillTreeCard;
 }
+
+export interface CheckPasswordDialogProps {
+  isOpen: boolean;
+  onClose: (open: boolean) => void;
+  onCheckSuccess?: () => void;
+}
