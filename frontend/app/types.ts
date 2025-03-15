@@ -85,7 +85,7 @@ export interface ConfirmationDialogProps {
 
 export interface CourseCardProps {
   course: Course;
-  onCourseDelete: (courseId: string) => void;
+  onCourseDelete: (courseId: string | undefined) => void;
   onCourseUpdate: () => void;
 }
 
@@ -160,9 +160,10 @@ export interface SkillTreeEditDialogProps {
 }
 
 export interface ChatSidebarProps {
-  isOpen: boolean;
-  selectedCourse: Course;
-  toggleSidebar: () => void;
+  course: Course;
+  courses: Course[];
+  isLoading: boolean;
   activeChat: Chat | null;
   setActiveChat: React.Dispatch<React.SetStateAction<Chat | null>>;
+  chats: Chat[];
 }

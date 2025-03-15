@@ -13,147 +13,101 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MessageSquare } from "lucide-react";
 import type { Course, Chat, ChatSidebarProps } from "@/app/types";
 import { backendAPI } from "@/environment/backend_api";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {useRouter} from "next/navigation";
 
 export default function ChatSidebar({
-  isOpen,
-  selectedCourse,
-  toggleSidebar,
+  course,
+  isLoading,
+  courses,
   activeChat,
   setActiveChat,
+  chats,
 }: ChatSidebarProps) {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [currentCourse, setCurrentCourse] = useState<Course | null>(selectedCourse);
-  const [chats, setChats] = useState<{ chat_id: string; chat_title: string }[]>([]);
-  const token = Cookies.get("authToken") as string;
-  const { toast } = useToast();
 
-  const fetchCourses = useCallback(async () => {
-    if (!token) return;
-    try {
-      const response = await backendAPI.get("/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCourses(response.data?.courses || []);
-    } catch (error: never) {
-      console.error("Error fetching courses:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch courses.",
-        variant: "destructive",
-        action: <ToastAction altText="Retry">Retry</ToastAction>,
-      });
-    }
-  }, [token, toast]);
-
-  const fetchChats = useCallback(
-    async (courseID: string | undefined) => {
-      if (!token || !courseID) return;
-      try {
-        const response = await backendAPI.get(`/course/${courseID}/chats`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setChats(response.data || []);
-      } catch (error) {
-        console.error("Error fetching chats:", error);
-      }
-    },
-    [token],
-  );
-
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
-
-  useEffect(() => {
-    if (currentCourse) {
-      fetchChats(currentCourse.course_id);
-    }
-  }, [currentCourse, fetchChats]);
+  const router = useRouter();
 
   return (
-    <div className="fixed overflow-hidden">
-      <SidebarProvider defaultOpen={isOpen}>
-
-        <Sidebar variant="floating" className="mt-14 max-h-[90vh]">
-          <SidebarHeader className="flex-col items-center justify-center border-b border-border">
-            <div className="py-4 text-lg font-bold text-foreground">Menu</div>
-            <SidebarMenu className="w-full pb-2">
-              <SidebarMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton className="w-full justify-between">
-                      <span className="truncate">{currentCourse?.course_name || "Select a Course"}</span>
-                      <ChevronDown className="ml-2 size-4 shrink-0"/>
-                    </SidebarMenuButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
-                    {courses.map((course) => (
-                        <DropdownMenuItem
-                            key={course.course_id}
-                            onClick={() => {
-                              setCurrentCourse(course);
-                              fetchChats(course.course_id);
-                            }}
-                        >
-                          <span className="truncate">{course.course_name}</span>
-                        </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarHeader>
-
-          <SidebarContent className="flex-1 overflow-y-auto">
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-muted-foreground">Chats</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {chats.length > 0 ? (
-                      chats.map((chat) => (
-                          <SidebarMenuItem key={chat.chat_id}>
-                            <SidebarMenuButton
-                                isActive={activeChat?.chat_id === chat.chat_id}
-                                className={cn("w-full text-left", "transition-colors duration-200")}
-                                onClick={() =>
-                                    setActiveChat({
-                                      chat_id: chat.chat_id,
-                                      chat_title: chat.chat_title,
-                                    } as Chat)
-                                }
-                            >
-                              <span className="truncate">{chat.chat_title}</span>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                      ))
-                  ) : (
-                      <div className="py-4 text-center text-sm text-muted-foreground">No chats available</div>
-                  )}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
-
-        <div className="w-full flex-1 py-2">
-          <SidebarTrigger>
-            <Button onClick={toggleSidebar}>
-              <span className="sr-only">Toggle sidebar</span>
+    <Sidebar className="mt-[3.2rem]">
+      <SidebarHeader className="sticky border-b bg-card px-2 py-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between">
+              <span className="truncate">{course?.course_name || "Select a Course"}</span>
+              <ChevronDown className="ml-2 size-4 shrink-0" />
             </Button>
-          </SidebarTrigger>
-        </div>
-      </SidebarProvider>
-    </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+            {courses.length > 0 ? (
+              courses.map((c) => (
+                <DropdownMenuItem
+                  key={c.course_id}
+                  onClick={() => {
+                    router.replace(`/course/${c.course_id}/chat`);
+                  }}
+                >
+                  <span className="truncate">{c.course_name}</span>
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <DropdownMenuItem disabled={true}>
+                <span className="text-muted-foreground">No courses available</span>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarHeader>
+
+      <SidebarContent className="h-[calc(100vh-10rem)]">
+        <SidebarGroup>
+          <div className="flex items-center justify-between px-2">
+            <SidebarGroupLabel>Chats</SidebarGroupLabel>
+          </div>
+          <SidebarGroupContent>
+            <ScrollArea className="h-[calc(100vh-16rem)]">
+              <SidebarMenu>
+                {isLoading ? (
+                  <div className="flex justify-center py-4">
+                    <p className="text-sm text-muted-foreground">Loading chats...</p>
+                  </div>
+                ) : chats.length > 0 ? (
+                  chats.map((chat) => (
+                    <SidebarMenuItem key={chat.chat_id}>
+                      <SidebarMenuButton
+                        isActive={activeChat?.chat_id === chat.chat_id}
+                        className="w-full text-left"
+                        onClick={() =>
+                          setActiveChat({
+                            chat_id: chat.chat_id,
+                            chat_title: chat.chat_title,
+                          } as Chat)
+                        }
+                      >
+                        <MessageSquare className="size-4 shrink-0" />
+                        <span className="truncate">{chat.chat_title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <MessageSquare className="mb-2 size-8 text-muted-foreground" />
+                    <h3 className="mb-1 text-sm font-medium">No chats yet</h3>
+                    <p className="text-xs text-muted-foreground">Create a new chat to get started</p>
+                  </div>
+                )}
+              </SidebarMenu>
+            </ScrollArea>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
   );
 }
 

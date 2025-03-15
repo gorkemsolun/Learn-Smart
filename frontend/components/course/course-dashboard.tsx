@@ -85,7 +85,7 @@ export default function CourseHomepage() {
 
   const handleInstructorClick = () => {
     startLoading();
-    router.push(`/course/${course_id}/instructor`);
+    router.push(`/course/${course_id}/chat`);
   };
 
   const handleWeeklyStudyPlanClick = () => {
