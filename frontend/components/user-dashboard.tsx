@@ -126,7 +126,7 @@ export default function UserDashboard() {
       title: "Chat",
       content: "Ask, learn using chatbot.",
       icon: <ChatIcon className="text-3xl md:text-4xl" />,
-      link: "",
+      link: courses.length === 0 ? "" : `/course/${courses[0].course_id}/chat`,
     },
     {
       title: "Engagement Metrics",

@@ -65,8 +65,6 @@ export interface ChatInterfaceProps {
   isChatLoading: boolean;
   chatContainerRef: React.RefObject<HTMLDivElement>;
   activeChat: Chat | null;
-  showToggleSidebarButton: boolean;
-  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface CoursesListProps {
@@ -169,8 +167,49 @@ export interface ChatSidebarProps {
 }
 
 export interface ChatResizablePanelsProps {
-  activeChat: { chat_title: string } | null;
-  message: string;
-  setMessage: (message: string) => void;
-  handleSendMessage: (event: React.FormEvent) => void;
+  activeChat: Chat | null;
+}
+
+export interface ChatDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onChatAction: (chat?: Chat) => void;
+  chat?: Chat | null;
+  mode: "create" | "edit";
+}
+
+export interface ChatMessage {
+  message_id: number;
+  is_user: boolean;
+  content: string;
+}
+
+export interface ChatHistoryResponse {
+  history: ChatMessage[];
+}
+
+export interface SlideResponse {
+  slide: string;
+  history?: ChatMessage[];
+}
+export interface SlidePanelProps {
+  imgSrc?: string
+  currentSlidePage: number
+  totalPages: number
+  isSlidesLoading: boolean
+  presentationFiles: { slide_id: string; slides_file_name: string }[]
+  currentSlide: Slide
+  onFileChange: (slide_id: string) => void
+  onPreviousSlide: () => void
+  onNextSlide: () => void
+  fetchSlide: (slideID: string, pageNumber: number) => Promise<any>;
+}
+
+export interface HotkeyConfig {
+  key: string
+  callback: () => void
+  ctrlKey?: boolean
+  metaKey?: boolean
+  shiftKey?: boolean
+  altKey?: boolean
 }

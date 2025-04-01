@@ -15,19 +15,17 @@ import { Label } from "@/components/ui/label";
 import { ToastAction } from "@/components/ui/toast";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
-import { FileIcon, FileTextIcon } from "lucide-react";
+import { FileIcon, FileTextIcon } from 'lucide-react';
 import Cookies from "js-cookie";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import type { Chat } from "@/app/types";
+import type { ChatDialogProps } from "@/app/types";
 
-interface ChatCreateDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onChatCreation: (newChat?: Chat) => void;
-}
-
-export function ChatCreateDialog({ isOpen, onClose, onChatCreation }: ChatCreateDialogProps) {
+/*
+* TO-DO write the backend for the edit where you may change the current slide with another,
+* users will also be able to add multiple slides this one will change the current slide only.
+* */
+export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDialogProps) {
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
   const [chatName, setChatName] = useState<string>("");
@@ -37,8 +35,25 @@ export function ChatCreateDialog({ isOpen, onClose, onChatCreation }: ChatCreate
   const authToken = Cookies.get("authToken") as string;
   const { toast } = useToast();
 
+  const isEditMode = mode === "edit";
+
+  // Set initial chat name when chat changes or dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      if (isEditMode && chat) {
+        setChatName(chat.chat_title);
+      } else if (!isEditMode) {
+        setChatName("");
+      }
+    }
+  }, [chat, isOpen, isEditMode]);
+
   const resetFields = () => {
-    setChatName("");
+    if (isEditMode && chat) {
+      setChatName(chat.chat_title);
+    } else {
+      setChatName("");
+    }
     setFile(null);
     setErrorMessage("");
   };
@@ -87,6 +102,8 @@ export function ChatCreateDialog({ isOpen, onClose, onChatCreation }: ChatCreate
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (isEditMode && !chat) return;
+
     if (!chatName.trim()) {
       setErrorMessage("Please fill out this field.");
       return;
@@ -101,33 +118,58 @@ export function ChatCreateDialog({ isOpen, onClose, onChatCreation }: ChatCreate
     }
 
     try {
-      const response = await backendAPI.post(
-        `/chat/create?course_id=${course_id}&chat_title=${chatName}`,
-        file ? formData : {},
-        {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${authToken}`,
-            ...(file && { "Content-Type": "multipart/form-data" }),
-          },
-        }
-      );
+      let response;
+      let resultChat;
 
-      const newChat = response.data.chat;
+      if (isEditMode && chat) {
+        // Edit mode
+        response = await backendAPI.put(
+          `/chat/${chat.chat_id}`,
+          file ? formData : { chat_title: chatName.trim() },
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${authToken}`,
+              ...(file && { "Content-Type": "multipart/form-data" }),
+            },
+          }
+        );
+
+        resultChat = {
+          ...chat,
+          chat_title: chatName.trim()
+        };
+      } else {
+        // Create mode
+        response = await backendAPI.post(
+          `/chat/create?course_id=${course_id}&chat_title=${chatName}`,
+          file ? formData : {},
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${authToken}`,
+              ...(file && { "Content-Type": "multipart/form-data" }),
+            },
+          }
+        );
+
+        resultChat = response.data.chat;
+      }
+
       toast({
         title: "Success",
-        description: "Chat successfully created",
+        description: `Chat successfully ${isEditMode ? 'updated' : 'created'}`,
         variant: "default",
         className: "bg-green-500 text-background",
       });
 
-      onChatCreation(newChat);
+      onChatAction(resultChat);
       closeModal();
     } catch (error) {
-      console.error("Error creating chat:", error);
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} chat:`, error);
       toast({
         title: "Error",
-        description: "Failed to create chat. Please try again.",
+        description: `Failed to ${isEditMode ? 'update' : 'create'} chat. Please try again.`,
         variant: "destructive",
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
@@ -140,13 +182,15 @@ export function ChatCreateDialog({ isOpen, onClose, onChatCreation }: ChatCreate
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Create New Chat</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Chat' : 'Create New Chat'}</DialogTitle>
           <DialogDescription>
-            Create a new chat for your course. You can optionally upload slides.
+            {isEditMode
+              ? 'Update your chat details. You can optionally upload new slides.'
+              : 'Create a new chat for your course. You can optionally upload slides.'}
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-6 py-2">
+        <form className="space-y-6 py-2" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="chatName" className="text-sm font-medium">
               Chat Title
@@ -171,7 +215,7 @@ export function ChatCreateDialog({ isOpen, onClose, onChatCreation }: ChatCreate
 
           <div className="space-y-2">
             <Label htmlFor="slide" className="text-sm font-medium">
-              Upload Slides (Optional)
+              Upload {isEditMode ? 'New ' : ''}Slides (Optional)
             </Label>
             <div
               className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
@@ -226,8 +270,13 @@ export function ChatCreateDialog({ isOpen, onClose, onChatCreation }: ChatCreate
           </div>
 
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting} onClick={handleSubmit}>
-              {isSubmitting ? "Creating..." : "Create Chat"}
+            <Button type="button" variant="outline" onClick={closeModal} className="mr-2">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting
+                ? (isEditMode ? "Updating..." : "Creating...")
+                : (isEditMode ? "Update Chat" : "Create Chat")}
             </Button>
           </DialogFooter>
         </form>
