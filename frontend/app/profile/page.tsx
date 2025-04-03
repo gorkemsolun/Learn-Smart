@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckPasswordDialog } from "@/components/check-password-dialog";
+import TierCardMini from "@/components/subscription-tier-card-mini-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { backendAPI } from "@/environment/backend_api";
@@ -59,35 +60,42 @@ export default function Profile() {
 
   return (
     <div className="flex size-full flex-col items-center justify-center">
-      <div className="mt-8 flex items-center justify-center">
-        <div className="mx-16 flex basis-32 items-center justify-between p-2">
+      <div className="mt-4 flex items-center justify-center sm:mt-6 md:mt-8 lg:mt-10">
+        <div className="mx-4 flex basis-32 items-center justify-between p-2 sm:mx-8 md:mx-16 lg:mx-32">
           <Image
             src="https://www.w3schools.com/howto/img_avatar.png"
             alt="Profile photo"
-            className="m-2 max-h-32 max-w-32 basis-64 rounded-full border-4 border-white"
+            className="m-1 max-h-32 max-w-32 basis-64 rounded-full border-4 border-white sm:m-2"
             width={256}
             height={256}
           />
 
-          <div className="m-2 flex basis-64 flex-col items-center justify-center">
+          <div className="m-1 flex basis-64 flex-col items-center justify-center sm:m-2">
             <h1 className="text-3xl font-bold">{user.nickname}</h1>
             <a href="#" className="font-semibold text-gray-600">
               {user.email}
             </a>
-            <hr className="full mt-2" />
+            <hr className="mt-2" />
           </div>
         </div>
-        <div className="flex basis-full flex-col items-center justify-center p-2">
+        <div className="mx-4 flex basis-full flex-col items-center justify-center p-2 sm:mx-8 md:mx-16 lg:mx-32">
           <h1 className="text-2xl font-bold">Subscription Plan</h1>
-          <div className="rounded border border-white p-2">
-            lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-            ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-            lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-            ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-          </div>
+          <TierCardMini
+            tier={{
+              name: "Edux+ Elite",
+              price: 41.54,
+              billingPeriod: "monthly",
+              llm: "GPT-3.5",
+              features: [
+                "Feature 1",
+                "Feature 2",
+                "Feature 3",
+              ],
+            }}
+          />
         </div>
       </div>
-      <div className="mt-8 flex w-full items-center justify-end">
+      <div className="mt-4 flex w-full items-center justify-end sm:mt-6 md:mt-8 lg:mt-10">
         <Button
           variant="ghost"
           onClick={() => {
@@ -99,14 +107,14 @@ export default function Profile() {
               "password"
             );
           }}
-          className="hover:text-primary-dark text-primary mr-16 transition-colors"
+          className="hover:text-primary-dark text-primary mr-4 transition-colors sm:mr-8 md:mr-16 lg:mr-32"
         >
           {editMode ? "Save Changes" : "Edit Profile"}
         </Button>
       </div>
-      <div className="mt-8 flex w-full items-start justify-start">
-        <div className="mx-32 p-4">
-          <div className="mb-4">
+      <div className="mt-4 flex w-full items-start justify-start sm:mt-6 md:mt-8 lg:mt-10">
+        <div className="mx-4 p-4 sm:mx-8 md:mx-16 lg:mx-32">
+          <div className="mb-2 sm:mb-4">
             <label className="text-foreground/70 text-xs font-semibold">
               Username
             </label>
