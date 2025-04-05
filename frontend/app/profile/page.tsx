@@ -309,7 +309,7 @@ export default function Profile() {
         </TabsContent>
 
         <TabsContent value="subscription">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
             <Card className="overflow-hidden border-border/20">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between font-thin text-foreground">
@@ -320,17 +320,15 @@ export default function Profile() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="rounded-xl border border-border/20 bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-4 shadow-lg">
-                  <TierCardMini
-                    tier={{
-                      name: "Edux+ Elite",
-                      price: 41.54,
-                      billingPeriod: "monthly",
-                      llm: "GPT-3.5",
-                      features: ["Feature 1", "Feature 2", "Feature 3"],
-                    }}
-                  />
-                </div>
+                <TierCardMini
+                  tier={{
+                    name: "Edux+ Elite",
+                    price: 41.54,
+                    billingPeriod: "monthly",
+                    llm: "GPT-3.5",
+                    features: ["Feature 1", "Feature 2", "Feature 3"],
+                  }}
+                />
                 <div className="flex flex-col gap-2">
                   <Button className="w-full bg-primary font-thin text-primary-foreground transition-colors hover:bg-primary/90">
                     Upgrade Plan
