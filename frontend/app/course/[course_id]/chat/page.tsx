@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import {ArrowRight, MessageSquareText} from "lucide-react";
+import {ArrowRight, Loader2, MessageSquareText} from "lucide-react";
 
 export default function ChatPage() {
   const params = useParams<{ course_id: string }>();
@@ -28,7 +28,8 @@ export default function ChatPage() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [chatsLoaded, setChatsLoaded] = useState(false);
+
   const { toast } = useToast();
 
   // Handler for opening the chat dialog to create a new chat
@@ -60,7 +61,6 @@ export default function ChatPage() {
   // Fetch courses for the user
   const fetchCourses = useCallback(async () => {
     if (!token) return;
-    setIsLoading(true);
     try {
       const response = await backendAPI.get("/users/me", {
         headers: { Authorization: `Bearer ${token}` },
@@ -79,8 +79,6 @@ export default function ChatPage() {
           </ToastAction>
         ),
       });
-    } finally {
-      setIsLoading(false);
     }
   }, [token, toast]);
 
@@ -88,7 +86,7 @@ export default function ChatPage() {
   const fetchSidebarData = useCallback(
     async (courseId: string) => {
       if (!token || !courseId) return;
-
+      setChatsLoaded(false);
       try {
         const courseResponse = await backendAPI.get(`/course/${courseId}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -114,6 +112,8 @@ export default function ChatPage() {
             </ToastAction>
           ),
         });
+      } finally {
+        setChatsLoaded(true);
       }
     },
     [token, toast, course_id]
@@ -129,6 +129,7 @@ export default function ChatPage() {
     fetchCourses();
   }, [fetchCourses]);
 
+
   return (
     <div className="fixed inset-0 mt-16">
       <SidebarProvider open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
@@ -136,7 +137,7 @@ export default function ChatPage() {
         <Sidebar>
           <ChatSidebar
             course={course as Course}
-            isLoading={isLoading}
+            isLoading={!chatsLoaded}
             courses={courses as Course[]}
             activeChat={activeChat as Chat}
             chats={chats}
@@ -159,60 +160,54 @@ export default function ChatPage() {
             <div className="flex-1 overflow-hidden">
               <ChatResizablePanels activeChat={activeChat} />
             </div>
+          ) :  !chatsLoaded ? (
+              <div className="absolute inset-0 flex size-full items-center justify-center">
+                <Loader2 className="size-12 animate-spin text-foreground/90"/>
+              </div>
           ) : (
               <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-background font-thin">
                 {/* Elegant background with subtle gradients */}
-                <div className="absolute inset-0 overflow-hidden opacity-60">
-                  <div
-                      className="absolute left-1/4 top-0 size-[500px] rounded-full bg-gradient-to-b from-primary/5 to-transparent blur-[120px]"></div>
-                  <div
-                      className="absolute bottom-0 right-1/4 size-[400px] rounded-full bg-gradient-to-t from-primary/5 to-transparent blur-[100px]"></div>
-                  <div
-                      className="absolute bottom-1/4 left-0 size-[300px] rounded-full bg-gradient-to-r from-secondary/5 to-transparent blur-[80px]"></div>
-                </div>
+              <div className="absolute inset-0 overflow-hidden opacity-60">
+                <div className="absolute left-1/4 top-0 size-[500px] rounded-full bg-gradient-to-b from-primary/5 to-transparent blur-[120px]" />
+                <div className="absolute bottom-0 right-1/4 size-[400px] rounded-full bg-gradient-to-t from-primary/5 to-transparent blur-[100px]" />
+                <div className="absolute bottom-1/4 left-0 size-[300px] rounded-full bg-gradient-to-r from-secondary/5 to-transparent blur-[80px]" />
+              </div>
 
-                {/* Subtle animated lines */}
-                <div className="absolute inset-0 overflow-hidden opacity-20">
-                  <div
-                      className="absolute left-0 top-[10%] h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
-                  <div
-                      className="absolute left-0 top-[60%] h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-                  <div
-                      className="absolute left-[20%] top-0 h-full w-px bg-gradient-to-b from-transparent via-secondary/20 to-transparent"></div>
-                  <div
-                      className="absolute left-[80%] top-0 h-full w-px bg-gradient-to-b from-transparent via-secondary/20 to-transparent"></div>
-                </div>
+              {/* Subtle animated lines */}
+              <div className="absolute inset-0 overflow-hidden opacity-20">
+                <div className="absolute left-0 top-[10%] h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                <div className="absolute left-0 top-[60%] h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                <div className="absolute left-[20%] top-0 h-full w-px bg-gradient-to-b from-transparent via-secondary/20 to-transparent" />
+                <div className="absolute left-[80%] top-0 h-full w-px bg-gradient-to-b from-transparent via-secondary/20 to-transparent" />
+              </div>
 
-                {/* Content container with elegant spacing */}
-                <div className="relative z-10 flex max-w-2xl flex-col items-center px-6 py-16 text-center">
-                  {/* Refined icon presentation */}
-                  <div className="relative mb-12">
-                    <div
-                        className="absolute -inset-8 rounded-full bg-gradient-to-r from-primary/5 to-secondary/5 opacity-70 blur-2xl"></div>
-                    <div
-                        className="absolute -inset-6 rounded-full bg-gradient-to-r from-primary/5 to-secondary/5 opacity-50 blur-xl"></div>
-                    <div
-                        className="relative flex size-20 items-center justify-center rounded-full border border-primary/10 bg-background/80 shadow-sm backdrop-blur-sm">
-                      <MessageSquareText className="size-8 text-primary/80"/>
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 size-3 rounded-full bg-primary"></div>
-                    <div className="absolute -bottom-1 -right-1 size-3 animate-ping rounded-full bg-primary"></div>
-                  </div>
+              {/* Content container */}
+               <div className="relative z-10 flex max-w-2xl flex-col items-center px-6 py-16 text-center">
+                 <div className="relative mb-12">
+                   <div
+                       className="absolute -inset-8 rounded-full bg-gradient-to-r from-primary/5 to-secondary/5 opacity-70 blur-2xl"/>
+                   <div
+                       className="absolute -inset-6 rounded-full bg-gradient-to-r from-primary/5 to-secondary/5 opacity-50 blur-xl"/>
+                   <div
+                       className="relative flex size-20 items-center justify-center rounded-full border border-primary/10 bg-background/80 shadow-sm backdrop-blur-sm">
+                     <MessageSquareText className="size-8 text-primary/80"/>
+                   </div>
+                   <div className="absolute -bottom-1 -right-1 size-3 rounded-full bg-primary"/>
+                   <div className="absolute -bottom-1 -right-1 size-3 animate-ping rounded-full bg-primary"/>
+                 </div>
 
-                  {/* Elegant typography */}
-                  <h1 className="mb-6 text-4xl tracking-tight text-foreground">
-                    Welcome to your Chatbot
-                  </h1>
+                 <h1 className="mb-6 text-4xl tracking-tight text-foreground">
+                   Welcome to your Chatbot
+                 </h1>
 
-                  <div className="mb-2 h-px w-16 bg-primary/30"></div>
+                 <div className="mb-2 h-px w-16 bg-primary/30"/>
 
-                  <p className="mb-12 max-w-lg text-lg leading-relaxed text-foreground/80">
-                    Discover a new way to explore ideas, find answers to your
-                    questions with our sophisticated AI assistant.
-                  </p>
+                 <p className="mb-12 max-w-lg text-lg leading-relaxed text-foreground/80">
+                   Discover a new way to explore ideas, find answers to your
+                   questions with our sophisticated AI assistant.
+                 </p>
 
-                  {/* Elegant button */}
-                  {chats.length === 0 && (
+                 {chatsLoaded && chats.length === 0 && (
                     <button
                       onClick={() => setChatDialogOpen(true)}
                       className="group relative flex items-center overflow-hidden rounded-md border border-primary/20 bg-background px-6 py-3 text-sm font-medium text-primary shadow-sm transition-all duration-300 hover:border-primary/40 hover:bg-primary/5 hover:shadow-md"
@@ -222,9 +217,9 @@ export default function ChatPage() {
                         <ArrowRight className="size-4" />
                       </span>
                     </button>
-                  )}
-                </div>
-              </div>
+                 )}
+               </div>
+             </div>
           )}
         </SidebarInset>
 

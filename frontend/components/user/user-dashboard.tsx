@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { Course } from "@/app/types";
 import { CourseDialogModal } from "@/components/course/course-dialog";
 import { CoursesList } from "@/components/course/courses-list";
-import { UserChart } from "@/components/user-analytics";
+import { UserChart } from "@/components/analytics/user-analytics";
 import {
   Card,
   CardTitle,
