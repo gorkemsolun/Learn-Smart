@@ -23,8 +23,8 @@ if [ -z "$WAIT_TIMEOUT" ]; then
 fi
 
 # Wait for the database using the wait-for-it.sh script.
-./wait-for-it.sh "$DATABASE_HOST" "$DATABASE_PORT" "$WAIT_TIMEOUT"
+./app/wait-for-it.sh "$DATABASE_HOST" "$DATABASE_PORT" "$WAIT_TIMEOUT"
 
 # Once the database is ready, start your application.
 echo "Database is ready. Starting service on port $SERVICE_PORT..."
-exec uvicorn main:app --host 0.0.0.0 --port "$SERVICE_PORT"
+exec uvicorn app.main:app --host 0.0.0.0 --port "$SERVICE_PORT"

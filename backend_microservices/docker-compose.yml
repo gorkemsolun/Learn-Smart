@@ -1,7 +1,7 @@
 services:
   auth_service:
     build:
-      context: ./auth_service/app
+      context: ./auth_service
       dockerfile: Dockerfile
     ports:
       - "8001:8001"
@@ -12,7 +12,7 @@ services:
 
   chat_service:
     build:
-      context: ./chat_service/app
+      context: ./chat_service
       dockerfile: Dockerfile
     ports:
       - "8002:8002"
@@ -25,7 +25,7 @@ services:
 
   course_service:
     build:
-      context: ./course_service/app
+      context: ./course_service
       dockerfile: Dockerfile
     ports:
       - "8003:8003"
@@ -38,7 +38,7 @@ services:
 
   filemanager_service:
     build:
-      context: ./filemanager_service/app
+      context: ./filemanager_service
       dockerfile: Dockerfile
     ports:
       - "8004:8004"
@@ -51,7 +51,7 @@ services:
 
   genai_service:
     build:
-      context: ./genai_service/app
+      context: ./genai_service
       dockerfile: Dockerfile
     ports:
       - "8005:8005"
@@ -62,7 +62,7 @@ services:
 
   user_service:
     build:
-      context: ./user_service/app
+      context: ./user_service
       dockerfile: Dockerfile
     ports:
       - "8007:8007"

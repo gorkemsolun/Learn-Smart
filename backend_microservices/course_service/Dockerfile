@@ -1,11 +1,11 @@
 FROM python:3.12.8
 # Install dependencies (MySQL client and netcat)
 RUN apt-get update && apt-get install -y default-mysql-client netcat-openbsd && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
+WORKDIR /course_service
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN chmod +x wait-for-it.sh entrypoint.sh
-ENV PYTHONPATH=/app
+RUN chmod +x app/wait-for-it.sh app/entrypoint.sh
+ENV PYTHONPATH=/
 EXPOSE 8003
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./app/entrypoint.sh"]
