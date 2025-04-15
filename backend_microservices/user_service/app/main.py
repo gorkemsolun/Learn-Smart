@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from user_service.app.api.public import router as public_router
 from user_service.app.api.private import router as private_router
-from .util import init
+from util import init
 
 # create the FastAPI app
 app = FastAPI()
