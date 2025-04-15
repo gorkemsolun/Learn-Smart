@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set PYTHONPATH
-export PYTHONPATH="/home/bil/edux/backend_microservices"
+export PYTHONPATH="/Users/edizcivan/Workspace/edux/backend_microservices"
 
 # Define services and their respective ports
 declare -A services=(
@@ -14,7 +14,7 @@ declare -A services=(
 )
 
 # Base directory where the services are located
-BASE_DIR="/home/bil/edux/backend_microservices"
+BASE_DIR="/Users/edizcivan/Workspace/edux/backend_microservices"
 # Create logs directory if it doesn't exist
 LOGS_DIR="$BASE_DIR/logs"
 if [ ! -d "$LOGS_DIR" ]; then
