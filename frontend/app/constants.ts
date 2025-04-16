@@ -4,3 +4,5 @@ export const documentMimeTypes = [
 ];
 
 export const imageMimeTypes = ["image/jpeg", "image/png"];
+
+export const ragSite = "eduxRAG";

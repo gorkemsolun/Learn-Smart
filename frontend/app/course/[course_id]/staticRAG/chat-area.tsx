@@ -6,13 +6,29 @@ import { Paperclip, Send } from "lucide-react";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ragSite } from "@/app/constants";
+import { useState } from "react";
+import { FileUploadModal } from "@/components/file-upload-modal";
 
 export function ChatArea() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleFileUpload = (files: File[]) => {
+    // Handle the uploaded files here
+    console.log("Files to upload:", files);
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-background">
+      <FileUploadModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onUpload={handleFileUpload}
+      />
+
       <Card className="rounded-none border-b">
         <CardHeader className="py-4">
-          <h1 className="text-xl font-semibold">ChatGPT</h1>
+          <h1 className="text-xl font-semibold">{ragSite}</h1>
         </CardHeader>
       </Card>
 
@@ -22,15 +38,18 @@ export function ChatArea() {
             <Card className="border-0 shadow-none">
               <CardContent className="flex flex-col items-center justify-center min-h-[60vh] text-center text-muted-foreground p-8">
                 <Avatar className="h-16 w-16 mb-4">
-                  <AvatarImage src="/chatgpt-icon.png" />
-                  <AvatarFallback>GPT</AvatarFallback>
+                  <AvatarImage src="/bot-icon.png" />
+                  <AvatarFallback>Bot</AvatarFallback>
                 </Avatar>
                 <h3 className="text-lg font-medium mb-2">New chat in this project</h3>
                 <p className="text-sm mb-6">Chats in this project can access file content</p>
                 <p className="text-sm mb-6">Chats will show up here</p>
                 
                 <div className="flex space-x-4">
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setIsModalOpen(true)}
+                  >
                     <Paperclip className="mr-2 h-4 w-4" />
                     Add files
                   </Button>
@@ -38,7 +57,6 @@ export function ChatArea() {
                     Add instructions
                   </Button>
                 </div>
-                <p className="text-xs mt-4">Talker the way ChatGPT responds in this project</p>
               </CardContent>
             </Card>
           </div>
@@ -50,7 +68,7 @@ export function ChatArea() {
           <div className="max-w-3xl w-full mx-auto">
             <div className="relative">
               <Input
-                placeholder="Message ChatGPT..."
+                placeholder={`Message to ${ragSite}...`}
                 className="pr-12"
               />
               <Button
@@ -62,7 +80,7 @@ export function ChatArea() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              ChatGPT can make mistakes. Consider checking important information.
+              {ragSite} can make mistakes. Consider checking important information.
             </p>
           </div>
         </CardFooter>
