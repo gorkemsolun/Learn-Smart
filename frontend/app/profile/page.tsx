@@ -2,24 +2,26 @@
 
 import { CheckPasswordDialog } from "@/components/check-password-dialog";
 import TierCardMini from "@/components/subscription-tier-card-mini-preview";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
+import { Calendar, Camera, Pencil, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { User } from "../types";
-import { Calendar, Camera, Pencil, Save, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
 
 export default function Profile() {
-  const [token, setToken] = useState<string>(Cookies.get("authToken") as string);
+  const [token, setToken] = useState<string>(
+    Cookies.get("authToken") as string
+  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [editMode, setEditMode] = useState<boolean>(false);
@@ -131,7 +133,7 @@ export default function Profile() {
   if (isLoading && !user.user_id) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="size-8 animate-spin rounded-full border-y-2 border-primary"></div>
+        <div className="border-primary size-8 animate-spin rounded-full border-y-2"></div>
       </div>
     );
   }
@@ -144,7 +146,9 @@ export default function Profile() {
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="mb-2 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-thin tracking-tight text-foreground">Profile</h1>
+          <h1 className="text-foreground text-3xl font-thin tracking-tight">
+            Profile
+          </h1>
         </div>
         <div className="flex gap-2">
           {editMode ? (
@@ -153,18 +157,18 @@ export default function Profile() {
                 variant="outline"
                 onClick={cancelEdit}
                 disabled={isSaving}
-                className="gap-2 border-border/50 font-thin transition-colors hover:border-destructive/20 hover:bg-destructive/5 hover:text-destructive"
+                className="border-border/50 hover:border-destructive/20 hover:bg-destructive/5 hover:text-destructive gap-2 font-thin transition-colors"
               >
                 <X className="size-4" /> Cancel
               </Button>
               <Button
                 onClick={handleSaveProfile}
                 disabled={isSaving}
-                className="gap-2 bg-primary font-thin text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-thin shadow-md transition-all hover:shadow-lg"
               >
                 {isSaving ? (
                   <>
-                    <div className="size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"></div>
+                    <div className="border-primary-foreground/30 border-t-primary-foreground size-4 animate-spin rounded-full border-2"></div>
                     Saving...
                   </>
                 ) : (
@@ -178,7 +182,7 @@ export default function Profile() {
             <Button
               onClick={() => setShowPasswordDialog(true)}
               variant="default"
-              className="gap-2 bg-primary font-thin text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-thin shadow-md transition-all hover:shadow-lg"
             >
               <Pencil className="size-4" /> Edit Profile
             </Button>
@@ -187,29 +191,32 @@ export default function Profile() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="mb-4 rounded-lg border border-border/10 bg-gradient-to-r from-muted/5 to-muted/10 p-1 shadow-sm">
+        <TabsList className="border-border/10 from-muted/5 to-muted/10 mb-4 rounded-lg border bg-gradient-to-r p-1 shadow-sm">
           <TabsTrigger
             value="profile"
-            className="rounded-md font-thin transition-all data-[state=active]:bg-background data-[state=active]:text-primary/90 data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-background data-[state=active]:text-primary/90 rounded-md font-thin transition-all data-[state=active]:shadow-sm"
           >
             Profile
           </TabsTrigger>
           <TabsTrigger
             value="subscription"
-            className="rounded-md font-thin transition-all data-[state=active]:bg-background data-[state=active]:text-primary/90 data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-background data-[state=active]:text-primary/90 rounded-md font-thin transition-all data-[state=active]:shadow-sm"
           >
             Subscription
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
-          <Card className="overflow-hidden border-border/20 shadow-sm">
-            <div className="h-28 bg-gradient-to-br from-primary/5 via-secondary/5 to-background shadow-lg"></div>
+          <Card className="border-border/20 overflow-hidden shadow-sm">
+            <div className="from-primary/5 via-secondary/5 to-background h-28 bg-gradient-to-br shadow-lg"></div>
             <div className="relative px-6">
               <div className="-mt-8 flex flex-col items-center gap-6 sm:flex-row sm:items-end">
                 <div className="relative">
-                  <Avatar className="size-32 border-4 border-background shadow-lg ring-2 ring-primary/10">
-                    <AvatarImage src="https://www.w3schools.com/howto/img_avatar.png" alt={user.nickname} />
+                  <Avatar className="border-background ring-primary/10 size-32 border-4 shadow-lg ring-2">
+                    <AvatarImage
+                      src="https://www.w3schools.com/howto/img_avatar.png"
+                      alt={user.nickname}
+                    />
                     <AvatarFallback className="text-2xl font-thin">
                       {user.nickname?.charAt(0)?.toUpperCase()}
                     </AvatarFallback>
@@ -218,7 +225,7 @@ export default function Profile() {
                     <Button
                       size="icon"
                       variant="secondary"
-                      className="absolute bottom-0 right-0 size-8 rounded-full bg-background shadow-md transition-colors hover:bg-primary/10"
+                      className="bg-background hover:bg-primary/10 absolute bottom-0 right-0 size-8 rounded-full shadow-md transition-colors"
                     >
                       <Camera className="size-4" />
                       <span className="sr-only">Change profile picture</span>
@@ -227,10 +234,12 @@ export default function Profile() {
                 </div>
                 <div className="flex-1 pb-4 text-center sm:text-left">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <h2 className="text-2xl font-thin tracking-tight text-foreground">{user.nickname}</h2>
+                    <h2 className="text-foreground text-2xl font-thin tracking-tight">
+                      {user.nickname}
+                    </h2>
                     <Badge
                       variant="outline"
-                      className="self-center border-primary/20 bg-primary/5 font-thin text-primary/80 sm:self-auto"
+                      className="border-primary/20 bg-primary/5 text-primary/80 self-center font-thin sm:self-auto"
                     >
                       {user.role || "Member"}
                     </Badge>
@@ -241,65 +250,80 @@ export default function Profile() {
             </div>
 
             <CardContent className="p-6 pt-0">
-              <Separator className="my-6 bg-gradient-to-r from-transparent via-border/30 to-transparent" />
+              <Separator className="via-border/30 my-6 bg-gradient-to-r from-transparent to-transparent" />
 
-              <div className="mb-6 flex w-fit items-center gap-2 rounded-full bg-muted/5 px-3 py-1.5 text-sm text-muted-foreground">
-                <Calendar className="size-4 text-primary/60" />
+              <div className="bg-muted/5 text-muted-foreground mb-6 flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm">
+                <Calendar className="text-primary/60 size-4" />
                 <span>Member since {formatDate(user.created_at)}</span>
               </div>
 
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-sm font-thin text-foreground/70">
+                  <Label
+                    htmlFor="username"
+                    className="text-foreground/70 text-sm font-thin"
+                  >
                     Username
                   </Label>
                   <Input
                     id="username"
                     type="text"
                     value={user.nickname ?? ""}
-                    onChange={(e) => setUser({ ...user, nickname: e.target.value })}
+                    onChange={(e) =>
+                      setUser({ ...user, nickname: e.target.value })
+                    }
                     required
                     disabled={!editMode || isSaving}
                     className={
                       editMode
                         ? "border-border/30 bg-muted/20"
-                        : "border-transparent bg-muted/5 transition-colors focus:bg-muted/10"
+                        : "bg-muted/5 focus:bg-muted/10 border-transparent transition-colors"
                     }
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-thin text-foreground/70">
+                  <Label
+                    htmlFor="email"
+                    className="text-foreground/70 text-sm font-thin"
+                  >
                     Email Address
                   </Label>
                   <Input
                     id="email"
                     type="email"
                     value={user.email ?? ""}
-                    onChange={(e) => setUser({ ...user, email: e.target.value })}
+                    onChange={(e) =>
+                      setUser({ ...user, email: e.target.value })
+                    }
                     required
                     disabled={!editMode || isSaving}
                     className={
                       editMode
                         ? "border-border/30 bg-muted/20"
-                        : "border-transparent bg-muted/5 transition-colors focus:bg-muted/10"
+                        : "bg-muted/5 focus:bg-muted/10 border-transparent transition-colors"
                     }
                   />
                 </div>
 
                 {editMode && (
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="password" className="text-sm font-thin text-foreground/70">
+                    <Label
+                      htmlFor="password"
+                      className="text-foreground/70 text-sm font-thin"
+                    >
                       New Password
                     </Label>
                     <Input
                       id="password"
                       type="password"
                       value={user.password ?? ""}
-                      onChange={(e) => setUser({ ...user, password: e.target.value })}
+                      onChange={(e) =>
+                        setUser({ ...user, password: e.target.value })
+                      }
                       placeholder="********"
                       disabled={isSaving}
-                      className="border-primary/30 bg-primary/5 transition-colors focus:bg-primary/10"
+                      className="border-primary/30 bg-primary/5 focus:bg-primary/10 transition-colors"
                     />
                   </div>
                 )}
@@ -310,9 +334,9 @@ export default function Profile() {
 
         <TabsContent value="subscription">
           <div className="grid gap-6 md:grid-cols-3">
-            <Card className="overflow-hidden border-border/20">
+            <Card className="border-border/20 overflow-hidden">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between font-thin text-foreground">
+                <CardTitle className="text-foreground flex items-center justify-between font-thin">
                   <span>Current Plan</span>
                   <Badge variant="outline" className="font-thin">
                     Active
@@ -328,14 +352,15 @@ export default function Profile() {
                     llm: "GPT-3.5",
                     features: ["Feature 1", "Feature 2", "Feature 3"],
                   }}
+                  fontColor="white"
                 />
                 <div className="flex flex-col gap-2">
-                  <Button className="w-full bg-primary font-thin text-primary-foreground transition-colors hover:bg-primary/90">
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 w-full font-thin transition-colors">
                     Upgrade Plan
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full border-border/30 font-thin transition-colors hover:bg-muted/10"
+                    className="border-border/30 hover:bg-muted/10 w-full font-thin transition-colors"
                   >
                     Manage Subscription
                   </Button>
@@ -376,7 +401,7 @@ function ProfileSkeleton() {
         <Skeleton className="h-10 w-64" />
       </div>
 
-      <Card className="overflow-hidden border-border/20">
+      <Card className="border-border/20 overflow-hidden">
         <Skeleton className="h-32 w-full" />
         <div className="relative px-6">
           <div className="-mt-16 flex flex-col items-center gap-6 sm:flex-row sm:items-end">
@@ -389,7 +414,7 @@ function ProfileSkeleton() {
         </div>
 
         <CardContent className="p-6 pt-0">
-          <Separator className="my-6 bg-border/20" />
+          <Separator className="bg-border/20 my-6" />
 
           <Skeleton className="mb-6 h-4 w-48" />
 
