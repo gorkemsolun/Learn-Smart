@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckPasswordDialog } from "@/components/check-password-dialog";
+import { ManageSubscriptionDialog } from "@/components/manage-subscription-dialog";
 import TierCardMini from "@/components/subscription-tier-card-mini-preview";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,8 @@ export default function Profile() {
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [editMode, setEditMode] = useState<boolean>(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState<boolean>(false);
+  const [showManageSubscriptionDialog, setShowManageSubscriptionDialog] =
+    useState<boolean>(false);
   const [user, setUser] = useState<User>({
     user_id: "",
     role: "",
@@ -361,6 +364,7 @@ export default function Profile() {
                   <Button
                     variant="outline"
                     className="border-border/30 hover:bg-muted/10 w-full font-thin transition-colors"
+                    onClick={() => setShowManageSubscriptionDialog(true)}
                   >
                     Manage Subscription
                   </Button>
@@ -379,6 +383,22 @@ export default function Profile() {
             setOriginalUser(user);
             setEditMode(true);
             setShowPasswordDialog(false);
+          }}
+        />
+      )}
+
+      {showManageSubscriptionDialog && (
+        <ManageSubscriptionDialog
+          isOpen={showManageSubscriptionDialog}
+          onClose={setShowManageSubscriptionDialog}
+          currentPlanName={user.role}
+          onUpgrade={(tier) => {
+            setUser({ ...user, role: tier.name });
+            setShowManageSubscriptionDialog(false);
+            toast({
+              title: "Success",
+              description: `Upgraded to ${tier.name} plan`,
+            });
           }}
         />
       )}
