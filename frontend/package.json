@@ -33,6 +33,9 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "cytoscape": "^3.31.2",
+    "cytoscape-dagre": "^2.5.0",
+    "cytoscape-popper": "^1.0.7",
     "d3": "^7.9.0",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.5",
@@ -55,12 +58,16 @@
     "shadcn": "^1.0.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "tippy.js": "^6.3.7"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.3.1",
     "@next/eslint-plugin-next": "^14.2.15",
     "@types/canvas-confetti": "^1.6.4",
+    "@types/cytoscape": "^3.21.9",
+    "@types/cytoscape-dagre": "^2.3.3",
+    "@types/cytoscape-popper": "^2.0.4",
     "@types/d3": "^7.4.3",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",

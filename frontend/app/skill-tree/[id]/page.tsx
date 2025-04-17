@@ -1,257 +1,143 @@
 "use client";
 
-import { CustomSimulationNode, LinkData, NodeData } from "@/app/types";
-import * as d3 from "d3";
-import { useEffect, useRef } from "react";
+// SkillTree.jsx
 
-// TO-DO IN BACKEND WE NEED TO LIMIT THE NUMBER OF BRANCHES A NODE CAN HAVE
-// TO-DO ADD QUIZ PARAMETERS TO NODE DATA
+import cytoscape from "cytoscape";
+import dagre from "cytoscape-dagre";
+import { useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 
-// Group is the depth of the node where group 0 will be the root, the example set group root
-// starts with root being 1.
-const nodesData: NodeData[] = [
-  { id: "1", label: "Education Core", group: 1, completed: true },
-  { id: "2", label: "Learning Styles", group: 2, completed: true },
-  { id: "3", label: "Subjects", group: 2, completed: false },
-  { id: "4", label: "Skills", group: 3, completed: false },
-  { id: "5", label: "Career Paths", group: 3, completed: false },
-  { id: "6", label: "Visual Learners", group: 4, completed: false },
-  { id: "7", label: "Aesthetic Learners", group: 4, completed: false },
-  { id: "8", label: "Math", group: 5, completed: true },
-  { id: "9", label: "Science", group: 5, completed: true },
-  { id: "10", label: "Programming", group: 6, completed: true },
-  { id: "11", label: "Leadership", group: 6, completed: true },
-  { id: "12", label: "Engineer", group: 7, completed: true },
-  { id: "13", label: "Doctor", group: 7, completed: true },
-];
+// Register extensions
+cytoscape.use(dagre);
 
-// Linking every link data with its child in the backend we will use heap strategy to align
-// parent and child, 2*n + 1 left child, 2*n + 2 will be the right child, parent floor((n-1)/2).
-const linksData: LinkData[] = [
-  { source: "1", target: "2" },
-  { source: "1", target: "3" },
-  { source: "1", target: "4" },
-  { source: "1", target: "5" },
-  { source: "2", target: "6" },
-  { source: "2", target: "7" },
-  { source: "3", target: "8" },
-  { source: "3", target: "9" },
-  { source: "4", target: "10" },
-  { source: "4", target: "11" },
-  { source: "5", target: "12" },
-  { source: "5", target: "13" },
-];
+// Simple Modal component
+const Modal = ({ nodeId, onClose }) => {
+  return ReactDOM.createPortal(
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "rgba(0,0,0,0.5)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 1000,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "#fff",
+          padding: "20px",
+          borderRadius: "8px",
+          minWidth: "300px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2>Node Details</h2>
+        <p>
+          ID: <strong>{nodeId}</strong>
+        </p>
+        <button
+          onClick={onClose}
+          style={{ marginTop: "10px", padding: "6px 12px" }}
+        >
+          Close
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+};
 
-export default function SkillTree() {
-  const svgRef = useRef<SVGSVGElement>(null!);
-
-  const getHSLWithOpacity = (hslColor: string, opacity: number) => {
-    const hsl = d3.hsl(hslColor);
-    return `hsla(${hsl.h}, ${hsl.s * 100}%, ${hsl.l * 100}%, ${opacity})`;
-  };
-
-  const colorScale = d3.scaleOrdinal<string>(d3.schemePastel2);
+const SkillTree = () => {
+  const containerRef = useRef(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!svgRef.current) {
-      return;
-    }
+    if (!containerRef.current) return;
 
-    const svg = d3.select(svgRef.current);
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
-
-    svg.attr("viewBox", `0 0 ${width} ${height}`);
-    svg.selectAll("*").remove();
-
-    const hierarchy = d3
-      .stratify<NodeData>()
-      .id((d) => d.id)
-      .parentId((d) => linksData.find((link) => link.target === d.id)?.source)(
-        nodesData
-      )
-      .descendants() as CustomSimulationNode[];
-
-    hierarchy.forEach((node) => {
-      node.id = node.data.id;
-      node.label = node.data.label;
-      node.group = node.data.group;
+    const cy = cytoscape({
+      container: containerRef.current,
+      elements: [
+        { data: { id: "A" } },
+        { data: { id: "B" } },
+        { data: { id: "C" } },
+        { data: { source: "A", target: "B" } },
+        { data: { source: "A", target: "C" } },
+        { data: { source: "B", target: "C" } },
+      ],
+      style: [
+        {
+          selector: "node",
+          style: {
+            "background-color": "#0074D9",
+            label: "data(id)",
+            "text-valign": "center",
+            color: "#fff",
+          },
+        },
+        {
+          selector: "edge",
+          style: {
+            width: 3,
+            "line-color": "#ccc",
+            "target-arrow-color": "#ccc",
+            "target-arrow-shape": "triangle",
+            "curve-style": "bezier",
+          },
+        },
+      ],
+      layout: {
+        name: "dagre",
+        rankDir: "LR",
+        nodeSep: 50,
+        edgeSep: 10,
+      },
+      userZoomingEnabled: true,
+      userPanningEnabled: true,
+      boxSelectionEnabled: false,
+      autoungrabify: false,
     });
 
-    // Starts the simulation and links different hierarchical nodes together
-    const simulation = d3
-      .forceSimulation<CustomSimulationNode>(hierarchy)
-      .force(
-        "link",
-        d3
-          .forceLink<CustomSimulationNode>()
-          .links(
-            linksData.map((link) => ({
-              source: hierarchy.find((node) => node.id === link.source)!,
-              target: hierarchy.find((node) => node.id === link.target)!,
-            }))
-          )
-          .id((d) => d.id)
-          .distance(40)
-      )
-      .force("charge", d3.forceManyBody().strength(-500))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force(
-        "collision",
-        d3
-          .forceCollide<CustomSimulationNode>()
-          .radius((d) => getNodeRadius(d) + 5)
-      );
+    // Enable node dragging
+    cy.nodes().grabify();
 
-    // Connectors of the circular nodes
-    const link = svg
-      .append("g")
-      .selectAll("line")
-      .data(
-        simulation
-          .force<d3.ForceLink<CustomSimulationNode, LinkData>>("link")!
-          .links()
-      )
-      .enter()
-      .append("line")
-      .attr("stroke", "hsl(var(--foreground))")
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", 1.5);
-
-    const node = svg
-      .append("g")
-      .selectAll("circle")
-      .data(hierarchy)
-      .enter()
-      .append("circle")
-      .attr("r", (d) => getNodeRadius(d))
-      .attr("fill", (d) =>
-        getHSLWithOpacity(colorScale(d.group.toString()), 0.95)
-      )
-      .call(
-        d3
-          .drag<SVGCircleElement, CustomSimulationNode>()
-          .on("start", dragStarted)
-          .on("drag", dragged)
-          .on("end", dragEnded)
-      );
-
-    // The labels written inside the circle
-    const label = svg
-      .append("g")
-      .selectAll("text")
-      .data(hierarchy)
-      .enter()
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "central")
-      .text((d) => d.label)
-      .style("fill", "black")
-      .style("font-size", 10)
-      .style("font-weight", "light")
-      .style("pointer-events", "none");
-
-    const cueSize = 16;
-    const cue = svg
-      .append("g")
-      .selectAll("rect")
-      .data(hierarchy)
-      .enter()
-      .append("rect")
-      .attr("width", cueSize)
-      .attr("height", cueSize)
-      .attr("fill", (d) => (d.data.completed ? "green" : "red")) // Green for complete, red for incomplete
-      .attr("stroke", "black")
-      .attr("stroke-width", 1)
-      .style("pointer-events", "none");
-
-    const cueIcons = svg
-      .append("g")
-      .selectAll("text")
-      .data(hierarchy)
-      .enter()
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle")
-      .text((d) => (d.data.completed ? "✔" : "✖")) // Tick for completed, X for incomplete
-      .style("font-size", "6px") // Adjust font size to fit in the square
-      .style("fill", "white")
-      .style("font-weight", "bold")
-      .style("pointer-events", "none");
-
-    simulation.on("tick", () => {
-      link
-        .attr("x1", (d) => (d.source as CustomSimulationNode).x!)
-        .attr("y1", (d) => (d.source as CustomSimulationNode).y!)
-        .attr("x2", (d) => (d.target as CustomSimulationNode).x!)
-        .attr("y2", (d) => (d.target as CustomSimulationNode).y!);
-
-      node.attr("cx", (d) => d.x!).attr("cy", (d) => d.y!);
-      label.attr("x", (d) => d.x!).attr("y", (d) => d.y!);
-
-      cue
-        .attr("x", (d) => d.x! + getNodeRadius(d) * 0.6) // top-right
-        .attr("y", (d) => d.y! - getNodeRadius(d) * 0.6);
-
-      cueIcons
-        .attr("x", (d) => d.x! + getNodeRadius(d) * 0.6 + cueSize / 2) // center of the square
-        .attr("y", (d) => d.y! - getNodeRadius(d) * 0.6 + cueSize / 2);
+    // Attach click handler to open modal
+    cy.nodes().forEach((node) => {
+      node.on("click", () => {
+        setSelectedNode(node.id());
+      });
     });
 
-    function dragStarted(
-      event: d3.D3DragEvent<
-        SVGCircleElement,
-        CustomSimulationNode,
-        CustomSimulationNode
-      >,
-      d: CustomSimulationNode
-    ) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
-
-    function dragged(
-      event: d3.D3DragEvent<
-        SVGCircleElement,
-        CustomSimulationNode,
-        CustomSimulationNode
-      >,
-      d: CustomSimulationNode
-    ) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-
-    function dragEnded(
-      event: d3.D3DragEvent<
-        SVGCircleElement,
-        CustomSimulationNode,
-        CustomSimulationNode
-      >,
-      d: CustomSimulationNode
-    ) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
-
-    // Each child will be smaller in radius than its parent up until it reaches the threshold
-    function getNodeRadius(d: CustomSimulationNode): number {
-      const maxRadius = 40;
-      const minRadius = 30;
-      const depthFactor = 0.2;
-      return Math.max(minRadius, maxRadius - d.depth * depthFactor * minRadius);
-    }
-
+    // Cleanup on unmount
     return () => {
-      simulation.stop();
+      cy.destroy();
     };
-  }, [colorScale]);
+  }, []);
 
   return (
-    <main>
-      <svg ref={svgRef} className="-mt-[8vh] h-screen w-full" />
-    </main>
+    <>
+      <div
+        ref={containerRef}
+        style={{ width: "100%", height: "600px", border: "1px solid #ccc" }}
+      />
+      {selectedNode && (
+        <Modal nodeId={selectedNode} onClose={() => setSelectedNode(null)} />
+      )}
+    </>
   );
-}
+};
+
+export default SkillTree;
+
+/**
+ * Usage:
+ * 1. Install dependencies:
+ *    npm install cytoscape cytoscape-dagre react-dom
+ * 2. Import and include <SkillTree /> in your React app.
+ */
