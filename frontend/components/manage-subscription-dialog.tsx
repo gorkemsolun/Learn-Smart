@@ -1,5 +1,3 @@
-// src/components/manage-subscription-dialog.tsx
-
 "use client";
 
 import { Tier } from "@/app/types";
@@ -87,7 +85,7 @@ export function ManageSubscriptionDialog({
               <div key={tier.name} className="relative">
                 <TierCardMini
                   tier={tier}
-                  fontColor={isCurrent ? "white" : "black"}
+                  fontColor={"white"}
                 />
                 <Button
                   className={`mt-2 w-full font-thin ${

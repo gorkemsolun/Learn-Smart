@@ -12,12 +12,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UpgradePlanDialog } from "@/components/upgrade-plan-dialog";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import { Calendar, Camera, Pencil, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { User } from "../types";
+import { Tier } from "../types";
 
 export default function Profile() {
   const [token, setToken] = useState<string>(
@@ -27,6 +29,27 @@ export default function Profile() {
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [editMode, setEditMode] = useState<boolean>(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState<boolean>(false);
+  const [targetTier, setTargetTier] = useState<Tier>({
+    name: "Edux+ Elite",
+    price: 199.99,
+    billingPeriod: "yearly",
+    llm: "GPT-4 Turbo",
+    features: [
+      "Everything in Pro",
+      "Dedicated account manager",
+      "Custom integrations",
+    ],
+    badge: "Best Value",
+  });
+  const [showUpgradePlanDialog, setShowUpgrade] = useState<boolean>(false);
+  const [currentTier, setCurrentTier] = useState<Tier>({
+    name: "Edux+ Pro",
+    price: 19.99,
+    billingPeriod: "monthly",
+    llm: "GPT-4",
+    features: ["Everything in Basic", "Priority support", "Extra Pro feature"],
+    badge: "Popular",
+  });
   const [showManageSubscriptionDialog, setShowManageSubscriptionDialog] =
     useState<boolean>(false);
   const [user, setUser] = useState<User>({
@@ -54,6 +77,7 @@ export default function Profile() {
       });
       setUser(response.data);
     } catch (error) {
+      console.error("Error fetching profile:", error);
       toast({
         variant: "destructive",
         title: "Error fetching profile",
@@ -103,6 +127,7 @@ export default function Profile() {
       setOriginalUser(response.data);
       toast({ title: "Profile updated successfully" });
     } catch (error) {
+      console.error("Error updating profile:", error);
       toast({
         variant: "destructive",
         title: "Error updating profile",
@@ -358,7 +383,10 @@ export default function Profile() {
                   fontColor="white"
                 />
                 <div className="flex flex-col gap-2">
-                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 w-full font-thin transition-colors">
+                  <Button
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 w-full font-thin transition-colors"
+                    onClick={() => setShowUpgrade(true)}
+                  >
                     Upgrade Plan
                   </Button>
                   <Button
@@ -399,6 +427,23 @@ export default function Profile() {
               title: "Success",
               description: `Upgraded to ${tier.name} plan`,
             });
+          }}
+        />
+      )}
+
+      {showUpgradePlanDialog && (
+        <UpgradePlanDialog
+          isOpen={showUpgradePlanDialog}
+          onClose={setShowUpgrade}
+          currentTier={currentTier}
+          newTier={targetTier}
+          onConfirm={() => {
+            // TODO: Call the upgrade API here
+            /* upgradeApi(targetTier.name).then(() => {
+              toast({ title: `Upgraded to ${targetTier.name}!` });
+              setCurrentTier(targetTier);
+              setShowUpgrade(false);
+            }); */
           }}
         />
       )}
