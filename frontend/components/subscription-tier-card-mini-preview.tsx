@@ -14,17 +14,34 @@ interface FeatureListProps {
 
 function FeatureList({ features, fontColor = "black" }: FeatureListProps) {
   const base = fontColor === "white" ? "text-white" : "text-black";
+  const displayCount = 3;
+  const displayFeatures = features.slice(0, displayCount);
+  const hasMore = features.length > displayCount;
+  const paddedFeatures = [
+    ...displayFeatures,
+    ...Array(displayCount - displayFeatures.length).fill(""),
+  ];
+
   return (
     <ul className={`${base}/80 space-y-2 text-xs`}>
-      {features.slice(0, 3).map((feature, index) => (
-        <li key={index} className="flex items-center gap-2">
-          <CheckIcon className={`${base}/70 size-3`} />
-          {feature}
+      {paddedFeatures.map((feature, idx) => (
+        <li key={idx} className="flex items-center gap-2">
+          {feature ? (
+            <CheckIcon className={`${base}/70 size-3`} />
+          ) : (
+            <div className="m-1 size-3" />
+          )}
+          {feature ? feature : <span className="m-1 inline-block size-3" />}
         </li>
       ))}
-      {features.length > 3 && (
-        <li className={`${base}/70`}>+{features.length - 3} more features</li>
-      )}
+      <li className="flex items-center gap-2">
+        {hasMore && <CheckIcon className={`${base}/70 size-3`} />}
+        {hasMore ? (
+          `+${features.length - displayCount} more features`
+        ) : (
+          <span className="inline-block size-3" />
+        )}
+      </li>
     </ul>
   );
 }
