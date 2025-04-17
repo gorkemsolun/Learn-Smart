@@ -304,9 +304,11 @@ export default function ChatResizablePanels({
       message_id: lastMessageID + 1,
       media_url: inputFile ? URL.createObjectURL(inputFile) : null,
     };
+
     setActiveMessages((messages: Message[]) => [...messages, newMessage]);
     setIsMessagesLoading(true);
     setInputMessage("");
+    if (inputFile) setInputFile(null);
 
     const url = activeChat?.slides_mode
     ? `/chat/${activeChat.chat_id}/send_message?slide_id=${currentSlide.slide_id}&page_number=${currentSlidePage}`
