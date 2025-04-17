@@ -10,6 +10,7 @@ import { useState, useRef } from 'react'
 import { backend } from "@/environment/backend_api"
 import { useAuthRedirect } from "@/hooks/useAuthRedirect"
 import { useGenerateFlashcard } from "@/hooks/useCreateFlashcards"
+import { useGenerateQuiz } from "@/hooks/useCreateQuiz"
 
 export default function ChatInterface({ 
   messages, 
@@ -26,7 +27,8 @@ export default function ChatInterface({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const token = useAuthRedirect();
-  const { generateFlashcard, isLoading, error, flashcardData } = useGenerateFlashcard();
+  const { generateFlashcard, isLoadingF, errorF, flashcardData } = useGenerateFlashcard();
+  const { generateQuiz, isLoadingQ, errorQ, quizData } = useGenerateQuiz();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -85,7 +87,7 @@ export default function ChatInterface({
             <h2 className="text-2xl font-bold ml-2">{activeChat.chat_title}</h2>
           </div>
           <div className="flex gap-2 mb-4">
-            <Button variant="outline" onClick={() => console.log("Create Quiz clicked")}>
+            <Button variant="outline" onClick={() => generateQuiz(activeChat.chat_id, token)}>
               Create Quiz
             </Button>
             <Button variant="outline" onClick={() => generateFlashcard(activeChat.chat_id, token)}>

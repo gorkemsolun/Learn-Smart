@@ -1,17 +1,26 @@
-"use client"
+"use client";
 
 import { backendAPI } from "@/environment/backend_api";
-import { useAuthToken } from "@/hooks/useAuthToken";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useLoading } from "@/hooks/useLoading";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import QuizComponent from "@/components/quiz-component";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function CourseQuizList() {
-  const token = useAuthToken();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [quizList, setQuizList] = useState([]);
+  const token = useAuthRedirect();
+  const { loading, startLoading, stopLoading } = useLoading();
+  const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null);
+  const [quizData, setQuizData] = useState<{ [filename: string]: any[] }>({});
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
-  const router = useRouter();
+
+  const handleQuizClick = (question: string) => {
+    setSelectedQuiz(selectedQuiz === question ? null : question);
+  };
 
   useEffect(() => {
     if (token) {
@@ -19,13 +28,9 @@ export default function CourseQuizList() {
     }
   }, [token, course_id]);
 
-  if (token == null) {
-    router.replace("/login");
-  }
-
   const fetchQuizList = async (course_id: string) => {
     try {
-      setLoading(true);
+      startLoading();
       const response = await backendAPI.get(`/course/${course_id}/quizzes`, {
         headers: {
           "Content-Type": "application/json",
@@ -33,29 +38,81 @@ export default function CourseQuizList() {
         },
       });
 
-      setQuizList(response.data)
+      const quizzesData: { [filename: string]: any[] } = {};
+
+      for (const item of response.data) {
+        const { chat_id, chat_title, quizzes } = item;
+        for (const filename of quizzes) {
+          const quizResponse = await backendAPI.get(`/course/${course_id}/quizzes/${filename}`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          quizzesData[filename] = quizResponse.data;
+        }
+      }
+
+      setQuizData(quizzesData);
     } catch (error) {
-      console.error("Error fetching course data:", error);
+      console.error("Error fetching quiz data:", error);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <LoadingSpinner />;
 
-  if (!quizList || quizList.length === 0) {
-    return <div>No quiz available.</div>;
+  if (!quizData || Object.keys(quizData).length === 0) {
+    return (
+      <Card className="text-center">
+        <CardHeader>
+          <h2 className="text-xl font-semibold">No Quizzes Available</h2>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            It looks like there are no quizzes to display at the moment.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div>
-      <h1>Quizzes for Course {course_id}</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Quizzes</h1>
       <ul>
-        {quizList.map((quiz, index) => (
-          <li key={index}>
-            <h2>{quiz}</h2> {/* 10.11.2024 current chat does note create quizzes or flashcards */}
+        {Object.entries(quizData).map(([filename, quizzes]) => (
+          <li key={filename} className="mb-4">
+            <div
+              className="cursor-pointer p-2 border rounded-lg hover:bg-gray-200"
+              onClick={() => handleQuizClick(filename)}
+            >
+              <h2 className="font-semibold">{filename}</h2>
+            </div>
+            <AnimatePresence>
+              {selectedQuiz === filename && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="mt-2 overflow-hidden"
+                >
+                  <div className="p-6 border shadow-md rounded-lg">
+                    {quizzes.map((quiz, qIndex) => (
+                      <QuizComponent
+                        key={qIndex}
+                        question={quiz.question}
+                        options={quiz.options}
+                        answer={quiz.answer}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </li>
         ))}
       </ul>
