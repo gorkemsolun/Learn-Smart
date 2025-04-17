@@ -21,6 +21,15 @@ export interface Course {
   course_icon?: File;
 }
 
+export interface Tier {
+  name: string;
+  price: number;
+  billingPeriod: "monthly" | "yearly";
+  llm: string;
+  features: string[];
+  badge?: any; // TODO: Define the type for badge
+}
+
 export interface Message {
   message_id: number;
   role: "user" | "model";
@@ -152,4 +161,10 @@ export interface SkillTreeEditCreateDialogProps {
   onSkillTreeSubmit: () => void;
   skillTree?: SkillTreeCard;
   isEdit?: boolean;
+}
+
+export interface CheckPasswordDialogProps {
+  isOpen: boolean;
+  onClose: (open: boolean) => void;
+  onCheckSuccess?: () => void;
 }
