@@ -31,10 +31,10 @@ export interface Message {
 export interface Chat {
   chat_id: string;
   chat_title: string;
-  slides_mode: boolean;
-  last_opened_slide_id: string | null;
-  slides: Slide[];
-  created_at: string;
+  slides_mode?: boolean;
+  last_opened_slide_id?: string | null;
+  slides?: Slide[];
+  created_at?: string;
 }
 
 export interface Slide {
@@ -135,14 +135,8 @@ export interface SkillTreeListProps {
   skillTrees: SkillTreeCard[];
 }
 
-export interface SkillTreeCreateDialogProps {
-  isOpen: boolean;
-  onClose: (value: boolean) => void;
-  onSkillTreeCreation: () => void;
-}
-
 export interface SkillTreeCreateProps {
-  onSkillTreeUpdate: () => void;
+  onSkillTreeSubmit: () => void;
 }
 
 export interface SkillTreeCardProps {
@@ -152,9 +146,10 @@ export interface SkillTreeCardProps {
   onSkillTreeDelete: (id: string) => void;
 }
 
-export interface SkillTreeEditDialogProps {
+export interface SkillTreeEditCreateDialogProps {
   isOpen: boolean;
   onClose: (value: boolean) => void;
-  onSkillTreeUpdate: () => void;
-  skillTree: SkillTreeCard;
+  onSkillTreeSubmit: () => void;
+  skillTree?: SkillTreeCard;
+  isEdit?: boolean;
 }
