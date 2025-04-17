@@ -126,7 +126,7 @@ export default function UserDashboard() {
       title: "Chat",
       content: "Ask, learn using chatbot.",
       icon: <ChatIcon className="text-3xl md:text-4xl" />,
-      link: courses.length === 0 ? "" : `/course/${courses[0].course_id}/chat`,
+      link: courses.length === 0 ? "error_chat" : `/course/${courses[0].course_id}/chat`,
     },
     {
       title: "Engagement Metrics",
@@ -143,6 +143,23 @@ export default function UserDashboard() {
   ];
 
   const handleCardClick = (link: string) => {
+    if (link === "error_chat") {
+      toast({
+        title: "No Course Found",
+        description: "Please create a course before accessing the chat.",
+        variant: "destructive",
+        action: (
+          <ToastAction
+            altText="Create"
+            onClick={() => setCourseDialog(true)}
+          >
+            Create
+          </ToastAction>
+        ),
+      });
+      return;
+    }
+
     if (link) router.push(link);
   };
 
