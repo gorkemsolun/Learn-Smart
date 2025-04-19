@@ -2,9 +2,9 @@
 
 import SkillTree from "./skill-tree";
 
-export default function SkillTreeDemo() {
-  // Custom data example
-  const programmingNodes = [
+export default function SkillTreeWrapper() {
+  // CHANGE THIS TO YOUR SKILL TREE DATA
+  const PROGRAMMING_NODES = [
     {
       id: "basics",
       label: "Programming Fundamentals",
@@ -108,7 +108,7 @@ export default function SkillTreeDemo() {
     },
   ];
 
-  const programmingEdges = [
+  const PROGRAMMING_EDGES = [
     { source: "basics", target: "oop" },
     { source: "basics", target: "algorithms" },
     { source: "oop", target: "design" },
@@ -118,7 +118,7 @@ export default function SkillTreeDemo() {
   ];
 
   return (
-    <div className="container mx-auto p-4 space-y-8 bg-background text-foreground min-h-screen">
+    <div className="bg-background text-foreground container mx-auto min-h-screen space-y-8 p-4">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Programming Skills Tree</h1>
         <p className="text-muted-foreground">
@@ -130,8 +130,8 @@ export default function SkillTreeDemo() {
         <div>
           <SkillTree
             title="Programming Skills Progression"
-            nodes={programmingNodes}
-            edges={programmingEdges}
+            nodes={PROGRAMMING_NODES}
+            edges={PROGRAMMING_EDGES}
           />
         </div>
       </div>
