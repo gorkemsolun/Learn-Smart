@@ -1,143 +1,140 @@
 "use client";
 
-// SkillTree.jsx
+import SkillTree from "./skill-tree";
 
-import cytoscape from "cytoscape";
-import dagre from "cytoscape-dagre";
-import { useEffect, useRef, useState } from "react";
-import ReactDOM from "react-dom";
-
-// Register extensions
-cytoscape.use(dagre);
-
-// Simple Modal component
-const Modal = ({ nodeId, onClose }) => {
-  return ReactDOM.createPortal(
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: "#fff",
-          padding: "20px",
-          borderRadius: "8px",
-          minWidth: "300px",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2>Node Details</h2>
-        <p>
-          ID: <strong>{nodeId}</strong>
-        </p>
-        <button
-          onClick={onClose}
-          style={{ marginTop: "10px", padding: "6px 12px" }}
-        >
-          Close
-        </button>
-      </div>
-    </div>,
-    document.body
-  );
-};
-
-const SkillTree = () => {
-  const containerRef = useRef(null);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const cy = cytoscape({
-      container: containerRef.current,
-      elements: [
-        { data: { id: "A" } },
-        { data: { id: "B" } },
-        { data: { id: "C" } },
-        { data: { source: "A", target: "B" } },
-        { data: { source: "A", target: "C" } },
-        { data: { source: "B", target: "C" } },
+export default function SkillTreeDemo() {
+  // Custom data example
+  const programmingNodes = [
+    {
+      id: "basics",
+      label: "Programming Fundamentals",
+      description:
+        "Master the fundamental concepts that form the foundation of all programming languages.",
+      level: 1,
+      progress: 100,
+      completed: true,
+      skills: [
+        "Variables",
+        "Data Types",
+        "Control Flow",
+        "Functions",
+        "Basic Algorithms",
       ],
-      style: [
-        {
-          selector: "node",
-          style: {
-            "background-color": "#0074D9",
-            label: "data(id)",
-            "text-valign": "center",
-            color: "#fff",
-          },
-        },
-        {
-          selector: "edge",
-          style: {
-            width: 3,
-            "line-color": "#ccc",
-            "target-arrow-color": "#ccc",
-            "target-arrow-shape": "triangle",
-            "curve-style": "bezier",
-          },
-        },
+      prerequisites: [],
+    },
+    {
+      id: "oop",
+      label: "Object-Oriented Programming & Design",
+      description:
+        "Learn to structure code using objects, classes, and inheritance patterns.",
+      level: 2,
+      progress: 75,
+      completed: false,
+      skills: [
+        "Classes",
+        "Inheritance",
+        "Polymorphism",
+        "Encapsulation",
+        "Abstraction",
       ],
-      layout: {
-        name: "dagre",
-        rankDir: "LR",
-        nodeSep: 50,
-        edgeSep: 10,
-      },
-      userZoomingEnabled: true,
-      userPanningEnabled: true,
-      boxSelectionEnabled: false,
-      autoungrabify: false,
-    });
+      prerequisites: ["Programming Fundamentals"],
+    },
+    {
+      id: "algorithms",
+      label: "Algorithms & Data Structures",
+      description:
+        "Understand how to efficiently store and manipulate data with optimized algorithms.",
+      level: 2,
+      progress: 60,
+      completed: false,
+      skills: [
+        "Sorting Algorithms",
+        "Search Algorithms",
+        "Trees",
+        "Graphs",
+        "Dynamic Programming",
+      ],
+      prerequisites: ["Programming Fundamentals"],
+    },
+    {
+      id: "dataStructures",
+      label: "Advanced Data Structures",
+      description:
+        "Master complex data structures for solving specialized problems.",
+      level: 3,
+      progress: 30,
+      completed: false,
+      skills: [
+        "Balanced Trees",
+        "Graph Algorithms",
+        "Heaps",
+        "Hash Tables",
+        "Tries",
+      ],
+      prerequisites: ["Algorithms & Data Structures"],
+    },
+    {
+      id: "design",
+      label: "Design Patterns",
+      description:
+        "Learn reusable solutions to common software design problems.",
+      level: 3,
+      progress: 45,
+      completed: false,
+      skills: [
+        "Creational Patterns",
+        "Structural Patterns",
+        "Behavioral Patterns",
+        "Architectural Patterns",
+      ],
+      prerequisites: ["Object-Oriented Programming & Design"],
+    },
+    {
+      id: "architecture",
+      label: "System Architecture",
+      description:
+        "Design and implement large-scale software systems with multiple components.",
+      level: 4,
+      progress: 15,
+      completed: false,
+      skills: [
+        "Distributed Systems",
+        "Microservices",
+        "Scalability",
+        "Reliability",
+        "Performance",
+      ],
+      prerequisites: ["Design Patterns", "Advanced Data Structures"],
+    },
+  ];
 
-    // Enable node dragging
-    cy.nodes().grabify();
-
-    // Attach click handler to open modal
-    cy.nodes().forEach((node) => {
-      node.on("click", () => {
-        setSelectedNode(node.id());
-      });
-    });
-
-    // Cleanup on unmount
-    return () => {
-      cy.destroy();
-    };
-  }, []);
+  const programmingEdges = [
+    { source: "basics", target: "oop" },
+    { source: "basics", target: "algorithms" },
+    { source: "oop", target: "design" },
+    { source: "algorithms", target: "dataStructures" },
+    { source: "design", target: "architecture" },
+    { source: "dataStructures", target: "architecture" },
+  ];
 
   return (
-    <>
-      <div
-        ref={containerRef}
-        style={{ width: "100%", height: "600px", border: "1px solid #ccc" }}
-      />
-      {selectedNode && (
-        <Modal nodeId={selectedNode} onClose={() => setSelectedNode(null)} />
-      )}
-    </>
+    <div className="container mx-auto p-4 space-y-8 bg-background text-foreground min-h-screen">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">Programming Skills Tree</h1>
+        <p className="text-muted-foreground">
+          Track your progress through programming concepts and skills
+        </p>
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-1">
+        <div>
+          <SkillTree
+            title="Programming Skills Progression"
+            nodes={programmingNodes}
+            edges={programmingEdges}
+          />
+        </div>
+      </div>
+    </div>
   );
-};
-
-export default SkillTree;
-
-/**
- * Usage:
- * 1. Install dependencies:
- *    npm install cytoscape cytoscape-dagre react-dom
- * 2. Import and include <SkillTree /> in your React app.
- */
+}
