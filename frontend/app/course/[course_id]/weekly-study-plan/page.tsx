@@ -1,10 +1,11 @@
 "use client";
 
-import { LoadingSpinner } from "@/components/LoadingSpinner"; // Import the loading spinner
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Card } from "@/components/ui/card";
+import UpdateUploadSyllabus from "@/components/upload-syllabus-modal";
 import { backend, backendAPI } from "@/environment/backend_api";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { useLoading } from "@/hooks/useLoading"; // Import the custom hook
+import { useLoading } from "@/hooks/useLoading";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -65,6 +66,7 @@ export default function WeeklyStudyPlan() {
   const [weeksData, setWeeksData] = useState<
     { title: string; items: string[] }[]
   >(parseStudyPlan(defaultStudyPlan));
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { course_id } = useParams<{ course_id: string }>();
 
   useEffect(() => {
@@ -107,7 +109,22 @@ export default function WeeklyStudyPlan() {
   }
 
   return (
-    <div className="bg-muted flex min-h-screen items-center justify-center p-8">
+    <div className="bg-muted relative flex min-h-screen items-center justify-center p-8">
+      <button
+        onClick={() => setIsModalOpen(true)}
+        type="button"
+        className="absolute right-4 top-4 rounded-lg bg-gray-700 px-4 py-2 text-white transition hover:bg-gray-900"
+      >
+        Update Syllabus
+      </button>
+
+      <UpdateUploadSyllabus
+        isOpen={isModalOpen}
+        modalTitle="Upload or Update Syllabus"
+        onClose={() => setIsModalOpen(false)}
+        course_id={course_id!}
+      />
+
       <div className="grid w-full max-w-5xl grid-cols-3 grid-rows-2 gap-6">
         {weeksData.map((week, idx) => (
           <Card key={idx} className="p-4">

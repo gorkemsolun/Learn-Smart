@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ToastAction } from "@/components/ui/toast";
-import UpdateUploadSyllabus from "@/components/upload-syllabus-modal-old";
+import UpdateUploadSyllabus from "@/components/upload-syllabus-modal";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
