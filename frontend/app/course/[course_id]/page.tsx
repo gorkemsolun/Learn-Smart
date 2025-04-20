@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ToastAction } from "@/components/ui/toast";
-import UpdateUploadSyllabus from "@/components/upload-syllabus-modal";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
@@ -24,7 +23,6 @@ import {
   FaClipboardList,
   FaUserTie,
 } from "react-icons/fa";
-import { IoCloudUploadSharp } from "react-icons/io5";
 
 export default function CourseHomepage() {
   const router = useRouter();
@@ -32,17 +30,10 @@ export default function CourseHomepage() {
   const [course, setCourse] = useState<Course>();
   const { loading, startLoading, stopLoading } = useLoading();
 
-  // Loading state is essential to ensure a smooth user experience, especially after a page refresh.
-  // This helps handle potential issues with icon themes that may not load correctly due to changes in the current theme.
-
   const token = useAuthRedirect();
   const { toast } = useToast();
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const handleModalOpen = () => setIsModalOpen(true);
-  const handleModalClose = () => setIsModalOpen(false);
 
   useEffect(() => {
     if (token) {
@@ -53,7 +44,6 @@ export default function CourseHomepage() {
   const fetchCourseData = async (course_id: string) => {
     startLoading();
     try {
-      // TODO: PUT THIS CODE DUPLICATION TO A GENERALIZED FOLDER
       const response = await backendAPI.get(`/course/${course_id}`, {
         headers: {
           "Content-Type": "application/json",
@@ -90,12 +80,7 @@ export default function CourseHomepage() {
 
   const handleWeeklyStudyPlanClick = () => {
     startLoading();
-    console.log("handleWeeklyStudyPlanClick");
     router.push(`/course/${course_id}/weekly-study-plan`);
-  };
-
-  const handleUploadSyllabusClick = () => {
-    handleModalOpen();
   };
 
   const courseHomepageElements = [
@@ -147,18 +132,6 @@ export default function CourseHomepage() {
       ),
       onClick: handleWeeklyStudyPlanClick,
     },
-    {
-      title: "Upload/Update Syllabus",
-      description: "Upload or update the course syllabus.",
-      icon: (
-        <IoCloudUploadSharp
-          className={`text-3xl ${
-            theme === "dark" ? "text-white" : "text-black"
-          }`}
-        />
-      ),
-      onClick: handleUploadSyllabusClick,
-    },
   ];
 
   if (loading) {
@@ -201,14 +174,6 @@ export default function CourseHomepage() {
           </div>
         )}
       </div>
-      {isModalOpen && (
-        <UpdateUploadSyllabus
-          isOpen={isModalOpen}
-          modalTitle="Upload/Update Syllabus"
-          onClose={handleModalClose}
-          course_id={course_id}
-        />
-      )}
     </main>
   );
 }

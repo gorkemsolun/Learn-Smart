@@ -71,6 +71,7 @@ export default function WeeklyStudyPlan() {
 
   useEffect(() => {
     if (token && course_id) fetchStudyPlanData(course_id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, course_id]);
 
   useEffect(() => {

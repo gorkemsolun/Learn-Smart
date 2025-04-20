@@ -90,6 +90,7 @@ export default function UpdateUploadSyllabus({
         },
       });
     } catch (error) {
+      console.error("Error uploading syllabus:", error);
       setSyllabusError(`An unexpected error occurred. Please try again.`);
     } finally {
       setLockSubmit(false);
