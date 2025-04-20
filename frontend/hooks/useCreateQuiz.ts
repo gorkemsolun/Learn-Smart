@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { backendAPI } from "@/environment/backend_api";
+import { useState } from "react";
 
 export const useGenerateQuiz = () => {
   const [isLoadingQ, setIsLoading] = useState<boolean>(false);
@@ -29,4 +29,4 @@ export const useGenerateQuiz = () => {
   };
 
   return { generateQuiz, isLoadingQ, errorQ, quizData };
-}
+};

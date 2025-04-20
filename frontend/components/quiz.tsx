@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import React, { useState } from "react";
 
 type QuizComponentProps = {
   question: string;
@@ -9,7 +9,11 @@ type QuizComponentProps = {
   answer: string;
 };
 
-export default function QuizComponent({ question, options, answer }: QuizComponentProps) {
+export default function Quiz({
+  question,
+  options,
+  answer,
+}: QuizComponentProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -24,9 +28,9 @@ export default function QuizComponent({ question, options, answer }: QuizCompone
   const isCorrect = selectedOption === answer;
 
   return (
-    <Card className="p-6 shadow-md rounded-lg">
+    <Card className="rounded-lg p-6 shadow-md">
       <CardContent>
-        <h3 className="text-xl font-semibold mb-4">{question}</h3>
+        <h3 className="mb-4 text-xl font-semibold">{question}</h3>
         {Object.entries(options).map(([key, value]) => (
           <div key={key} className="mb-2">
             <label className="flex items-center space-x-2">
