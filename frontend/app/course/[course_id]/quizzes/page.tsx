@@ -2,7 +2,17 @@
 
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import Quiz from "@/components/quiz";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { backendAPI } from "@/environment/backend_api";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
@@ -16,7 +26,7 @@ type QuizItem = {
   answer: string;
 };
 
-// ——— Default dummy data ———
+// default dummy data
 const DEFAULT_QUIZ_DATA: { [filename: string]: QuizItem[] } = {
   "js_basics_quiz.json": [
     {
@@ -68,17 +78,25 @@ export default function CourseQuizList() {
   const [quizData, setQuizData] = useState<{ [filename: string]: QuizItem[] }>(
     DEFAULT_QUIZ_DATA
   );
+
+  const [results, setResults] = useState<boolean[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
 
   const handleQuizClick = (filename: string) => {
-    setSelectedQuiz(selectedQuiz === filename ? null : filename);
+    const opening = selectedQuiz !== filename;
+    setSelectedQuiz(opening ? filename : null);
+    if (opening) {
+      setResults([]);
+      setModalOpen(false);
+    }
   };
 
+  // fetch real data and merge over defaults
   useEffect(() => {
-    if (token) {
-      fetchQuizList(course_id);
-    }
+    if (token) fetchQuizList(course_id);
   }, [token, course_id]);
 
   const fetchQuizList = async (course_id: string) => {
@@ -95,7 +113,6 @@ export default function CourseQuizList() {
       );
 
       const quizzesData: { [filename: string]: QuizItem[] } = {};
-
       for (const item of listResponse.data) {
         for (const filename of item.quizzes as string[]) {
           const quizRes = await backendAPI.get(
@@ -127,6 +144,24 @@ export default function CourseQuizList() {
     }
   };
 
+  // open modal once all questions are submitted
+  useEffect(() => {
+    if (
+      selectedQuiz &&
+      results.length === (quizData[selectedQuiz]?.length || 0)
+    ) {
+      setModalOpen(true);
+    }
+  }, [results, selectedQuiz, quizData]);
+
+  const handlePracticeMore = () => {
+    if (!selectedQuiz) return;
+    const base = quizData[selectedQuiz];
+    // TODO: navigate to or open quiz-builder with `base`
+    console.log("Practice more with base quiz:", base);
+    setModalOpen(false);
+  };
+
   if (loading) return <LoadingSpinner />;
 
   if (!quizData || Object.keys(quizData).length === 0) {
@@ -156,6 +191,7 @@ export default function CourseQuizList() {
             >
               <h2 className="font-semibold">{filename}</h2>
             </div>
+
             <AnimatePresence>
               {selectedQuiz === filename && (
                 <motion.div
@@ -165,13 +201,16 @@ export default function CourseQuizList() {
                   transition={{ duration: 0.5 }}
                   className="mt-2 overflow-hidden"
                 >
-                  <div className="rounded-lg border p-6 shadow-md">
-                    {quizzes.map((quiz, qIndex) => (
+                  <div className="space-y-6 rounded-lg border p-6 shadow-md">
+                    {quizzes.map((quiz, index) => (
                       <Quiz
-                        key={qIndex}
+                        key={index}
                         question={quiz.question}
                         options={quiz.options}
                         answer={quiz.answer}
+                        onSubmit={(correct) =>
+                          setResults((prev) => [...prev, correct])
+                        }
                       />
                     ))}
                   </div>
@@ -181,6 +220,24 @@ export default function CourseQuizList() {
           </li>
         ))}
       </ul>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Congratulations!</DialogTitle>
+            <DialogDescription>
+              You’ve completed all questions. Would you like to practice more
+              with a new quiz based on this one?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="space-x-2">
+            <DialogClose asChild>
+              <Button variant="outline">Close</Button>
+            </DialogClose>
+            <Button onClick={handlePracticeMore}>Practice More</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
