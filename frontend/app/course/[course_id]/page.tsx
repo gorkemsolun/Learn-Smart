@@ -14,7 +14,6 @@ import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
-import { useTheme } from "next-themes";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -26,10 +25,8 @@ import {
 
 export default function CourseHomepage() {
   const router = useRouter();
-  const { theme } = useTheme();
   const [course, setCourse] = useState<Course>();
   const { loading, startLoading, stopLoading } = useLoading();
-
   const token = useAuthRedirect();
   const { toast } = useToast();
   const params = useParams<{ course_id: string }>();
@@ -63,116 +60,74 @@ export default function CourseHomepage() {
     }
   };
 
-  const handleFlashcardsClick = () => {
+  const navigate = (path: string) => {
     startLoading();
-    router.push(`/course/${course_id}/flashcards`);
+    router.push(path);
   };
 
-  const handleQuizzesClick = () => {
-    startLoading();
-    router.push(`/course/${course_id}/quizzes`);
-  };
-
-  const handleInstructorClick = () => {
-    startLoading();
-    router.push(`/course/${course_id}/instructor`);
-  };
-
-  const handleWeeklyStudyPlanClick = () => {
-    startLoading();
-    router.push(`/course/${course_id}/weekly-study-plan`);
-  };
+  const iconStyle = "text-4xl text-gray-300"; // slightly darker than before
 
   const courseHomepageElements = [
     {
       title: "Flashcards",
       description: "Practice with digital flashcards.",
-      icon: (
-        <FaBook
-          className={`text-3xl ${
-            theme === "dark" ? "text-white" : "text-black"
-          }`}
-        />
-      ),
-      onClick: handleFlashcardsClick,
+      icon: <FaBook className={iconStyle} />,
+      onClick: () => navigate(`/course/${course_id}/flashcards`),
     },
     {
       title: "Quizzes",
       description: "Take interactive quizzes.",
-      icon: (
-        <FaClipboardList
-          className={`text-3xl ${
-            theme === "dark" ? "text-white" : "text-black"
-          }`}
-        />
-      ),
-      onClick: handleQuizzesClick,
+      icon: <FaClipboardList className={iconStyle} />,
+      onClick: () => navigate(`/course/${course_id}/quizzes`),
     },
     {
       title: `Go to ${course?.course_name} Instructor`,
       description: `Ask ${course?.course_name} Instructor through chatbot.`,
-      icon: (
-        <FaUserTie
-          className={`text-3xl ${
-            theme === "dark" ? "text-white" : "text-black"
-          }`}
-        />
-      ),
-      onClick: handleInstructorClick,
+      icon: <FaUserTie className={iconStyle} />,
+      onClick: () => navigate(`/course/${course_id}/instructor`),
     },
     {
       title: "Weekly study plan",
       description: "Plan your study sessions for the week.",
-      icon: (
-        <FaCalendarAlt
-          className={`text-3xl ${
-            theme === "dark" ? "text-white" : "text-black"
-          }`}
-        />
-      ),
-      onClick: handleWeeklyStudyPlanClick,
+      icon: <FaCalendarAlt className={iconStyle} />,
+      onClick: () => navigate(`/course/${course_id}/weekly-study-plan`),
     },
   ];
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  if (loading) return <LoadingSpinner />;
 
   return (
-    <main className="min-h-screen bg-transparent text-black">
-      <div className="space-y-6 p-6">
-        {loading ? (
-          <div className="text-center">Loading...</div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {courseHomepageElements.map((element, index) => (
-              <Card
-                key={index}
-                className="flex h-full flex-col justify-between"
-              >
-                <CardHeader className="text-center">
-                  <CardTitle className="text-lg font-semibold">
-                    {element.title}
-                  </CardTitle>
-                  <CardDescription className="text-gray-500">
-                    {element.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex h-32 items-center justify-center">
-                  {element.icon}
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <div
-                    onClick={element.onClick}
-                    className="w-full max-w-xs cursor-pointer rounded-full bg-black px-6 py-2 text-center text-white transition duration-300 hover:bg-gray-700"
-                  >
-                    {element.title}
-                  </div>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
+    <main className="min-h-screen  text-white">
+      <div className="mx-auto max-w-6xl p-6">
+        <div className="grid grid-cols-1 place-items-stretch gap-8 sm:grid-cols-2">
+          {courseHomepageElements.map((element, index) => (
+            <Card
+              key={index}
+              className="to-gray-750 flex h-full flex-col justify-between rounded-2xl bg-gradient-to-br from-gray-900 shadow-xl transition-transform duration-300 hover:scale-105 hover:shadow-2xl"
+            >
+              <CardHeader className="text-center">
+                <CardTitle className="text-lg font-semibold">
+                  {element.title}
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  {element.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex h-32 items-center justify-center">
+                {element.icon}
+              </CardContent>
+              <CardFooter className="flex justify-center pb-6">
+                <button
+                  onClick={element.onClick}
+                  type="button"
+                  className="w-full max-w-xs rounded-full bg-gradient-to-r from-gray-700 to-gray-500 px-6 py-2 text-center font-medium text-white transition-opacity duration-300 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                >
+                  {element.title}
+                </button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       </div>
     </main>
   );
