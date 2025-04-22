@@ -158,3 +158,9 @@ export interface SkillTreeEditDialogProps {
   onSkillTreeUpdate: () => void;
   skillTree: SkillTreeCard;
 }
+
+export type Project = {
+  id: string;
+  name: string;
+  messages: Message[];
+};
