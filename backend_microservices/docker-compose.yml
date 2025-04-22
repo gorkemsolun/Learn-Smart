@@ -1,0 +1,145 @@
+services:
+  auth_service:
+    build:
+      context: ./auth_service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./auth_service/app/.env
+    networks:
+      - microservices-network
+
+  chat_service:
+    build:
+      context: ./chat_service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      - mysql_chat
+    env_file:
+      - ./chat_service/app/.env
+    networks:
+      - microservices-network
+
+  course_service:
+    build:
+      context: ./course_service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    depends_on:
+      - mysql_course
+    env_file:
+      - ./course_service/app/.env
+    networks:
+      - microservices-network
+
+  filemanager_service:
+    build:
+      context: ./filemanager_service
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    depends_on:
+      - mysql_filemanager
+    env_file:
+      - ./filemanager_service/app/.env
+    networks:
+      - microservices-network
+
+  genai_service:
+    build:
+      context: ./genai_service
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8005"
+    env_file:
+      - ./genai_service/app/.env.devel
+    networks:
+      - microservices-network
+
+  user_service:
+    build:
+      context: ./user_service
+      dockerfile: Dockerfile
+    ports:
+      - "8007:8007"
+    depends_on:
+      - mysql_user
+    env_file:
+      - ./user_service/app/.env
+    networks:
+      - microservices-network
+
+  # MySQL containers.
+  mysql_chat:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: edux_chat
+      MYSQL_USER: edux_admin
+      MYSQL_PASSWORD: eduxisawesome123
+      MYSQL_ROOT_PASSWORD: 22003206
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_chat:/var/lib/mysql
+    networks:
+      - microservices-network
+
+  mysql_course:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: edux_course
+      MYSQL_USER: edux_admin
+      MYSQL_PASSWORD: eduxisawesome123
+      MYSQL_ROOT_PASSWORD: 22003206
+    ports:
+      - "3308:3306"
+    volumes:
+      - db_course:/var/lib/mysql
+    networks:
+      - microservices-network
+
+  mysql_user:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: edux_user
+      MYSQL_USER: edux_admin
+      MYSQL_PASSWORD: eduxisawesome123
+      MYSQL_ROOT_PASSWORD: 22003206
+    ports:
+      - "3309:3306"
+    volumes:
+      - db_user:/var/lib/mysql
+    networks:
+      - microservices-network
+  
+  mysql_filemanager:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: edux_files
+      MYSQL_USER: edux_admin
+      MYSQL_PASSWORD: eduxisawesome123
+      MYSQL_ROOT_PASSWORD: 22003206
+    ports:
+      - "3310:3306"
+    volumes:
+      - db_filemanager:/var/lib/mysql
+    networks:
+      - microservices-network
+
+networks:
+  microservices-network:
+    driver: bridge
+
+volumes:
+  db_chat:
+  db_course:
+  db_filemanager:
+  db_user:
