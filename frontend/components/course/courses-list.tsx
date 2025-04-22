@@ -4,7 +4,7 @@ import React, {useState} from "react";
 import {Pencil1Icon} from "@radix-ui/react-icons";
 import {CoursesListProps} from "@/app/types";
 import {Card, CardTitle} from "@/components/ui/card";
-import {CourseCard} from "@/components/course-card";
+import {CourseCard} from "@/components/course/course-card";
 import {backendAPI} from "@/environment/backend_api";
 import {ToastAction} from "@/components/ui/toast";
 import {useToast} from "@/hooks/use-toast";

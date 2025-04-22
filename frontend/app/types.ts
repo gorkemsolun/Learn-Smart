@@ -1,5 +1,5 @@
 import { HierarchyNode, SimulationNodeDatum } from "d3";
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 
 export interface User {
   user_id: string;
@@ -32,6 +32,14 @@ export interface NodeData {
   completed?: boolean;
 }
 
+export interface Tier {
+  name: string;
+  price: number;
+  billingPeriod: "monthly" | "yearly";
+  llm: string;
+  features: string[];
+  badge?: any; // TODO: Define the type for badge
+}
 export interface Message {
   message_id: number;
   role: "user" | "model";
@@ -76,8 +84,6 @@ export interface ChatInterfaceProps {
   isChatLoading: boolean;
   chatContainerRef: React.RefObject<HTMLDivElement>;
   activeChat: Chat | null;
-  showToggleSidebarButton: boolean;
-  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface CoursesListProps {
@@ -96,7 +102,7 @@ export interface ConfirmationDialogProps {
 
 export interface CourseCardProps {
   course: Course;
-  onCourseDelete: (courseId: string) => void;
+  onCourseDelete: (courseId: string | undefined) => void;
   onCourseUpdate: () => void;
 }
 
@@ -156,4 +162,68 @@ export interface SkillTreeEditCreateDialogProps {
   onSkillTreeSubmit: () => void;
   skillTree?: SkillTreeCard;
   isEdit?: boolean;
+}
+
+export interface CheckPasswordDialogProps {
+  isOpen: boolean;
+  onClose: (open: boolean) => void;
+  onCheckSuccess?: () => void;
+}
+
+export interface ChatSidebarProps {
+  course: Course;
+  courses: Course[];
+  isLoading: boolean;
+  activeChat: Chat | null;
+  setActiveChat: React.Dispatch<React.SetStateAction<Chat | null>>;
+  chats: Chat[];
+  fetchChats: (courseId: string) => Promise<void>;
+}
+
+export interface ChatResizablePanelsProps {
+  activeChat: Chat | null;
+}
+
+export interface ChatDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onChatAction: (chat?: Chat) => void;
+  chat?: Chat | null;
+  mode: "create" | "edit";
+}
+
+export interface ChatMessage {
+  message_id: number;
+  is_user: boolean;
+  content: string;
+}
+
+export interface ChatHistoryResponse {
+  history: ChatMessage[];
+}
+
+export interface SlideResponse {
+  slide: string;
+  history?: ChatMessage[];
+}
+export interface SlidePanelProps {
+  imgSrc?: string
+  currentSlidePage: number
+  totalPages: number
+  isSlidesLoading: boolean
+  presentationFiles: { slide_id: string; slides_file_name: string }[]
+  currentSlide: Slide
+  onFileChange: (slide_id: string) => void
+  onPreviousSlide: () => void
+  onNextSlide: () => void
+  fetchSlide: (slideID: string, pageNumber: number) => Promise<any>;
+}
+
+export interface HotkeyConfig {
+  key: string
+  callback: () => void
+  ctrlKey?: boolean
+  metaKey?: boolean
+  shiftKey?: boolean
+  altKey?: boolean
 }

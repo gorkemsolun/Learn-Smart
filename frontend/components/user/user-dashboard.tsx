@@ -7,9 +7,9 @@ import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
 import { Course } from "@/app/types";
-import { CourseDialogModal } from "@/components/course-dialog";
-import { CoursesList } from "@/components/courses-list";
-import { UserChart } from "@/components/user-analytics";
+import { CourseDialogModal } from "@/components/course/course-dialog";
+import { CoursesList } from "@/components/course/courses-list";
+import { UserChart } from "@/components/analytics/user-analytics";
 import {
   Card,
   CardTitle,
@@ -126,7 +126,7 @@ export default function UserDashboard() {
       title: "Chat",
       content: "Ask, learn using chatbot.",
       icon: <ChatIcon className="text-3xl md:text-4xl" />,
-      link: "",
+      link: courses.length === 0 ? "error_chat" : `/course/${courses[0].course_id}/chat`,
     },
     {
       title: "Engagement Metrics",
@@ -138,11 +138,28 @@ export default function UserDashboard() {
       title: "Profile",
       content: "Adjust your preferences.",
       icon: <PersonIcon className="text-3xl md:text-4xl" />,
-      link: "",
+      link: "/profile",
     },
   ];
 
   const handleCardClick = (link: string) => {
+    if (link === "error_chat") {
+      toast({
+        title: "No Course Found",
+        description: "Please create a course before accessing the chat.",
+        variant: "destructive",
+        action: (
+          <ToastAction
+            altText="Create"
+            onClick={() => setCourseDialog(true)}
+          >
+            Create
+          </ToastAction>
+        ),
+      });
+      return;
+    }
+
     if (link) router.push(link);
   };
 

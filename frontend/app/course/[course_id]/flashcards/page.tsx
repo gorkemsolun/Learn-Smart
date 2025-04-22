@@ -5,8 +5,9 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
-import FlashcardComponent from "@/components/flashcard-component";
+import { LoadingSpinner } from "@/components/loading-spinner";
+import FlashcardComponent from "@/components/course/flashcard-component";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CourseFlashCardList() {
@@ -55,7 +56,20 @@ export default function CourseFlashCardList() {
   };
 
   if (loading) return <LoadingSpinner />;
-  if (!flashcardList || flashcardList.length === 0) return <div>No flashcards available.</div>;
+  if (!flashcardList || flashcardList.length === 0) {
+    return (
+      <Card className="text-center">
+        <CardHeader>
+          <h2 className="text-xl font-semibold">No Flashcards Available</h2>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            It looks like there are no flashcards to display at the moment.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="p-4">
