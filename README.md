@@ -1,4 +1,4 @@
-![Edux Logo](https://github.com/gorkemsolun/Learn-Smart/blob/main/Eduxlogo.png)
+![Edux Logo](https://github.com/gorkemsolun/Learn-Smart/blob/main/edux-logo.png)
 
 # Edux
 
