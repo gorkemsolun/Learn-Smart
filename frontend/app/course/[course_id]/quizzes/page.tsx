@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
-import { LoadingSpinner } from "@/components/loading-spinner";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import QuizComponent from "@/components/quiz-component";
 import { motion, AnimatePresence } from "framer-motion";

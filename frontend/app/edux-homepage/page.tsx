@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import UserDashboard from "@/components/user/user-dashboard";
+import UserDashboard from "@/components/user-dashboard";
 import {useRouter} from "next/navigation";
 import Cookies from "js-cookie";
 

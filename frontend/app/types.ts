@@ -1,5 +1,5 @@
 import { HierarchyNode, SimulationNodeDatum } from "d3";
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 
 export interface User {
   user_id: string;
@@ -74,6 +74,8 @@ export interface ChatInterfaceProps {
   isChatLoading: boolean;
   chatContainerRef: React.RefObject<HTMLDivElement>;
   activeChat: Chat | null;
+  showToggleSidebarButton: boolean;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface CoursesListProps {
@@ -92,7 +94,7 @@ export interface ConfirmationDialogProps {
 
 export interface CourseCardProps {
   course: Course;
-  onCourseDelete: (courseId: string | undefined) => void;
+  onCourseDelete: (courseId: string) => void;
   onCourseUpdate: () => void;
 }
 
@@ -165,61 +167,4 @@ export interface CheckPasswordDialogProps {
   isOpen: boolean;
   onClose: (open: boolean) => void;
   onCheckSuccess?: () => void;
-}
-
-export interface ChatSidebarProps {
-  course: Course;
-  courses: Course[];
-  isLoading: boolean;
-  activeChat: Chat | null;
-  setActiveChat: React.Dispatch<React.SetStateAction<Chat | null>>;
-  chats: Chat[];
-}
-
-export interface ChatResizablePanelsProps {
-  activeChat: Chat | null;
-}
-
-export interface ChatDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onChatAction: (chat?: Chat) => void;
-  chat?: Chat | null;
-  mode: "create" | "edit";
-}
-
-export interface ChatMessage {
-  message_id: number;
-  is_user: boolean;
-  content: string;
-}
-
-export interface ChatHistoryResponse {
-  history: ChatMessage[];
-}
-
-export interface SlideResponse {
-  slide: string;
-  history?: ChatMessage[];
-}
-export interface SlidePanelProps {
-  imgSrc?: string
-  currentSlidePage: number
-  totalPages: number
-  isSlidesLoading: boolean
-  presentationFiles: { slide_id: string; slides_file_name: string }[]
-  currentSlide: Slide
-  onFileChange: (slide_id: string) => void
-  onPreviousSlide: () => void
-  onNextSlide: () => void
-  fetchSlide: (slideID: string, pageNumber: number) => Promise<any>;
-}
-
-export interface HotkeyConfig {
-  key: string
-  callback: () => void
-  ctrlKey?: boolean
-  metaKey?: boolean
-  shiftKey?: boolean
-  altKey?: boolean
 }
