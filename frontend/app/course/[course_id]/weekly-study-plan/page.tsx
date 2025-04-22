@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card } from "@/components/ui/card";
 import UpdateUploadSyllabus from "@/components/upload-syllabus-modal";
 import { backend, backendAPI } from "@/environment/backend_api";
