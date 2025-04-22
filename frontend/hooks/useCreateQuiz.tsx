@@ -7,8 +7,8 @@ import {ToastAction} from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 
 export const useGenerateQuiz = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<any>(null);
+  const [isLoadingQuiz, setIsLoading] = useState<boolean>(false);
+  const [errorQuiz, setError] = useState<any>(null);
   const [quizData, setQuizData] = useState<any>(null);
   const router = useRouter();
   const { toast } = useToast();
@@ -46,5 +46,5 @@ export const useGenerateQuiz = () => {
     }
   };
 
-  return { generateQuiz, isLoading, error, quizData };
+  return { generateQuiz, isLoadingQuiz, errorQuiz, quizData };
 };

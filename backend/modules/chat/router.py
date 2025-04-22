@@ -463,8 +463,6 @@ async def create_quiz(chat_id: int, current_user: dict = Depends(auth.get_curren
         raise HTTPException(status_code=500, detail="Failed to generate quiz.")
     
     data = response_dict["data"]
-    if not validate_llm_quiz_response(data):
-        raise HTTPException(status_code=500, detail="An error occurred while generating the quiz.")
 
     quizzes_base_path = get_quizzes_folder_path(chat_id)
     os.makedirs(quizzes_base_path, exist_ok=True)

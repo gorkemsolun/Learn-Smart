@@ -7,8 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 
 export const useGenerateFlashcard = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<any>(null);
+  const [isLoadingFlashcard, setIsLoading] = useState<boolean>(false);
+  const [errorFlashcard, setError] = useState<any>(null);
   const [flashcardData, setFlashcardData] = useState<any>(null);
 
   const { toast } = useToast();
@@ -58,5 +58,5 @@ export const useGenerateFlashcard = () => {
     }
   };
 
-  return { generateFlashcard, isLoading, error, flashcardData };
+  return { generateFlashcard, isLoadingFlashcard, errorFlashcard, flashcardData };
 };
