@@ -1,11 +1,7 @@
 "use client";
 
-import { backendAPI } from "@/environment/backend_api";
-import { useRouter } from "next/navigation";
-import * as React from "react";
+import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import {ToastAction} from "@/components/ui/toast";
 import {
   Card,
   CardContent,
@@ -14,12 +10,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {Icons} from "@/components/icons";
-import {EnvelopeClosedIcon, LockClosedIcon, PersonIcon, CrossCircledIcon, CheckCircledIcon} from "@radix-ui/react-icons";
+import { ToastAction } from "@/components/ui/toast";
+import { backendAPI } from "@/environment/backend_api";
+import { useToast } from "@/hooks/use-toast";
+import {
+  CheckCircledIcon,
+  CrossCircledIcon,
+  EnvelopeClosedIcon,
+  LockClosedIcon,
+  PersonIcon,
+} from "@radix-ui/react-icons";
+import { useRouter } from "next/navigation";
+import * as React from "react";
 import { useState } from "react";
 
 export default function SignUp() {
-
   const [username, setUsername] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -56,7 +61,7 @@ export default function SignUp() {
       return;
     }
 
-    if(!passwordsMatch()) {
+    if (!passwordsMatch()) {
       toast({
         title: "Passwords do not match",
         description: "Please enter the same password",

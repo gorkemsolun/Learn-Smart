@@ -1,7 +1,7 @@
 "use client";
-import * as React from "react";
-import {Button} from "@/components/ui/button";
-import {ToastAction} from "@/components/ui/toast";
+import { Icons } from "@/components/icons";
+import ImageSlider from "@/components/image-slider";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,24 +9,41 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {Input} from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { ToastAction } from "@/components/ui/toast";
+import { backendAPI } from "@/environment/backend_api";
+import { useToast } from "@/hooks/use-toast";
+import { EnvelopeClosedIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
-import {Icons} from "@/components/icons";
-import {EnvelopeClosedIcon, LockClosedIcon} from "@radix-ui/react-icons";
-import {FcGoogle} from "react-icons/fc";
-import {useRouter} from "next/navigation";
-import {useToast} from "@/hooks/use-toast";
-import {useEffect, useState} from "react";
-import {backendAPI} from "@/environment/backend_api";
-import ImageSlider from "@/components/image-slider";
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useState } from "react";
+import { FcGoogle } from "react-icons/fc";
 
 export default function SignIn() {
-
   const [email, setEmail] = useState<string>(Cookies.get("emailCookie") || "");
   const [password, setPassword] = useState<string>("");
-  const [role, setRole] = useState<string>("" || null);
+  const [role, setRole] = useState<string>("");
   const router = useRouter();
-  const {toast} = useToast();
+  const { toast } = useToast();
+
+  const fetchUserRole = useCallback(async () => {
+    try {
+      const response = await backendAPI.get("/users/me", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Cookies.get("authToken")}`,
+        },
+      });
+      setRole(response.data.role);
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch user role. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
     const fetchAndRedirect = async () => {
@@ -49,71 +66,57 @@ export default function SignIn() {
     };
 
     fetchAndRedirect();
-  }, [router, role]);
-
-  async function fetchUserRole() {
-    await backendAPI
-      .get("/users/me", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("authToken")}`,
-        },
-      })
-      .then((response) => {
-        setRole(response.data.role);
-      });
-  }
+  }, [router, role, fetchUserRole]);
 
   const handleSignIn = async () => {
     await backendAPI
-        .post(
-            "/users/login",
-            {
-              username: email,
-              password: password,
-            },
-            {
-              headers: {
-                Accept: "application/json",
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-            }
-        )
-        .then((response) => {
-          toast({
-              title: "Sign in successful",
-              variant: "default",
-            });
-
-          const data = response.data;
-          // Store the token in a cookie
-          Cookies.set("authToken", data["access_token"], {expires: 3});
-          Cookies.set("signin_time", new Date().toISOString(), {path: "/" });
-
-          fetchUserRole();
-
-          if (role == null) {
-            router.push("/role-card");
-          } else if (role === "User") {
-            router.push("/edux-homepage");
-          } else if (role === "Instructor") {
-            router.push("/edux-homepage-instructor");
-          }
-        })
-        .catch((error) => {
-          console.error("Sign in error:", error);
-          toast({
-            title: "There is no such user",
-            description: "Details you entered does not match with a record",
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
-          });
+      .post(
+        "/users/login",
+        {
+          username: email,
+          password: password,
+        },
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      )
+      .then((response) => {
+        toast({
+          title: "Sign in successful",
+          variant: "default",
         });
+
+        const data = response.data;
+        // Store the token in a cookie
+        Cookies.set("authToken", data["access_token"], { expires: 3 });
+        Cookies.set("signin_time", new Date().toISOString(), { path: "/" });
+
+        fetchUserRole();
+
+        if (role == null) {
+          router.push("/role-card");
+        } else if (role === "User") {
+          router.push("/edux-homepage");
+        } else if (role === "Instructor") {
+          router.push("/edux-homepage-instructor");
+        }
+      })
+      .catch((error) => {
+        console.error("Sign in error:", error);
+        toast({
+          title: "There is no such user",
+          description: "Details you entered does not match with a record",
+          variant: "destructive",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
+        });
+      });
   };
 
   // TO-DO after domain acquired this place will be updated
-  const handleGoogleSignIn = () => {
-  };
+  const handleGoogleSignIn = () => {};
 
   return (
       <div className="flex min-h-screen w-full items-center justify-center p-6">
@@ -225,5 +228,3 @@ export default function SignIn() {
       </div>
   );
 }
-
-

@@ -21,6 +21,15 @@ export interface Course {
   course_icon?: File;
 }
 
+export interface Tier {
+  name: string;
+  price: number;
+  billingPeriod: "monthly" | "yearly";
+  llm: string;
+  features: string[];
+  badge?: any; // TODO: Define the type for badge
+}
+
 export interface Message {
   message_id: number;
   role: "user" | "model";
@@ -31,10 +40,10 @@ export interface Message {
 export interface Chat {
   chat_id: string;
   chat_title: string;
-  slides_mode: boolean;
-  last_opened_slide_id: string | null;
-  slides: Slide[];
-  created_at: string;
+  slides_mode?: boolean;
+  last_opened_slide_id?: string | null;
+  slides?: Slide[];
+  created_at?: string;
 }
 
 export interface Slide {
@@ -133,14 +142,8 @@ export interface SkillTreeListProps {
   skillTrees: SkillTreeCard[];
 }
 
-export interface SkillTreeCreateDialogProps {
-  isOpen: boolean;
-  onClose: (value: boolean) => void;
-  onSkillTreeCreation: () => void;
-}
-
 export interface SkillTreeCreateProps {
-  onSkillTreeUpdate: () => void;
+  onSkillTreeSubmit: () => void;
 }
 
 export interface SkillTreeCardProps {
@@ -150,11 +153,18 @@ export interface SkillTreeCardProps {
   onSkillTreeDelete: (id: string) => void;
 }
 
-export interface SkillTreeEditDialogProps {
+export interface SkillTreeEditCreateDialogProps {
   isOpen: boolean;
   onClose: (value: boolean) => void;
-  onSkillTreeUpdate: () => void;
-  skillTree: SkillTreeCard;
+  onSkillTreeSubmit: () => void;
+  skillTree?: SkillTreeCard;
+  isEdit?: boolean;
+}
+
+export interface CheckPasswordDialogProps {
+  isOpen: boolean;
+  onClose: (open: boolean) => void;
+  onCheckSuccess?: () => void;
 }
 
 export interface ChatSidebarProps {

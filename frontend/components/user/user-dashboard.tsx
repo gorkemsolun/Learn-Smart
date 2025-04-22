@@ -138,7 +138,7 @@ export default function UserDashboard() {
       title: "Profile",
       content: "Adjust your preferences.",
       icon: <PersonIcon className="text-3xl md:text-4xl" />,
-      link: "",
+      link: "/profile",
     },
   ];
 
