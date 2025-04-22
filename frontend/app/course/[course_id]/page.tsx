@@ -1,7 +1,7 @@
 "use client";
 
 import type { Course } from "@/app/types";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToastAction } from "@/components/ui/toast";
 import { backendAPI } from "@/environment/backend_api";
@@ -72,7 +72,7 @@ export default function CourseHomepage() {
       title: "Course Instructor",
       description: `Chat with the AI ${course?.course_name} Instructor.`,
       icon: <Bot size={iconSize} className="text-primary/70" strokeWidth={1.5} />,
-      path: `/course/${course_id}/instructor`,
+      path: `/course/${course_id}/chat`,
     },
     {
       title: "Weekly Study Plan",

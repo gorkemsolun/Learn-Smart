@@ -1,6 +1,6 @@
 "use client";
 
-import InstructorDashboard from "@/components/instructor-dashboard";
+import InstructorDashboard from "@/components/instructor/instructor-dashboard";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
