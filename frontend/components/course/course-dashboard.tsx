@@ -24,7 +24,7 @@ import { IoCloudUploadSharp } from "react-icons/io5";
 import UpdateUploadSyllabus from "./upload-syllabus-modal-old";
 import { useLoading } from "@/hooks/useLoading";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 export default function CourseHomepage() {
   const router = useRouter();
@@ -85,7 +85,7 @@ export default function CourseHomepage() {
 
   const handleInstructorClick = () => {
     startLoading();
-    router.push(`/course/${course_id}/instructor`);
+    router.push(`/course/${course_id}/chat`);
   };
 
   const handleWeeklyStudyPlanClick = () => {

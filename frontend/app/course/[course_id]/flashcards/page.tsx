@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
+import { LoadingSpinner } from "@/components/loading-spinner";
+import FlashcardComponent from "@/components/course/flashcard-component";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import FlashcardComponent from "@/components/flashcard-component";

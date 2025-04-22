@@ -1,6 +1,6 @@
 import { Icons } from "@/components/icons";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Searchbar } from "@/components/searchbar";
+import { Searchbar } from "@/components/searchbar/searchbar";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,

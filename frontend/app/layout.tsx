@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import ClientLayout from "@/components/client-layout";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 
 export const metadata: Metadata = {
   title: "edux",

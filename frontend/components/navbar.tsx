@@ -1,5 +1,5 @@
 import { NavbarHeader } from "@/components/navbar-header";
-import { SearchDialogModal } from "@/components/search-dialog";
+import { SearchDialogModal } from "@/components/searchbar/search-dialog";
 import { useState } from "react";
 
 export function Navbar() {
