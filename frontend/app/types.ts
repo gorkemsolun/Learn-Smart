@@ -174,6 +174,7 @@ export interface ChatSidebarProps {
   activeChat: Chat | null;
   setActiveChat: React.Dispatch<React.SetStateAction<Chat | null>>;
   chats: Chat[];
+  fetchChats: (courseId: string) => Promise<void>;
 }
 
 export interface ChatResizablePanelsProps {

@@ -94,7 +94,7 @@ export default function ChatPage() {
         setCourse(courseResponse.data);
 
         // Simulate a short delay
-        await new Promise((resolve) => setTimeout(resolve, 700));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
         const chatResponse = await backendAPI.get(`/course/${courseId}/chats`, {
           headers: { Authorization: `Bearer ${token}` },
