@@ -1,5 +1,7 @@
-import { Bell } from "lucide-react";
+import { BellIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export type Notification = {
   id: string;
@@ -9,53 +11,43 @@ export type Notification = {
   url?: string;
 };
 
-interface NotificationsDropdownProps {
-  notifications: Notification[];
+interface NotificationsPopoverProps {
+  notifications: Notification[]
 }
 
-export function NotificationsDropdown({
-  notifications,
-}: NotificationsDropdownProps) {
+export function Notifications({ notifications }: NotificationsPopoverProps) {
   return (
-    <div className="group relative">
-      <Bell className="size-5 cursor-pointer text-white hover:text-white/80" />
-
-      <div className="border-border bg-background text-foreground absolute right-0 top-full z-50 mt-2 hidden max-h-80 w-64 overflow-y-auto rounded-md border p-2 text-sm shadow-lg group-hover:block">
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="bg-transparent focus-visible:ring-0">
+          <BellIcon className="size-[1.2rem]" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="max-h-96 w-80 overflow-y-auto p-2" align="end">
         {notifications.length === 0 ? (
           <p className="p-2">No new notifications</p>
         ) : (
           <ul className="space-y-2">
             {notifications.map((n) => (
-              <li
-                key={n.id}
-                className="hover:bg-accent/10 block rounded-md p-2"
-              >
+              <li key={n.id} className="block rounded-md p-2 hover:bg-accent/10">
                 {n.url ? (
                   <Link href={n.url} className="block">
                     <div className="font-medium">{n.title}</div>
-                    <div className="text-muted-foreground text-xs">
-                      {n.description}
-                    </div>
-                    <div className="text-muted-foreground mt-1 text-[10px]">
-                      {n.time}
-                    </div>
+                    <div className="text-xs text-muted-foreground">{n.description}</div>
+                    <div className="mt-1 text-[10px] text-muted-foreground">{n.time}</div>
                   </Link>
                 ) : (
                   <div>
                     <div className="font-medium">{n.title}</div>
-                    <div className="text-muted-foreground text-xs">
-                      {n.description}
-                    </div>
-                    <div className="text-muted-foreground mt-1 text-[10px]">
-                      {n.time}
-                    </div>
+                    <div className="text-xs text-muted-foreground">{n.description}</div>
+                    <div className="mt-1 text-[10px] text-muted-foreground">{n.time}</div>
                   </div>
                 )}
               </li>
             ))}
           </ul>
         )}
-      </div>
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 }

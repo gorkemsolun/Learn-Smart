@@ -17,7 +17,7 @@ import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useState } from "react";
-import { Notification, NotificationsDropdown } from "./notifications-dropdown";
+import { Notification, Notifications } from "./notifications-dropdown";
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -84,7 +84,20 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
       description: "Thanks for joining.",
       time: "Just now",
     },
-    // …
+    {
+      id: "2",
+      title: "New message",
+      description: "You have a new message from John",
+      time: "5 minutes ago",
+      url: "/messages/1",
+    },
+    {
+      id: "3",
+      title: "New follower",
+      description: "Jane Doe is now following you",
+      time: "1 hour ago",
+      url: "/profile/jane-doe",
+    },
   ];
 
   const handleLogout = () => {
@@ -174,10 +187,10 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
             <Searchbar onSearchButtonClick={onSearchButtonClick} />
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NotificationsDropdown notifications={mock} />
+            <ModeToggle />
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <ModeToggle />
+            <Notifications notifications={mock} />
           </NavigationMenuItem>
           <NavigationMenuItem>
             <Button
