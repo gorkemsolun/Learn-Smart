@@ -21,6 +21,17 @@ export interface Course {
   course_icon?: File;
 }
 
+export interface NodeData {
+  id: string;
+  label?: string;
+  description?: string;
+  level?: number;
+  progress?: number;
+  prerequisites?: string[];
+  skills?: string[];
+  completed?: boolean;
+}
+
 export interface Tier {
   name: string;
   price: number;
@@ -29,7 +40,6 @@ export interface Tier {
   features: string[];
   badge?: any; // TODO: Define the type for badge
 }
-
 export interface Message {
   message_id: number;
   role: "user" | "model";
@@ -103,13 +113,6 @@ export interface CourseDialogProps {
   onCourseUpdate: () => void;
   onCourseCreation?: () => void;
   course?: Course;
-}
-
-export interface NodeData {
-  id: string;
-  label: string;
-  group: number;
-  completed: boolean;
 }
 
 export interface LinkData {

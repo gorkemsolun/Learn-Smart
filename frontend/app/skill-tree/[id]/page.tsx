@@ -1,257 +1,140 @@
 "use client";
 
-import { CustomSimulationNode, LinkData, NodeData } from "@/app/types";
-import * as d3 from "d3";
-import { useEffect, useRef } from "react";
+import SkillTree from "./skill-tree";
 
-// TO-DO IN BACKEND WE NEED TO LIMIT THE NUMBER OF BRANCHES A NODE CAN HAVE
-// TO-DO ADD QUIZ PARAMETERS TO NODE DATA
+export default function SkillTreeWrapper() {
+  // CHANGE THIS TO YOUR SKILL TREE DATA
+  const PROGRAMMING_NODES = [
+    {
+      id: "basics",
+      label: "Programming Fundamentals",
+      description:
+        "Master the fundamental concepts that form the foundation of all programming languages.",
+      level: 1,
+      progress: 100,
+      completed: true,
+      skills: [
+        "Variables",
+        "Data Types",
+        "Control Flow",
+        "Functions",
+        "Basic Algorithms",
+      ],
+      prerequisites: [],
+    },
+    {
+      id: "oop",
+      label: "Object-Oriented Programming & Design",
+      description:
+        "Learn to structure code using objects, classes, and inheritance patterns.",
+      level: 2,
+      progress: 75,
+      completed: false,
+      skills: [
+        "Classes",
+        "Inheritance",
+        "Polymorphism",
+        "Encapsulation",
+        "Abstraction",
+      ],
+      prerequisites: ["Programming Fundamentals"],
+    },
+    {
+      id: "algorithms",
+      label: "Algorithms & Data Structures",
+      description:
+        "Understand how to efficiently store and manipulate data with optimized algorithms.",
+      level: 2,
+      progress: 60,
+      completed: false,
+      skills: [
+        "Sorting Algorithms",
+        "Search Algorithms",
+        "Trees",
+        "Graphs",
+        "Dynamic Programming",
+      ],
+      prerequisites: ["Programming Fundamentals"],
+    },
+    {
+      id: "dataStructures",
+      label: "Advanced Data Structures",
+      description:
+        "Master complex data structures for solving specialized problems.",
+      level: 3,
+      progress: 30,
+      completed: false,
+      skills: [
+        "Balanced Trees",
+        "Graph Algorithms",
+        "Heaps",
+        "Hash Tables",
+        "Tries",
+      ],
+      prerequisites: ["Algorithms & Data Structures"],
+    },
+    {
+      id: "design",
+      label: "Design Patterns",
+      description:
+        "Learn reusable solutions to common software design problems.",
+      level: 3,
+      progress: 45,
+      completed: false,
+      skills: [
+        "Creational Patterns",
+        "Structural Patterns",
+        "Behavioral Patterns",
+        "Architectural Patterns",
+      ],
+      prerequisites: ["Object-Oriented Programming & Design"],
+    },
+    {
+      id: "architecture",
+      label: "System Architecture",
+      description:
+        "Design and implement large-scale software systems with multiple components.",
+      level: 4,
+      progress: 15,
+      completed: false,
+      skills: [
+        "Distributed Systems",
+        "Microservices",
+        "Scalability",
+        "Reliability",
+        "Performance",
+      ],
+      prerequisites: ["Design Patterns", "Advanced Data Structures"],
+    },
+  ];
 
-// Group is the depth of the node where group 0 will be the root, the example set group root
-// starts with root being 1.
-const nodesData: NodeData[] = [
-  { id: "1", label: "Education Core", group: 1, completed: true },
-  { id: "2", label: "Learning Styles", group: 2, completed: true },
-  { id: "3", label: "Subjects", group: 2, completed: false },
-  { id: "4", label: "Skills", group: 3, completed: false },
-  { id: "5", label: "Career Paths", group: 3, completed: false },
-  { id: "6", label: "Visual Learners", group: 4, completed: false },
-  { id: "7", label: "Aesthetic Learners", group: 4, completed: false },
-  { id: "8", label: "Math", group: 5, completed: true },
-  { id: "9", label: "Science", group: 5, completed: true },
-  { id: "10", label: "Programming", group: 6, completed: true },
-  { id: "11", label: "Leadership", group: 6, completed: true },
-  { id: "12", label: "Engineer", group: 7, completed: true },
-  { id: "13", label: "Doctor", group: 7, completed: true },
-];
-
-// Linking every link data with its child in the backend we will use heap strategy to align
-// parent and child, 2*n + 1 left child, 2*n + 2 will be the right child, parent floor((n-1)/2).
-const linksData: LinkData[] = [
-  { source: "1", target: "2" },
-  { source: "1", target: "3" },
-  { source: "1", target: "4" },
-  { source: "1", target: "5" },
-  { source: "2", target: "6" },
-  { source: "2", target: "7" },
-  { source: "3", target: "8" },
-  { source: "3", target: "9" },
-  { source: "4", target: "10" },
-  { source: "4", target: "11" },
-  { source: "5", target: "12" },
-  { source: "5", target: "13" },
-];
-
-export default function SkillTree() {
-  const svgRef = useRef<SVGSVGElement>(null!);
-
-  const getHSLWithOpacity = (hslColor: string, opacity: number) => {
-    const hsl = d3.hsl(hslColor);
-    return `hsla(${hsl.h}, ${hsl.s * 100}%, ${hsl.l * 100}%, ${opacity})`;
-  };
-
-  const colorScale = d3.scaleOrdinal<string>(d3.schemePastel2);
-
-  useEffect(() => {
-    if (!svgRef.current) {
-      return;
-    }
-
-    const svg = d3.select(svgRef.current);
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
-
-    svg.attr("viewBox", `0 0 ${width} ${height}`);
-    svg.selectAll("*").remove();
-
-    const hierarchy = d3
-      .stratify<NodeData>()
-      .id((d) => d.id)
-      .parentId((d) => linksData.find((link) => link.target === d.id)?.source)(
-        nodesData
-      )
-      .descendants() as CustomSimulationNode[];
-
-    hierarchy.forEach((node) => {
-      node.id = node.data.id;
-      node.label = node.data.label;
-      node.group = node.data.group;
-    });
-
-    // Starts the simulation and links different hierarchical nodes together
-    const simulation = d3
-      .forceSimulation<CustomSimulationNode>(hierarchy)
-      .force(
-        "link",
-        d3
-          .forceLink<CustomSimulationNode>()
-          .links(
-            linksData.map((link) => ({
-              source: hierarchy.find((node) => node.id === link.source)!,
-              target: hierarchy.find((node) => node.id === link.target)!,
-            }))
-          )
-          .id((d) => d.id)
-          .distance(40)
-      )
-      .force("charge", d3.forceManyBody().strength(-500))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force(
-        "collision",
-        d3
-          .forceCollide<CustomSimulationNode>()
-          .radius((d) => getNodeRadius(d) + 5)
-      );
-
-    // Connectors of the circular nodes
-    const link = svg
-      .append("g")
-      .selectAll("line")
-      .data(
-        simulation
-          .force<d3.ForceLink<CustomSimulationNode, LinkData>>("link")!
-          .links()
-      )
-      .enter()
-      .append("line")
-      .attr("stroke", "hsl(var(--foreground))")
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", 1.5);
-
-    const node = svg
-      .append("g")
-      .selectAll("circle")
-      .data(hierarchy)
-      .enter()
-      .append("circle")
-      .attr("r", (d) => getNodeRadius(d))
-      .attr("fill", (d) =>
-        getHSLWithOpacity(colorScale(d.group.toString()), 0.95)
-      )
-      .call(
-        d3
-          .drag<SVGCircleElement, CustomSimulationNode>()
-          .on("start", dragStarted)
-          .on("drag", dragged)
-          .on("end", dragEnded)
-      );
-
-    // The labels written inside the circle
-    const label = svg
-      .append("g")
-      .selectAll("text")
-      .data(hierarchy)
-      .enter()
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "central")
-      .text((d) => d.label)
-      .style("fill", "black")
-      .style("font-size", 10)
-      .style("font-weight", "light")
-      .style("pointer-events", "none");
-
-    const cueSize = 16;
-    const cue = svg
-      .append("g")
-      .selectAll("rect")
-      .data(hierarchy)
-      .enter()
-      .append("rect")
-      .attr("width", cueSize)
-      .attr("height", cueSize)
-      .attr("fill", (d) => (d.data.completed ? "green" : "red")) // Green for complete, red for incomplete
-      .attr("stroke", "black")
-      .attr("stroke-width", 1)
-      .style("pointer-events", "none");
-
-    const cueIcons = svg
-      .append("g")
-      .selectAll("text")
-      .data(hierarchy)
-      .enter()
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle")
-      .text((d) => (d.data.completed ? "✔" : "✖")) // Tick for completed, X for incomplete
-      .style("font-size", "6px") // Adjust font size to fit in the square
-      .style("fill", "white")
-      .style("font-weight", "bold")
-      .style("pointer-events", "none");
-
-    simulation.on("tick", () => {
-      link
-        .attr("x1", (d) => (d.source as CustomSimulationNode).x!)
-        .attr("y1", (d) => (d.source as CustomSimulationNode).y!)
-        .attr("x2", (d) => (d.target as CustomSimulationNode).x!)
-        .attr("y2", (d) => (d.target as CustomSimulationNode).y!);
-
-      node.attr("cx", (d) => d.x!).attr("cy", (d) => d.y!);
-      label.attr("x", (d) => d.x!).attr("y", (d) => d.y!);
-
-      cue
-        .attr("x", (d) => d.x! + getNodeRadius(d) * 0.6) // top-right
-        .attr("y", (d) => d.y! - getNodeRadius(d) * 0.6);
-
-      cueIcons
-        .attr("x", (d) => d.x! + getNodeRadius(d) * 0.6 + cueSize / 2) // center of the square
-        .attr("y", (d) => d.y! - getNodeRadius(d) * 0.6 + cueSize / 2);
-    });
-
-    function dragStarted(
-      event: d3.D3DragEvent<
-        SVGCircleElement,
-        CustomSimulationNode,
-        CustomSimulationNode
-      >,
-      d: CustomSimulationNode
-    ) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
-
-    function dragged(
-      event: d3.D3DragEvent<
-        SVGCircleElement,
-        CustomSimulationNode,
-        CustomSimulationNode
-      >,
-      d: CustomSimulationNode
-    ) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-
-    function dragEnded(
-      event: d3.D3DragEvent<
-        SVGCircleElement,
-        CustomSimulationNode,
-        CustomSimulationNode
-      >,
-      d: CustomSimulationNode
-    ) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
-
-    // Each child will be smaller in radius than its parent up until it reaches the threshold
-    function getNodeRadius(d: CustomSimulationNode): number {
-      const maxRadius = 40;
-      const minRadius = 30;
-      const depthFactor = 0.2;
-      return Math.max(minRadius, maxRadius - d.depth * depthFactor * minRadius);
-    }
-
-    return () => {
-      simulation.stop();
-    };
-  }, [colorScale]);
+  const PROGRAMMING_EDGES = [
+    { source: "basics", target: "oop" },
+    { source: "basics", target: "algorithms" },
+    { source: "oop", target: "design" },
+    { source: "algorithms", target: "dataStructures" },
+    { source: "design", target: "architecture" },
+    { source: "dataStructures", target: "architecture" },
+  ];
 
   return (
-    <main>
-      <svg ref={svgRef} className="-mt-[8vh] h-screen w-full" />
-    </main>
+    <div className="bg-background text-foreground container mx-auto min-h-screen space-y-8 p-4">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">Programming Skills Tree</h1>
+        <p className="text-muted-foreground">
+          Track your progress through programming concepts and skills
+        </p>
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-1">
+        <div>
+          <SkillTree
+            title="Programming Skills Progression"
+            nodes={PROGRAMMING_NODES}
+            edges={PROGRAMMING_EDGES}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
