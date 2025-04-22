@@ -23,7 +23,7 @@ export function Notifications({ notifications }: NotificationsPopoverProps) {
           <BellIcon className="size-[1.2rem]" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="max-h-96 w-80 overflow-y-auto p-2" align="end">
+      <PopoverContent className="max-h-44 w-80 overflow-y-auto p-2" align="end">
         {notifications.length === 0 ? (
           <p className="p-2">No new notifications</p>
         ) : (
