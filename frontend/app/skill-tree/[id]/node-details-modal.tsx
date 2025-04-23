@@ -51,15 +51,7 @@ export default function NodeDetailsModal({
       <DialogContent className="from-background to-background/90 border-border text-foreground bg-gradient-to-br sm:max-w-md">
         <div className="from-background to-background/80 border-background absolute -top-12 left-1/2 flex size-24 -translate-x-1/2 items-center justify-center rounded-full border-4 bg-gradient-to-br shadow-xl">
           <div
-            className={`flex size-16 items-center justify-center rounded-full ${
-              node.level === 1
-                ? "bg-gradient-to-br from-emerald-500/80 to-emerald-600"
-                : node.level === 2
-                  ? "from-primary/80 to-primary bg-gradient-to-br"
-                  : node.level === 3
-                    ? "from-secondary/80 to-secondary bg-gradient-to-br"
-                    : "bg-gradient-to-br from-amber-500/80 to-amber-600"
-            }`}
+            className={`from-primary/80 to-primary flex size-16 items-center justify-center rounded-full bg-gradient-to-br`}
           >
             <LevelIcon className="size-8 text-white" />
           </div>
@@ -72,17 +64,7 @@ export default function NodeDetailsModal({
           <div className="mt-2 flex justify-center">
             <Badge
               variant="outline"
-              className={`
-                  ${
-                    node.level === 1
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                      : node.level === 2
-                        ? "bg-primary/10 border-primary/30 text-primary"
-                        : node.level === 3
-                          ? "bg-secondary/10 border-secondary/30 text-secondary"
-                          : "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                  }
-                `}
+              className="bg-primary/10 border-primary/30 text-primary"
             >
               Level {node.level}
             </Badge>
@@ -108,21 +90,7 @@ export default function NodeDetailsModal({
                 {node.progress || 0}%
               </span>
             </div>
-            <Progress
-              value={node.progress || 0}
-              className="bg-muted h-2"
-              indicatorClassName={`
-                  ${
-                    node.level === 1
-                      ? "bg-emerald-500"
-                      : node.level === 2
-                        ? "bg-primary"
-                        : node.level === 3
-                          ? "bg-secondary"
-                          : "bg-amber-500"
-                  }
-                `}
-            />
+            <Progress value={node.progress || 0} className="bg-muted h-2" />
           </div>
 
           <Separator className="bg-border" />
@@ -147,7 +115,6 @@ export default function NodeDetailsModal({
             </div>
           )}
 
-          {/* Prerequisites section */}
           {node.prerequisites && node.prerequisites.length > 0 && (
             <div className="space-y-3">
               <h4 className="text-muted-foreground text-sm font-medium">
@@ -185,19 +152,7 @@ export default function NodeDetailsModal({
                 Mark as In Progress
               </Button>
             )}
-            <Button
-              className={`
-                  ${
-                    node.level === 1
-                      ? "bg-emerald-600 hover:bg-emerald-700"
-                      : node.level === 2
-                        ? "bg-primary hover:bg-primary/90"
-                        : node.level === 3
-                          ? "bg-secondary hover:bg-secondary/90"
-                          : "bg-amber-600 hover:bg-amber-700"
-                  }
-                `}
-            >
+            <Button className="bg-primary hover:bg-primary/90">
               {node.completed ? "Review Skills" : "Start Learning"}
             </Button>
           </div>
