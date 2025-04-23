@@ -1,15 +1,10 @@
 "use client";
 
-import NodeDetailsModal from "@/app/skill-tree/[id]/node-details-modal";
-import { NodeData } from "@/app/types";
+import NodeDetailsModal from "@/components/skill-tree/node-details-modal";
+import type { NodeData } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import cytoscape from "cytoscape";
 import dagre from "cytoscape-dagre";
 import { Home, Info, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
@@ -19,78 +14,50 @@ import { useEffect, useRef, useState } from "react";
 cytoscape.use(dagre);
 
 interface SkillTreeProps {
-  nodes?: NodeData[];
-  edges?: { source: string; target: string }[];
-  title?: string;
+  nodes?: NodeData[]
+  edges?: { source: string; target: string }[]
+  title?: string
 }
 
 const defaultNodes: NodeData[] = [
   {
     id: "basics",
     label: "Programming Fundamentals",
-    description:
-      "Master the fundamental concepts that form the foundation of all programming languages.",
+    description: "Master the fundamental concepts that form the foundation of all programming languages.",
     level: 1,
     progress: 100,
     completed: true,
-    skills: [
-      "Variables",
-      "Data Types",
-      "Control Flow",
-      "Functions",
-      "Basic Algorithms",
-    ],
+    skills: ["Variables", "Data Types", "Control Flow", "Functions", "Basic Algorithms"],
     prerequisites: [],
   },
   {
     id: "oop",
     label: "Object-Oriented Programming & Design",
-    description:
-      "Learn to structure code using objects, classes, and inheritance patterns.",
+    description: "Learn to structure code using objects, classes, and inheritance patterns.",
     level: 2,
     progress: 75,
     completed: false,
-    skills: [
-      "Classes",
-      "Inheritance",
-      "Polymorphism",
-      "Encapsulation",
-      "Abstraction",
-    ],
+    skills: ["Classes", "Inheritance", "Polymorphism", "Encapsulation", "Abstraction"],
     prerequisites: ["Programming Fundamentals"],
   },
   {
     id: "algorithms",
     label: "Algorithms & Data Structures",
-    description:
-      "Understand how to efficiently store and manipulate data with optimized algorithms.",
+    description: "Understand how to efficiently store and manipulate data with optimized algorithms.",
     level: 2,
     progress: 60,
     completed: false,
-    skills: [
-      "Sorting Algorithms",
-      "Search Algorithms",
-      "Trees",
-      "Graphs",
-      "Dynamic Programming",
-    ],
+    skills: ["Sorting Algorithms", "Search Algorithms", "Trees", "Graphs", "Dynamic Programming"],
     prerequisites: ["Programming Fundamentals"],
   },
   {
     id: "dataStructures",
     label: "Advanced Data Structures",
-    description:
-      "Master complex data structures for solving specialized problems.",
+    description: "Master complex data structures for solving specialized problems.",
     level: 3,
     progress: 30,
     completed: false,
-    skills: [
-      "Balanced Trees",
-      "Graph Algorithms",
-      "Heaps",
-      "Hash Tables",
-      "Tries",
-    ],
+    skills: ["Balanced Trees", "Graph Algorithms", "Heaps", "Hash Tables", "Tries"],
     prerequisites: ["Algorithms & Data Structures"],
   },
   {
@@ -100,29 +67,17 @@ const defaultNodes: NodeData[] = [
     level: 3,
     progress: 45,
     completed: false,
-    skills: [
-      "Creational Patterns",
-      "Structural Patterns",
-      "Behavioral Patterns",
-      "Architectural Patterns",
-    ],
+    skills: ["Creational Patterns", "Structural Patterns", "Behavioral Patterns", "Architectural Patterns"],
     prerequisites: ["Object-Oriented Programming & Design"],
   },
   {
     id: "architecture",
     label: "System Architecture",
-    description:
-      "Design and implement large-scale software systems with multiple components.",
+    description: "Design and implement large-scale software systems with multiple components.",
     level: 4,
     progress: 15,
     completed: false,
-    skills: [
-      "Distributed Systems",
-      "Microservices",
-      "Scalability",
-      "Reliability",
-      "Performance",
-    ],
+    skills: ["Distributed Systems", "Microservices", "Scalability", "Reliability", "Performance"],
     prerequisites: ["Design Patterns", "Advanced Data Structures"],
   },
 ];
@@ -136,33 +91,38 @@ const defaultEdges = [
   { source: "dataStructures", target: "architecture" },
 ];
 
+// Update the color palette to be more neutral and subtle
+const nodeThemeColors = {
+  dark: {
+    background: "#0a0a0a",
+    foreground: "#f0f0f0",
+    primary: "#333333",
+    primaryForeground: "#f0f0f0",
+    border: "#2a2a2a",
+    accent: "#666666",
+    subtle: "rgba(255, 255, 255, 0.05)",
+  },
+  light: {
+    background: "#ffffff",
+    foreground: "#222222",
+    primary: "#e8e8e8",
+    primaryForeground: "#222222",
+    border: "#dddddd",
+    accent: "#888888",
+    subtle: "rgba(0, 0, 0, 0.02)",
+  },
+};
+
 export default function SkillTree({
   nodes = defaultNodes,
   edges = defaultEdges,
-  title = "Skill Progression Tree (this is dynamic)",
+  title = "Skill Progression Tree",
 }: SkillTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyReference = useRef<cytoscape.Core | null>(null);
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
   const [isClient, setIsClient] = useState(false);
   const { theme, setTheme } = useTheme();
-
-  const nodeThemeColors = {
-    dark: {
-      background: "#000000",
-      foreground: "#ffffff",
-      primary: "#4a4a4a",
-      primaryForeground: "#ffffff",
-      border: "#e0e0e0",
-    },
-    light: {
-      background: "#ffffff",
-      foreground: "#e0e0e0",
-      primary: "#b0b0b0",
-      primaryForeground: "#000000",
-      border: "#2c2c2c",
-    },
-  };
 
   useEffect(() => {
     setIsClient(true);
@@ -174,8 +134,7 @@ export default function SkillTree({
 
   useEffect(() => {
     if (cyReference.current && isClient) {
-      const colors =
-        theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
+      const colors = theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
 
       cyReference.current
         .style()
@@ -194,24 +153,79 @@ export default function SkillTree({
         .selector("node")
         .style({
           "background-color": colors.background,
+          "background-opacity": 0.7,
+          "border-width": 1, // Ultra-thin border
           "border-color": colors.border,
+          "border-style": "solid",
+          "text-valign": "center",
+          "text-halign": "center",
           color: colors.primaryForeground,
-          // Reset shadow properties
-          "shadow-blur": 0,
-          "shadow-opacity": 0,
+          "font-weight": "200", // Extra light font weight
+          "font-size": "13px",
+          "font-family": "'Inter', 'Helvetica Neue', sans-serif",
+          width: "label",
+          height: "label",
+          "padding-left": "22px",
+          "padding-right": "22px",
+          "padding-top": "14px",
+          "padding-bottom": "14px",
+          label: "data(label)",
+          "text-wrap": "wrap",
+          "text-max-width": "160px",
+          shape: "round-rectangle",
+          "border-radius": 12,
+          "shadow-blur": 15,
+          "shadow-color": colors.subtle,
+          "shadow-opacity": 0.8,
+          "shadow-offset-x": 0,
+          "shadow-offset-y": 2,
+          "text-outline-width": 0,
+          "text-outline-opacity": 0,
+          "text-margin-y": 0,
+          "text-transform": "none",
+          "text-letter-spacing": 0.3, // Elegant letter spacing
         })
         .selector("node:selected")
         .style({
-          // Add shadow underlay for selected nodes based on their level
-          "shadow-blur": 15,
-          "shadow-opacity": 0.5,
-          "border-width": 4,
+          "border-color": colors.accent,
+          "border-width": 1.5,
+          "padding-left": "24px",
+          "padding-right": "24px",
+          "padding-top": "16px",
+          "padding-bottom": "16px",
+          "shadow-blur": 25,
+          "shadow-color": colors.accent,
+          "shadow-opacity": 0.3,
+          "shadow-offset-x": 0,
+          "shadow-offset-y": 3,
+          "background-color": theme === "dark" ? "rgba(138, 133, 255, 0.05)" : "rgba(99, 102, 241, 0.03)",
         })
         .selector("edge")
         .style({
-          "line-color": colors.primaryForeground,
-          "target-arrow-color": colors.primaryForeground,
+          width: 1, // Ultra-thin lines
+          "curve-style": "bezier", // Less pronounced curves
+          "line-color": theme === "dark" ? "rgba(240, 240, 240, 0.2)" : "rgba(34, 34, 34, 0.15)",
+          "target-arrow-color": theme === "dark" ? "rgba(240, 240, 240, 0.3)" : "rgba(34, 34, 34, 0.25)",
           "target-arrow-fill": "filled",
+          "target-arrow-shape": "triangle",
+          "arrow-scale": 0.8, // Smaller, more elegant arrows
+          opacity: 0.7,
+          "edge-distances": "node-position",
+          "control-point-step-size": 30, // Reduced for straighter lines
+          "control-point-weight": 0.3, // Reduced for straighter lines
+          "control-point-distances": [20, -20], // Reduced for straighter lines
+          "source-endpoint": "outside-to-node",
+          "target-endpoint": "outside-to-node",
+        })
+        .selector("edge:hover")
+        .style({
+          width: 1.5,
+          opacity: 1,
+          "line-color": colors.accent,
+          "target-arrow-color": colors.accent,
+          "transition-property": "opacity, width, line-color, target-arrow-color",
+          "transition-duration": "0.2s",
+          "transition-timing-function": "ease-in-out",
         })
         .update();
 
@@ -221,8 +235,7 @@ export default function SkillTree({
     }
   }, [theme, isClient]);
 
-  const colors =
-    theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
+  const colors = theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -260,46 +273,54 @@ export default function SkillTree({
           selector: "node",
           style: {
             "background-color": colors.background,
-            "background-opacity": 0.9,
-            "border-width": 3, // Consistent border width for all nodes
+            "background-opacity": 0.7,
+            "border-width": 1, // Ultra-thin border
             "border-color": colors.border,
-            "border-style": "solid", // Consistent border style
+            "border-style": "solid",
             "text-valign": "center",
             "text-halign": "center",
             color: colors.primaryForeground,
-            "font-weight": "bold",
-            "font-size": "12px",
+            "font-weight": "200", // Extra light font weight
+            "font-size": "13px",
+            "font-family": "'Inter', 'Helvetica Neue', sans-serif", // More elegant font
             width: "label",
             height: "label",
-            "padding-left": "15px",
-            "padding-right": "15px",
-            "padding-top": "10px",
-            "padding-bottom": "10px",
+            "padding-left": "22px",
+            "padding-right": "22px",
+            "padding-top": "14px",
+            "padding-bottom": "14px",
             label: "data(label)",
             "text-wrap": "wrap",
-            "text-max-width": "120px",
+            "text-max-width": "160px", // Wider for better text flow
             shape: "round-rectangle",
-            "shadow-blur": 0,
-            "shadow-color": "#000000",
-            "shadow-opacity": 0,
+            "border-radius": 12, // More rounded corners
+            "shadow-blur": 15,
+            "shadow-color": colors.subtle,
+            "shadow-opacity": 0.8,
             "shadow-offset-x": 0,
-            "shadow-offset-y": 0,
+            "shadow-offset-y": 2,
+            "text-outline-width": 0,
+            "text-outline-opacity": 0,
+            "text-margin-y": 0,
+            "text-transform": "none",
+            "text-letter-spacing": 0.3, // Elegant letter spacing
           },
         },
         {
           selector: "node:selected",
           style: {
-            "border-color": colors.primary,
-            "border-width": 4,
-            "padding-left": "18px",
-            "padding-right": "18px",
-            "padding-top": "12px",
-            "padding-bottom": "12px",
-            "shadow-blur": 15,
-            "shadow-color": colors.primary,
-            "shadow-opacity": 0.5,
+            "border-color": colors.accent,
+            "border-width": 1.5,
+            "padding-left": "24px",
+            "padding-right": "24px",
+            "padding-top": "16px",
+            "padding-bottom": "16px",
+            "shadow-blur": 25,
+            "shadow-color": colors.accent,
+            "shadow-opacity": 0.3,
             "shadow-offset-x": 0,
-            "shadow-offset-y": 0,
+            "shadow-offset-y": 3,
+            "background-color": theme === "dark" ? "rgba(138, 133, 255, 0.05)" : "rgba(99, 102, 241, 0.03)",
           },
         },
         {
@@ -313,26 +334,45 @@ export default function SkillTree({
         {
           selector: "edge",
           style: {
-            width: 3,
-            "curve-style": "straight",
-            "line-color": colors.primaryForeground,
-            "target-arrow-color": colors.primaryForeground,
-            "target-arrow-fill": "filled", // Hollow arrow heads (white inside)
-            "target-arrow-shape": "vee",
-            "arrow-scale": 1.3,
-            opacity: 0.9,
+            width: 1, // Ultra-thin lines
+            "curve-style": "bezier", // Less pronounced curves
+            "line-color": theme === "dark" ? "rgba(240, 240, 240, 0.2)" : "rgba(34, 34, 34, 0.15)",
+            "target-arrow-color": theme === "dark" ? "rgba(240, 240, 240, 0.3)" : "rgba(34, 34, 34, 0.25)",
+            "target-arrow-fill": "filled",
+            "target-arrow-shape": "triangle",
+            "arrow-scale": 0.8, // Smaller, more elegant arrows
+            opacity: 0.7,
+            "edge-distances": "node-position",
+            "control-point-step-size": 30, // Reduced for straighter lines
+            "control-point-weight": 0.3, // Reduced for straighter lines
+            "control-point-distances": [20, -20], // Reduced for straighter lines
+            "source-endpoint": "outside-to-node",
+            "target-endpoint": "outside-to-node",
+          },
+        },
+        {
+          selector: "edge:hover",
+          style: {
+            width: 1.5,
+            opacity: 1,
+            "line-color": colors.accent,
+            "target-arrow-color": colors.accent,
+            "transition-property": "opacity, width, line-color, target-arrow-color",
+            "transition-duration": "0.2s",
+            "transition-timing-function": "ease-in-out",
           },
         },
       ],
       layout: {
         name: "dagre",
         rankDir: "LR", // Left to right layout
-        nodeSep: 80,
-        edgeSep: 30,
-        rankSep: 120,
-        padding: 50,
+        nodeSep: 120, // Much more space between nodes on same rank
+        edgeSep: 50, // More space between edges
+        rankSep: 180, // More space between ranks
+        padding: 80,
         animate: true,
-        animationDuration: 500,
+        animationDuration: 900, // Slower animation for elegance
+        animationEasing: "ease-in-out-cubic", // Smoother easing
       },
       userZoomingEnabled: true,
       userPanningEnabled: true,
@@ -423,10 +463,10 @@ export default function SkillTree({
   };
 
   return (
-    <Card className="border-border bg-background text-foreground flex h-full w-full flex-col border shadow-md">
-      <div className="border-border from-primary/5 via-secondary/5 to-background border-b bg-gradient-to-br p-4">
+    <Card className="flex size-full flex-col border border-border bg-background text-foreground shadow-md">
+      <div className="border-b border-border bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">{title}</h3>
+          <h3 className="text-lg font-thin text-foreground/90">{title}</h3>
           <div className="flex space-x-2">
             <TooltipProvider>
               <Tooltip>
@@ -435,7 +475,7 @@ export default function SkillTree({
                     variant="outline"
                     size="icon"
                     onClick={handleZoomIn}
-                    className="border-border bg-background/80 hover:bg-muted text-foreground"
+                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
                   >
                     <ZoomIn className="size-4" />
                   </Button>
@@ -453,7 +493,7 @@ export default function SkillTree({
                     variant="outline"
                     size="icon"
                     onClick={handleZoomOut}
-                    className="border-border bg-background/80 hover:bg-muted text-foreground"
+                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
                   >
                     <ZoomOut className="size-4" />
                   </Button>
@@ -471,7 +511,7 @@ export default function SkillTree({
                     variant="outline"
                     size="icon"
                     onClick={handleReset}
-                    className="border-border bg-background/80 hover:bg-muted text-foreground"
+                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
                   >
                     <Home className="size-4" />
                   </Button>
@@ -489,7 +529,7 @@ export default function SkillTree({
                     variant="outline"
                     size="icon"
                     onClick={handleFullscreen}
-                    className="border-border bg-background/80 hover:bg-muted text-foreground"
+                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
                   >
                     <Maximize2 className="size-4" />
                   </Button>
@@ -506,27 +546,29 @@ export default function SkillTree({
       <div className="relative">
         <div
           ref={containerRef}
-          className="bg-background h-[calc(94vh-4rem)] w-full"
+          className="h-[calc(94vh-4rem)] w-full bg-gradient-to-br from-background via-background to-background/95"
           aria-label="Skill tree visualization"
         />
         <div className="absolute right-4 top-4">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="bg-background/80 hover:bg-muted text-foreground shadow-md"
-          >
-            <Info className="mr-2 size-4" />
-            Click on a node for details
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="bg-background/80 text-foreground shadow-md hover:bg-muted"
+                >
+                  <Info className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Click on a node for details</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
       {isClient && selectedNode && (
-        <NodeDetailsModal
-          node={selectedNode}
-          open={!!selectedNode}
-          onClose={() => setSelectedNode(null)}
-        />
+        <NodeDetailsModal node={selectedNode} open={!!selectedNode} onClose={() => setSelectedNode(null)} />
       )}
     </Card>
   );
