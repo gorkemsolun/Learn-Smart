@@ -12,7 +12,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const isNavbar = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up');
+  const isNavbar = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up') || pathname.startsWith('/forgot-password');
 
   useExitTracker();
   return (
