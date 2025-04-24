@@ -335,9 +335,13 @@ export function CourseDialogModal(props: CourseDialogProps) {
                 {syllabus ? (
                   <div className="flex flex-col items-center text-center">
                     {syllabus.name.endsWith(".pdf") ? (
-                      <FileCheck className="mb-2 size-10 text-primary" />
+                        <div className="mb-2 rounded-full bg-primary/10 p-2">
+                          <FileCheck className="size-6 text-primary" />
+                        </div>
                     ) : (
-                      <FileText className="mb-2 size-10 text-primary" />
+                      <div className="mb-2 rounded-full bg-primary/10 p-2">
+                        <FileText className="size-6 text-primary" />
+                      </div>
                     )}
                     <p className="text-sm font-medium">{syllabus.name}</p>
                     <p className="text-xs text-muted-foreground">{(syllabus.size / 1024 / 1024).toFixed(2)} MB</p>
