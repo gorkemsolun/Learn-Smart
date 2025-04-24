@@ -1,24 +1,19 @@
 "use client";
 
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
-import { Course, CourseDialogProps } from "@/app/types";
+import type { Course, CourseDialogProps } from "@/app/types";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
 import { backend, backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
-import { FileIcon, FileTextIcon, ImageIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
-import * as React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { LuUpload } from "react-icons/lu";
+import type * as React from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { Label } from "@/components/ui/label";
+import { FileCheck, FileText, Image } from "@mynaui/icons-react";
 
 export function CourseDialogModal(props: CourseDialogProps) {
   const [courseName, setCourseName] = useState<string>("");
@@ -26,10 +21,12 @@ export function CourseDialogModal(props: CourseDialogProps) {
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
-  const [disableSubmitButton, setDisableSubmitButton] =
-    useState<boolean>(false);
+  const [disableSubmitButton, setDisableSubmitButton] = useState<boolean>(false);
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const [originalCourseData, setOriginalCourseData] = useState<Course>();
+
+  const syllabusInputRef = useRef<HTMLInputElement>(null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
 
@@ -73,17 +70,11 @@ export function CourseDialogModal(props: CourseDialogProps) {
       });
 
       if (course_syllabus_url) {
-        const syllabusResponse = await fetch(
-          `${backend.getUri()}/${course_syllabus_url}`
-        );
+        const syllabusResponse = await fetch(`${backend.getUri()}/${course_syllabus_url}`);
         const syllabusBlob = await syllabusResponse.blob();
         const syllabusType = syllabusBlob.type;
         const syllabusExtension = syllabusType.split("/")[1];
-        const syllabusFile = new File(
-          [syllabusBlob],
-          `syllabus.${syllabusExtension}`,
-          { type: syllabusType }
-        );
+        const syllabusFile = new File([syllabusBlob], `syllabus.${syllabusExtension}`, { type: syllabusType });
         setSyllabus(syllabusFile);
         setOriginalCourseData((prev) => ({
           ...prev,
@@ -95,9 +86,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
       }
 
       if (course_icon_url) {
-        const iconResponse = await fetch(
-          `${backend.getUri()}/${course_icon_url}`
-        );
+        const iconResponse = await fetch(`${backend.getUri()}/${course_icon_url}`);
         const iconBlob = await iconResponse.blob();
         setOriginalCourseData((prev) => ({
           ...prev,
@@ -141,29 +130,17 @@ export function CourseDialogModal(props: CourseDialogProps) {
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
     setter: React.Dispatch<React.SetStateAction<File | null>>,
-    fileType: string
+    fileType: string,
   ) {
     const file = event.target.files && event.target.files[0];
     handleFile(file, setter, fileType);
   }
 
-  function handleFile(
-    file: File | null,
-    setter: React.Dispatch<React.SetStateAction<File | null>>,
-    fileType: string
-  ) {
+  function handleFile(file: File | null, setter: React.Dispatch<React.SetStateAction<File | null>>, fileType: string) {
     // Check if file is of correct type for document
-    if (
-      file &&
-      fileType === "document" &&
-      documentMimeTypes.includes(file.type)
-    ) {
+    if (file && fileType === "document" && documentMimeTypes.includes(file.type)) {
       setter(file);
-    } else if (
-      file &&
-      fileType === "image" &&
-      imageMimeTypes.includes(file.type)
-    ) {
+    } else if (file && fileType === "image" && imageMimeTypes.includes(file.type)) {
       setter(file);
     } else {
       setter(null);
@@ -190,11 +167,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
     props.onClose(false);
   }
 
-  async function handleSubmit(
-    event:
-      | React.FormEvent<HTMLFormElement>
-      | React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     // Prevent default form submission
     event.preventDefault();
 
@@ -234,216 +207,246 @@ export function CourseDialogModal(props: CourseDialogProps) {
       return;
     }
 
-    if (!props.isCreate) {
-      await backendAPI
-        .put(`/course/${props.course.course_id}`, formData, {
+    try {
+      if (!props.isCreate) {
+        await backendAPI.put(`/course/${props.course.course_id}`, formData, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
-        })
-        .then(() => {
-          props.onCourseUpdate();
-        })
-        .catch((error) => {
-          console.log(error.response);
-          toast({
-            title: "Error",
-            description: "Error creating course" + error,
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
-          });
-        })
-        .finally(() => {
-          setDisableSubmitButton(false);
-          props.onClose(false);
         });
-    } else {
-      // Send the form data to the backend
-      await backendAPI
-        .post(`/course/create`, formData, {
+
+        props.onCourseUpdate();
+        toast({
+          title: "Success",
+          description: "Course successfully updated",
+          variant: "default",
+          action: (
+            <ToastAction altText="Dismiss" className="hover:bg-background/20">
+              Dismiss
+            </ToastAction>
+          ),
+          className: "bg-green-500 text-background",
+        });
+      } else {
+        // Send the form data to the backend
+        await backendAPI.post(`/course/create`, formData, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
-        })
-        .then(() => {
-          // Call the onCourseCreation callback to update the course list
-          if (props.onCourseCreation) {
-            props.onCourseCreation();
-          }
-          toast({
-            title: "Success",
-            description: "Course successfully created",
-            variant: "default",
-            action: (
-              <ToastAction altText="Dismiss" className="hover:bg-background/20">
-                Dismiss
-              </ToastAction>
-            ),
-            className: "bg-green-500 text-background",
-          });
-        })
-        .catch((error) => {
-          console.log(error.response);
-          toast({
-            title: "Error",
-            description: "Error creating course",
-            variant: "destructive",
-            action: <ToastAction altText="Try again">Try again</ToastAction>,
-          });
-        })
-        .finally(() => {
-          // Reset form fields and close the modal
-          setDisableSubmitButton(false);
-          resetFields();
-          props.onClose(false);
         });
+
+        // Call the onCourseCreation callback to update the course list
+        if (props.onCourseCreation) {
+          props.onCourseCreation();
+        }
+        toast({
+          title: "Success",
+          description: "Course successfully created",
+          variant: "default",
+          action: (
+            <ToastAction altText="Dismiss" className="hover:bg-background/20">
+              Dismiss
+            </ToastAction>
+          ),
+          className: "bg-green-500 text-background",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Error ${props.isCreate ? "creating" : "updating"} course`,
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
+    } finally {
+      // Reset form fields and close the modal
+      setDisableSubmitButton(false);
+      resetFields();
+      props.onClose(false);
     }
   }
 
   return (
-    <Dialog
-      open={props.isOpen}
-      onOpenChange={handleOpenChange}
-      className="w-3/5"
-    >
-      <DialogContent className="border-b-neutral-800 sm:max-w-[80vh]">
-        <div className="space-y-1">
-          <DialogTitle className="mb-2">
-            {props.isCreate ? "Create" : "Edit"} Individual Study
-          </DialogTitle>
-          <DialogDescription></DialogDescription>
-          <label className="text-xs font-semibold text-foreground/70">
-            Name
-          </label>
-          <Input
-            id="courseName"
-            type="text"
-            value={courseName}
-            onChange={(event) => setCourseName(event.target.value)}
-            required
-          />
-          <label className="text-xs font-semibold text-foreground/70">
-            Code
-          </label>
-          <Input
-            id="courseCode"
-            type="text"
-            value={courseCode}
-            onChange={(event) => setCourseCode(event.target.value)}
-            required
-          />
-          <label className="text-xs font-semibold text-foreground/70">
-            Description
-          </label>
-          <Textarea
-            id="description"
-            value={courseDescription || ""}
-            onChange={(event) => setCourseDescription(event.target.value)}
-          />
-        </div>
-        <div className="flex items-center space-x-4">
-          <div
-            className="flex w-1/2 flex-col items-center justify-center"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const file = e.dataTransfer.files[0];
-              handleFile(file, setSyllabus, "document");
-            }}
-          >
-            <label
-              htmlFor="syllabus"
-              className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
-            >
-              <div className="flex flex-col items-center justify-center">
+    <Dialog open={props.isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[650px]">
+        <DialogHeader>
+          <DialogTitle>{props.isCreate ? "Create" : "Edit"} Individual Study</DialogTitle>
+        </DialogHeader>
+
+        <form className="space-y-2 py-2" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="courseName" className="text-sm font-medium">
+                Name
+              </Label>
+              <Input
+                id="courseName"
+                type="text"
+                value={courseName}
+                onChange={(event) => setCourseName(event.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="courseCode" className="text-sm font-medium">
+                Code
+              </Label>
+              <Input
+                id="courseCode"
+                type="text"
+                value={courseCode}
+                onChange={(event) => setCourseCode(event.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-sm font-medium">
+              Description
+            </Label>
+            <Textarea
+              id="description"
+              value={courseDescription || ""}
+              onChange={(event) => setCourseDescription(event.target.value)}
+              placeholder="Enter course description"
+              className="min-h-[100px]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="syllabus" className="text-sm font-medium">
+                Syllabus (PDF or DOCX)
+              </Label>
+              <div
+                className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  handleFile(file, setSyllabus, "document");
+                }}
+              >
                 {syllabus ? (
-                  <div className="space-y-4">
-                    {syllabus.name.endsWith(".pdf") && (
-                      <FileIcon className="size-[6vh]" />
+                  <div className="flex flex-col items-center text-center">
+                    {syllabus.name.endsWith(".pdf") ? (
+                      <FileCheck className="mb-2 size-10 text-primary" />
+                    ) : (
+                      <FileText className="mb-2 size-10 text-primary" />
                     )}
-                    {syllabus.name.endsWith(".docx") && (
-                      <FileTextIcon className="size-[6vh]" />
-                    )}
-                    <p>{syllabus.name}</p>
+                    <p className="text-sm font-medium">{syllabus.name}</p>
+                    <p className="text-xs text-muted-foreground">{(syllabus.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => {
+                        setSyllabus(null);
+                        if (syllabusInputRef.current) {
+                          syllabusInputRef.current.value = "";
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
                   </div>
                 ) : (
-                  <div>
-                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
-                    <p className="text-sm text-foreground/70">
-                      <span className="font-semibold">Click to upload</span> or
-                      drag and drop
+                  <label htmlFor="syllabus" className="flex cursor-pointer flex-col items-center text-center">
+                    <div className="mb-2 rounded-full bg-primary/10 p-2">
+                      <FileText className="size-6 text-primary" />
+                    </div>
+                    <p className="text-sm font-light">
+                      <span className="text-primary">Click to upload</span> or drag and drop
                     </p>
-                    <p className="text-base text-foreground/70">PDF or DOCX</p>
-                  </div>
+                    <p className="mt-1 text-xs text-muted-foreground">PDF or DOCX (max 10MB)</p>
+                  </label>
                 )}
+                <input
+                  id="syllabus"
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={(event) => handleFileChange(event, setSyllabus, "document")}
+                  className="hidden"
+                  ref={syllabusInputRef}
+                />
               </div>
-              <input
-                id="syllabus"
-                type="file"
-                accept=".pdf,.docx"
-                onChange={(event) =>
-                  handleFileChange(event, setSyllabus, "document")
-                }
-                className="hidden"
-              />
-            </label>
-          </div>
-          <div
-            className="flex w-1/2 flex-col items-center justify-center"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const file = e.dataTransfer.files[0];
-              handleFile(file, setIcon, "image");
-            }}
-          >
-            <label
-              htmlFor="image"
-              className="flex h-[24vh] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed"
-            >
-              <div className="flex flex-col items-center justify-center">
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="image" className="text-sm font-medium">
+                Course Icon (JPG, JPEG or PNG)
+              </Label>
+              <div
+                className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  handleFile(file, setIcon, "image");
+                }}
+              >
                 {icon ? (
-                  <div className="space-y-4">
-                    {<ImageIcon className="mb-4 size-[6vh]" />}
-                    <p>{icon.name}</p>
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-2 rounded-full bg-primary/10 p-2">
+                      <Image className="size-6 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium">{icon.name}</p>
+                    <p className="text-xs text-muted-foreground">{(icon.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => {
+                        setIcon(null);
+                        if (iconInputRef.current) {
+                          iconInputRef.current.value = "";
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
                   </div>
                 ) : (
-                  <div>
-                    <LuUpload className="mb-4 size-[6vh] text-foreground/70" />
-                    <p className="text-sm text-foreground/70">
-                      <span className="font-semibold">Click to upload</span> or
-                      drag and drop
+                  <label htmlFor="image" className="flex cursor-pointer flex-col items-center text-center">
+                    <div className="mb-2 rounded-full bg-primary/10 p-2">
+                      <Image className="size-6 text-primary" />
+                    </div>
+                    <p className="text-sm font-light">
+                      <span className="text-primary">Click to upload</span> or drag and drop
                     </p>
-                    <p className="text-base text-foreground/70">
-                      JPG, JPEG or PNG
-                    </p>
-                  </div>
+                    <p className="mt-1 text-xs text-muted-foreground">JPG, JPEG or PNG (max 10MB)</p>
+                  </label>
                 )}
+                <input
+                  id="image"
+                  type="file"
+                  accept=".jpg,.jpeg,.png"
+                  onChange={(event) => handleFileChange(event, setIcon, "image")}
+                  className="hidden"
+                  ref={iconInputRef}
+                />
               </div>
-              <input
-                id="image"
-                type="file"
-                accept=".jpg,.jpeg,.png"
-                onChange={(event) => handleFileChange(event, setIcon, "image")}
-                className="hidden"
-              />
-            </label>
+            </div>
           </div>
-        </div>
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSubmit}
-            type="submit"
-            className="w-1/5"
-            disabled={!courseName || !courseCode || disableSubmitButton}
-          >
-            Save
-          </Button>
-        </div>
+          <DialogFooter>
+            <Button className="mt-2" type="submit" disabled={!courseName || !courseCode || disableSubmitButton}>
+              {disableSubmitButton
+                ? props.isCreate
+                  ? "Creating..."
+                  : "Updating..."
+                : props.isCreate
+                  ? "Create"
+                  : "Update"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
