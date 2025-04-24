@@ -96,17 +96,6 @@ export function SearchDialogModal({ isOpen, onClose }) {
             </button>
           </CommandItem>
           <CommandItem asChild>
-            {/* TO-DO update the router path */}
-            <button
-              onClick={() => handleNavigation("/edux-homepage")}
-              className="flex w-full cursor-pointer items-center gap-2 text-left"
-            >
-              <ChatIcon />
-              <span>Chat</span>
-            </button>
-          </CommandItem>
-          <CommandItem asChild>
-            {/* TO-DO update the router path */}
             <button
               onClick={() => handleNavigation("/profile")}
               className="flex w-full cursor-pointer items-center gap-2 text-left"
