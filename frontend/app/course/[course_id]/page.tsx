@@ -110,7 +110,7 @@ export default function CourseHomepage() {
               <CardFooter className="flex justify-center pb-6">
                 <button
                   type="button"
-                  className="w-full max-w-xs rounded-full bg-primary/90 px-6 py-3 text-center font-thin text-primary-foreground shadow-sm transition-all duration-300 hover:bg-primary hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
+                  className="w-full max-w-xs rounded-full bg-primary/90 px-6 py-3 text-center font-light text-primary-foreground shadow-sm transition-all duration-300 hover:bg-primary hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
                 >
                   {element.title}
                 </button>

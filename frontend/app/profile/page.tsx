@@ -185,14 +185,14 @@ export default function Profile() {
                 variant="outline"
                 onClick={cancelEdit}
                 disabled={isSaving}
-                className="border-border/50 hover:border-destructive/20 hover:bg-destructive/5 hover:text-destructive gap-2 font-thin transition-colors"
+                className="border-border/50 hover:border-destructive/20 hover:bg-destructive/5 hover:text-destructive gap-2 font-light transition-colors"
               >
                 <X className="size-4" /> Cancel
               </Button>
               <Button
                 onClick={handleSaveProfile}
                 disabled={isSaving}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-thin shadow-md transition-all hover:shadow-lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-light shadow-md transition-all hover:shadow-lg"
               >
                 {isSaving ? (
                   <>
@@ -210,7 +210,7 @@ export default function Profile() {
             <Button
               onClick={() => setShowPasswordDialog(true)}
               variant="default"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-thin shadow-md transition-all hover:shadow-lg"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-light shadow-md transition-all hover:shadow-lg"
             >
               <Pencil className="size-4" /> Edit Profile
             </Button>
@@ -222,13 +222,13 @@ export default function Profile() {
         <TabsList className="border-border/10 from-muted/5 to-muted/10 mb-4 rounded-lg border bg-gradient-to-r p-1 shadow-sm">
           <TabsTrigger
             value="profile"
-            className="data-[state=active]:bg-background data-[state=active]:text-primary/90 rounded-md font-thin transition-all data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-background data-[state=active]:text-primary/90 rounded-md font-light transition-all data-[state=active]:shadow-sm"
           >
             Profile
           </TabsTrigger>
           <TabsTrigger
             value="subscription"
-            className="data-[state=active]:bg-background data-[state=active]:text-primary/90 rounded-md font-thin transition-all data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-background data-[state=active]:text-primary/90 rounded-md font-light transition-all data-[state=active]:shadow-sm"
           >
             Subscription
           </TabsTrigger>
@@ -245,7 +245,7 @@ export default function Profile() {
                       src="https://www.w3schools.com/howto/img_avatar.png"
                       alt={user.nickname}
                     />
-                    <AvatarFallback className="text-2xl font-thin">
+                    <AvatarFallback className="text-2xl font-light">
                       {user.nickname?.charAt(0)?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -262,12 +262,12 @@ export default function Profile() {
                 </div>
                 <div className="flex-1 pb-4 text-center sm:text-left">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <h2 className="text-foreground text-2xl font-thin tracking-tight">
+                    <h2 className="text-foreground text-2xl font-light tracking-tight">
                       {user.nickname}
                     </h2>
                     <Badge
                       variant="outline"
-                      className="border-primary/20 bg-primary/5 text-primary/80 self-center font-thin sm:self-auto"
+                      className="border-primary/20 bg-primary/5 text-primary/80 self-center font-light sm:self-auto"
                     >
                       {user.role || "Member"}
                     </Badge>
@@ -289,7 +289,7 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="username"
-                    className="text-foreground/70 text-sm font-thin"
+                    className="text-foreground/70 text-sm font-light"
                   >
                     Username
                   </Label>
@@ -313,7 +313,7 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="email"
-                    className="text-foreground/70 text-sm font-thin"
+                    className="text-foreground/70 text-sm font-light"
                   >
                     Email Address
                   </Label>
@@ -338,7 +338,7 @@ export default function Profile() {
                   <div className="space-y-2 sm:col-span-2">
                     <Label
                       htmlFor="password"
-                      className="text-foreground/70 text-sm font-thin"
+                      className="text-foreground/70 text-sm font-light"
                     >
                       New Password
                     </Label>
@@ -364,9 +364,9 @@ export default function Profile() {
           <div className="grid gap-6 md:grid-cols-3">
             <Card className="border-border/20 overflow-hidden">
               <CardHeader>
-                <CardTitle className="text-foreground flex items-center justify-between font-thin">
+                <CardTitle className="text-foreground flex items-center justify-between font-light">
                   <span>Current Plan</span>
-                  <Badge variant="outline" className="font-thin">
+                  <Badge variant="outline" className="font-light">
                     Active
                   </Badge>
                 </CardTitle>
@@ -384,14 +384,14 @@ export default function Profile() {
                 />
                 <div className="flex flex-col gap-2">
                   <Button
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 w-full font-thin transition-colors"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 w-full font-light transition-colors"
                     onClick={() => setShowUpgrade(true)}
                   >
                     Upgrade Plan
                   </Button>
                   <Button
                     variant="outline"
-                    className="border-border/30 hover:bg-muted/10 w-full font-thin transition-colors"
+                    className="border-border/30 hover:bg-muted/10 w-full font-light transition-colors"
                     onClick={() => setShowManageSubscriptionDialog(true)}
                   >
                     Manage Subscription
