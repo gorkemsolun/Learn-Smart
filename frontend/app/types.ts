@@ -128,11 +128,10 @@ export interface CustomSimulationNode
   group: number;
 }
 
-export interface SkillTree {
-  id: string;
-  title: string;
-  nodes: NodeData[];
-  nodeLinks: LinkData[];
+export interface SkillTreeProps {
+  nodes?: NodeData[]
+  edges?: { source: string; target: string }[]
+  title?: string
 }
 
 export interface SkillTreeCard {

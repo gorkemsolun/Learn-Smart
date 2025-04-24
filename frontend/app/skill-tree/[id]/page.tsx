@@ -1,7 +1,7 @@
 "use client";
 
 import NodeDetailsModal from "@/components/skill-tree/node-details-modal";
-import type { NodeData } from "@/app/types";
+import type { NodeData, SkillTreeProps } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -13,11 +13,7 @@ import { useEffect, useRef, useState } from "react";
 
 cytoscape.use(dagre);
 
-interface SkillTreeProps {
-  nodes?: NodeData[]
-  edges?: { source: string; target: string }[]
-  title?: string
-}
+
 
 const defaultNodes: NodeData[] = [
   {
@@ -154,13 +150,13 @@ export default function SkillTree({
         .style({
           "background-color": colors.background,
           "background-opacity": 0.7,
-          "border-width": 1, // Ultra-thin border
+          "border-width": 1,
           "border-color": colors.border,
           "border-style": "solid",
           "text-valign": "center",
           "text-halign": "center",
           color: colors.primaryForeground,
-          "font-weight": "200", // Extra light font weight
+          "font-weight": "200",
           "font-size": "13px",
           "font-family": "'Inter', 'Helvetica Neue', sans-serif",
           width: "label",
@@ -198,12 +194,11 @@ export default function SkillTree({
           "shadow-opacity": 0.3,
           "shadow-offset-x": 0,
           "shadow-offset-y": 3,
-          "background-color": theme === "dark" ? "rgba(138, 133, 255, 0.05)" : "rgba(99, 102, 241, 0.03)",
         })
         .selector("edge")
         .style({
           width: 1, // Ultra-thin lines
-          "curve-style": "bezier", // Less pronounced curves
+          "curve-style": "unbundled-bezier",
           "line-color": theme === "dark" ? "rgba(240, 240, 240, 0.2)" : "rgba(34, 34, 34, 0.15)",
           "target-arrow-color": theme === "dark" ? "rgba(240, 240, 240, 0.3)" : "rgba(34, 34, 34, 0.25)",
           "target-arrow-fill": "filled",
