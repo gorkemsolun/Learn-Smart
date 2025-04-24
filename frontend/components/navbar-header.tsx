@@ -21,9 +21,9 @@ import { Notification, Notifications } from "./notifications-dropdown";
 
 const components: { title: string; href: string; description: string }[] = [
   {
-    title: "Notifications",
-    href: "",
-    description: "Keep updated with the latest changes.",
+    title: "Profile",
+    href: "/profile",
+    description: "Adjust your preferences.",
   },
   {
     title: "Subscription Service",
