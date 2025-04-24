@@ -1,20 +1,13 @@
 "use client";
 
 import { Icons } from "@/components/icons";
-import { Eye, EyeSlash } from "@mynaui/icons-react";
+import { Eye, EyeSlash, LockWaves, Envelope, User, DangerCircle, CheckCircle} from "@mynaui/icons-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
-import {
-  CheckCircledIcon,
-  CrossCircledIcon,
-  EnvelopeClosedIcon,
-  LockClosedIcon,
-  PersonIcon,
-} from "@radix-ui/react-icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -144,7 +137,7 @@ export default function SignUp() {
                 <div className="grid w-5/6 items-center gap-4">
                   <div className="flex w-full flex-col space-y-1.5">
                     <div className="relative w-full">
-                      <EnvelopeClosedIcon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                      <Envelope className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       <Input
                         type="text"
                         placeholder="email@example.com"
@@ -155,7 +148,7 @@ export default function SignUp() {
                     </div>
 
                     <div className="relative w-full">
-                      <PersonIcon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                      <User className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       <Input
                         type="text"
                         placeholder="username"
@@ -166,7 +159,7 @@ export default function SignUp() {
                     </div>
 
                     <div className="relative w-full">
-                      <LockClosedIcon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                      <LockWaves className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="********"
@@ -188,9 +181,9 @@ export default function SignUp() {
 
                     <div className="relative w-full">
                       {passwordsMatch() ? (
-                        <CheckCircledIcon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                        <CheckCircle className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       ) : (
-                        <CrossCircledIcon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                        <DangerCircle className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       )}
                       <Input
                         type={showConfirmPassword ? "text" : "password"}

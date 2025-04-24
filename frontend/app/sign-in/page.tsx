@@ -1,6 +1,6 @@
 "use client";
 import { Icons } from "@/components/icons";
-import { Eye, EyeSlash } from "@mynaui/icons-react";
+import {Eye, EyeSlash, Envelope, LockWaves} from "@mynaui/icons-react";
 import ImageSlider from "@/components/image-slider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
-import { EnvelopeClosedIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -157,17 +156,17 @@ export default function SignIn() {
                 <div className="grid w-5/6 items-center gap-4">
                   <div className="flex w-full flex-col space-y-1.5">
                     <div className="relative w-full">
-                      <EnvelopeClosedIcon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                      <Envelope className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       <Input
                         type="text"
                         placeholder="email@example.com"
-                        className="pl-10 font-light"
+                        className="px-10 font-light"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
                     </div>
                     <div className="relative w-full">
-                      <LockClosedIcon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                      <LockWaves className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="********"
