@@ -187,12 +187,17 @@ export function CourseDialogModal(props: CourseDialogProps) {
       if (!props.isCreate) {
         formData.append("course_update_syllabus", "true");
       }
+    } else if(!props.isCreate && originalCourseData?.course_syllabus) {
+      {/* TO-DO THIS DOESN'T WORK BACKEND SHOULD FIX THIS HAVE ADDITIONAL FIELD */}
+      formData.append("course_update_syllabus", "true");
     }
     if (icon) {
       formData.append("course_icon_file", icon);
       if (!props.isCreate) {
         formData.append("update_icon", "true");
       }
+    } else if (!props.isCreate && originalCourseData?.course_icon) {
+      formData.append("update_icon", "true");
     }
 
     setDisableSubmitButton(true);
@@ -209,7 +214,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
 
     try {
       if (!props.isCreate) {
-        await backendAPI.put(`/course/${props.course.course_id}`, formData, {
+        await backendAPI.put(`/course/${props.course?.course_id}`, formData, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,

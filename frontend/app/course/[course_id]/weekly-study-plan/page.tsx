@@ -13,43 +13,19 @@ import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
 import { toast } from "@/hooks/use-toast";
 
-const defaultStudyPlan = `
-# Weekly Study Plan
+type WeekData = {
+  label: string;
+  weekNumber: string;
+  topic: string;
+  activities: string;
+  reading: string;
+  deliverable: string;
+  date: string;
+};
 
-## Week 1: Introduction & Setup
-- Topic: Course Overview & Tools Setup
-- Activities: Install required software, review syllabus, join discussion channels
-- Deliverable: Setup confirmation screenshot
-
-## Week 2: Fundamentals
-- Topic: Core Concepts & Terminology
-- Activities: Read Chapters 1-2, complete quiz
-- Deliverable: Quiz results & summary notes
-
-## Week 3: Deep Dive
-- Topic: Advanced Patterns
-- Activities: Watch lecture videos, build sample project
-- Deliverable: Sample project code on GitHub
-
-## Week 4: Hands-On Practice
-- Topic: Case Studies
-- Activities: Group workshop, peer review
-- Deliverable: Workshop feedback document
-
-## Week 5: Review & Assessment
-- Topic: Comprehensive Review
-- Activities: Revision session, practice exam
-- Deliverable: Completed practice exam
-
-## Week 6: Final Project
-- Topic: Integration & Deployment
-- Activities: Develop final project, deploy to staging
-- Deliverable: Live project link & documentation
-`;
-
-function parseStudyPlan(md: string) {
+function parseStudyPlan(md: string): WeekData[] {
   const weekRegex = /(?:\*\*|##)?\s*Week\s+(\d+)\s*:?\s*(.*?)\n([\s\S]*?)(?=(?:\*\*|##)?\s*Week\s+\d+|$)/gi;
-  const weeks = [];
+  const weeks: WeekData[] = [];
   let match;
 
   while ((match = weekRegex.exec(md)) !== null) {
@@ -57,7 +33,6 @@ function parseStudyPlan(md: string) {
     const rawLabel = match[2]?.trim() || "";
     const body = match[3].trim();
 
-    // Clean up titles like "**" or empty values
     const label = rawLabel && rawLabel !== "**" ? rawLabel.replace(/\*\*/g, "").trim() : `Week ${weekNumber}`;
 
     const lines = body.split("\n").map((line) => line.trim()).filter(Boolean);
@@ -70,18 +45,7 @@ function parseStudyPlan(md: string) {
 
       const key = rawKey.trim().toLowerCase();
       const value = rest.join(":").trim();
-
-      switch (key) {
-        case "topic":
-        case "activities":
-        case "reading":
-        case "deliverable":
-        case "date":
-          details[key] = value;
-          break;
-        default:
-          details[key] = value; // catch-all for unexpected keys
-      }
+      details[key] = value;
     }
 
     weeks.push({
@@ -98,14 +62,11 @@ function parseStudyPlan(md: string) {
   return weeks;
 }
 
-
-
-
 export default function WeeklyStudyPlan() {
   const token = useAuthRedirect();
   const { loading, startLoading, stopLoading } = useLoading();
-  const [studyPlan, setStudyPlan] = useState<string>(defaultStudyPlan);
-  const [weeksData, setWeeksData] = useState(parseStudyPlan(defaultStudyPlan));
+  const [studyPlan, setStudyPlan] = useState<string>("");
+  const [weeksData, setWeeksData] = useState<WeekData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [courseName, setCourseName] = useState<string>("");
   const [syllabusInfo, setSyllabusInfo] = useState<{ url?: string; name?: string }>({});
@@ -122,11 +83,13 @@ export default function WeeklyStudyPlan() {
       });
       return;
     }
-    if (token) fetchStudyPlanData(course_id);
+    if (token) fetchStudyPlanData(course_id as string);
   }, [token, course_id]);
 
   useEffect(() => {
-    setWeeksData(parseStudyPlan(studyPlan));
+    if (studyPlan) {
+      setWeeksData(parseStudyPlan(studyPlan));
+    }
   }, [studyPlan]);
 
   const fetchStudyPlanData = async (course_id: string) => {
@@ -159,7 +122,7 @@ export default function WeeklyStudyPlan() {
       });
 
       const data = studyPlanResponse.data;
-      if (data && typeof data === "string" && data.trim().length > 0) {
+      if (typeof data === "string" && data.trim().length > 0) {
         setStudyPlan(data);
         console.log(data);
       }
@@ -176,7 +139,7 @@ export default function WeeklyStudyPlan() {
   };
 
   const handleRefresh = () => {
-    if (token && course_id) fetchStudyPlanData(course_id);
+    if (token && course_id) fetchStudyPlanData(course_id as string);
   };
 
   const handleUploadSuccess = () => {
@@ -227,7 +190,6 @@ export default function WeeklyStudyPlan() {
                     </CardTitle>
                     <CalendarDays className="size-4 text-muted-foreground" />
                   </div>
-
                 </CardHeader>
                 <CardContent className="pt-4">
                   {week.topic && (
