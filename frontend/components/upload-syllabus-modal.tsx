@@ -1,15 +1,41 @@
-import { documentMimeTypes } from "@/app/constants";
-import { backendAPI } from "@/environment/backend_api";
+"use client";
+
+import type React from "react";
+import { useState } from "react";
+import { FileIcon, FileTextIcon, Upload, X, Eye, AlertCircle } from 'lucide-react';
 import Cookies from "js-cookie";
-import { useEffect, useRef, useState } from "react";
-import { FaFilePdf } from "react-icons/fa";
-import { TbFileTypeDocx } from "react-icons/tb";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { backend, backendAPI } from "@/environment/backend_api";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+// Updated MIME types
+const documentMimeTypes = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+const validExtensions = ["pdf", "docx"];
 
 interface UpdateUploadSyllabusParameters {
   isOpen: boolean;
   modalTitle: string;
   onClose: () => void;
   course_id: string;
+  onUploadSuccess?: () => void;
+  existingSyllabus?: {
+    url?: string;
+    name?: string;
+  };
 }
 
 export default function UpdateUploadSyllabus({
@@ -17,34 +43,34 @@ export default function UpdateUploadSyllabus({
   modalTitle,
   onClose,
   course_id,
+  onUploadSuccess,
+  existingSyllabus,
 }: UpdateUploadSyllabusParameters) {
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [syllabusError, setSyllabusError] = useState<string>("");
-  const [token, setToken] = useState<string>("");
-  const [lockSubmit, setLockSubmit] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReplacing, setIsReplacing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const resetFields = () => {
     setSyllabus(null);
     setSyllabusError("");
+    setIsReplacing(false);
+    setUploadProgress(0);
+    setIsDragging(false);
   };
 
-  useEffect(() => {
-    setToken(Cookies.get("authToken") || "");
-  }, []);
-
-  function handleFileChange(
-    event: React.ChangeEvent<HTMLInputElement>,
-    fileType: string
-  ) {
-    const file = event.target.files?.[0] || null;
-    handleFile(file, fileType);
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files && event.target.files[0];
+    handleFile(file);
   }
 
-  function handleFile(file: File | null, fileType: string) {
+  function handleFile(file: File | null) {
     if (file) {
+      const fileExtension = file.name.split(".").pop()?.toLowerCase() || "";
       const isValidFileType =
-        fileType === "document" && documentMimeTypes.includes(file.type);
+        documentMimeTypes.includes(file.type) || validExtensions.includes(fileExtension);
 
       if (!isValidFileType) {
         setSyllabus(null);
@@ -56,19 +82,26 @@ export default function UpdateUploadSyllabus({
       setSyllabusError("");
     } else {
       setSyllabus(null);
-      setSyllabusError(
-        fileType === "document"
-          ? "Invalid file type. Allowed types are: PDF, DOCX"
-          : "Invalid file type. Allowed types are: JPG, JPEG, PNG"
-      );
     }
   }
 
-  async function handleSubmit(
-    event:
-      | React.FormEvent<HTMLFormElement>
-      | React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) {
+  function handleDragOver(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave() {
+    setIsDragging(false);
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files[0] || null;
+    handleFile(file);
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!syllabus) {
@@ -76,11 +109,14 @@ export default function UpdateUploadSyllabus({
       return;
     }
 
+    const token = Cookies.get("authToken") || "";
     const formData = new FormData();
     formData.append("course_syllabus_file", syllabus);
     formData.append("course_update_syllabus", "true");
 
-    setLockSubmit(true);
+    setIsSubmitting(true);
+    setUploadProgress(10);
+
     try {
       await backendAPI.put(`/course/${course_id}`, formData, {
         headers: {
@@ -88,131 +124,175 @@ export default function UpdateUploadSyllabus({
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+          }
+        },
       });
+
+      setUploadProgress(100);
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      if (onUploadSuccess) {
+        onUploadSuccess();
+      }
     } catch (error) {
       console.error("Error uploading syllabus:", error);
       setSyllabusError(`An unexpected error occurred. Please try again.`);
+      setUploadProgress(0);
     } finally {
-      setLockSubmit(false);
-      resetFields();
-      onClose();
+      setIsSubmitting(false);
     }
   }
 
-  if (!isOpen) {
-    return null;
-  }
+  const closeModal = () => {
+    resetFields();
+    onClose();
+  };
+
+  const hasExistingSyllabus = !!existingSyllabus?.url;
+  const fileExtension = syllabus?.name.split(".").pop()?.toLowerCase() || "";
+
+  const getFileIcon = (ext: string) => {
+    switch (ext) {
+      case "pdf":
+        return <FileIcon className="size-10 text-primary" />;
+      case "docx":
+        return <FileTextIcon className="size-10 text-primary" />;
+      default:
+        return <FileTextIcon className="size-10 text-primary" />;
+    }
+  };
+
+  const fileIcon = getFileIcon(fileExtension);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="w-full max-w-lg rounded-lg bg-black p-6 shadow-lg">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            {modalTitle}
-          </h2>
-          <button
-            onClick={onClose}
-            type="button"
-            className="text-2xl text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            &times;
-          </button>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div
-            className="bg-gray-250 flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-600 hover:bg-gray-300 dark:border-gray-900 dark:bg-gray-800 dark:hover:bg-gray-900"
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const file = e.dataTransfer.files[0];
-              handleFile(file, "document");
-            }}
-          >
-            <div className="flex flex-col items-center justify-center pb-6 pt-5">
-              {syllabus ? (
-                <div>
-                  {syllabus.name.endsWith(".pdf") && (
-                    <FaFilePdf className="mb-4 size-16 text-gray-700 dark:text-gray-500" />
-                  )}
-                  {syllabus.name.endsWith(".docx") && (
-                    <TbFileTypeDocx className="mb-4 size-16 text-gray-700 dark:text-gray-300" />
-                  )}
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {syllabus.name}
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <svg
-                    className="mb-4 size-8 text-gray-500 dark:text-gray-400"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 16"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                    />
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="font-semibold">Click to upload</span> or
-                    drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    PDF or DOCX
-                  </p>
-                </div>
-              )}
-            </div>
-            <input
-              id="syllabus"
-              type="file"
-              accept=".pdf,.docx"
-              onChange={(event) => handleFileChange(event, "document")}
-              ref={fileInputRef}
-              className="hidden"
-              title="Upload syllabus"
-            />
-          </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
+      <DialogContent className="sm:max-w-[550px]">
+        <DialogHeader>
+          <DialogTitle>{modalTitle}</DialogTitle>
+          <DialogDescription className="font-light">
+            {hasExistingSyllabus
+              ? "Update your course syllabus to refresh your personalized weekly study plan."
+              : "Upload your course syllabus to get a personalized weekly study plan."}
+          </DialogDescription>
+        </DialogHeader>
 
-          {syllabusError && (
-            <p className="mt-2 text-center text-sm text-red-500">
-              {syllabusError}
-            </p>
+        <form className="space-y-6 py-2" onSubmit={handleSubmit}>
+          {hasExistingSyllabus && !syllabus && !isReplacing && (
+            <div className="rounded-md border border-border bg-muted/30 p-4">
+              <h3 className="mb-2 text-sm font-medium">Current Syllabus</h3>
+              <div className="flex items-start space-x-3">
+                <div className="rounded-full bg-primary/10 p-2">
+                  <FileIcon className="size-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{existingSyllabus.name || "Course Syllabus"}</p>
+                  <div className="mt-1 flex items-center space-x-2">
+                    {existingSyllabus.url && (
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-xs font-light"
+                        onClick={() => window.open(`${backend.getUri()}/${existingSyllabus.url}`, "_blank")}
+                      >
+                        <Eye className="mr-1 size-3" />
+                        View syllabus
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
-          <p className="mt-2 text-center text-sm text-gray-400 dark:text-gray-500">
-            You can upload your course syllabus to get a personalized weekly
-            study plan.
-          </p>
-
-          <div className="mt-6 flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg bg-gray-400 px-4 py-2 text-black transition duration-300 hover:bg-gray-500 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={syllabus === null || lockSubmit}
-              className={`rounded-lg px-4 py-2 transition duration-300 ${
-                syllabus === null || lockSubmit
-                  ? "cursor-not-allowed bg-gray-500 text-gray-300 opacity-60 dark:bg-gray-700 dark:text-gray-500"
-                  : "bg-gray-900 text-white hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600"
+          <div className="space-y-2">
+            <Label htmlFor="syllabus" className="text-sm font-medium">
+              {hasExistingSyllabus && !isReplacing ? "Upload New Syllabus" : "Upload Syllabus"}
+            </Label>
+            <div
+              className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors ${
+                isDragging
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
               }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
             >
-              Upload
-            </button>
+              {syllabus ? (
+                <div className="flex flex-col items-center text-center">
+                  {fileIcon}
+                  <p className="mt-2 text-sm font-medium">{syllabus.name}</p>
+                  <p className="text-xs font-light text-muted-foreground">
+                    {(syllabus.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 flex items-center gap-1"
+                    onClick={() => setSyllabus(null)}
+                  >
+                    <X className="size-3" />
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="syllabus-upload"
+                  className="flex cursor-pointer flex-col items-center text-center"
+                >
+                  <div className="mb-3 rounded-full bg-primary/10 p-3">
+                    <Upload className="size-6 text-primary" />
+                  </div>
+                  <p className="text-sm font-medium">
+                    <span className="text-primary">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="mt-1 text-xs font-light text-muted-foreground">PDF or DOCX (max 10MB)</p>
+                </label>
+              )}
+              <input
+                id="syllabus-upload"
+                type="file"
+                accept=".pdf,.docx"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+
+            {syllabusError && (
+              <Alert variant="destructive" className="mt-2 py-2">
+                <AlertCircle className="size-4" />
+                <AlertDescription className="ml-2 text-xs">{syllabusError}</AlertDescription>
+              </Alert>
+            )}
           </div>
+
+          {isSubmitting && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium">Uploading...</span>
+                <span className="text-xs font-light text-muted-foreground">{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="h-2" />
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeModal} className="mr-2">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={syllabus === null || isSubmitting} className="min-w-24">
+              {isSubmitting ? "Uploading..." : hasExistingSyllabus ? "Update" : "Upload"}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

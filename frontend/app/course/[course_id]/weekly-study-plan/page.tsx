@@ -1,15 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { CalendarDays, FileText, Upload } from "lucide-react";
+
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import UpdateUploadSyllabus from "@/components/upload-syllabus-modal";
 import { backend, backendAPI } from "@/environment/backend_api";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
-// Dummy fallback study plan in Markdown
 const defaultStudyPlan = `
 # Weekly Study Plan
 
@@ -44,34 +47,82 @@ const defaultStudyPlan = `
 - Deliverable: Live project link & documentation
 `;
 
-// Parse Markdown into structured week data
 function parseStudyPlan(md: string) {
-  const regex = /##\s*([^\n]+)\n([\s\S]*?)(?=(##\s*|$))/g;
-  const matches = Array.from(md.matchAll(regex));
-  return matches.map((match) => {
-    const title = match[1].trim();
-    const content = match[2];
-    const items = content
-      .split("\n")
-      .filter((line) => line.startsWith("-"))
-      .map((line) => line.replace(/^-+\s*/, "").trim());
-    return { title, items };
-  });
+  const weekRegex = /(?:\*\*|##)?\s*Week\s+(\d+)\s*:?\s*(.*?)\n([\s\S]*?)(?=(?:\*\*|##)?\s*Week\s+\d+|$)/gi;
+  const weeks = [];
+  let match;
+
+  while ((match = weekRegex.exec(md)) !== null) {
+    const weekNumber = match[1].trim();
+    const rawLabel = match[2]?.trim() || "";
+    const body = match[3].trim();
+
+    // Clean up titles like "**" or empty values
+    const label = rawLabel && rawLabel !== "**" ? rawLabel.replace(/\*\*/g, "").trim() : `Week ${weekNumber}`;
+
+    const lines = body.split("\n").map((line) => line.trim()).filter(Boolean);
+    const details: Record<string, string> = {};
+
+    for (const line of lines) {
+      const cleaned = line.replace(/^[-*]\s*/, "");
+      const [rawKey, ...rest] = cleaned.split(":");
+      if (!rawKey || rest.length === 0) continue;
+
+      const key = rawKey.trim().toLowerCase();
+      const value = rest.join(":").trim();
+
+      switch (key) {
+        case "topic":
+        case "activities":
+        case "reading":
+        case "deliverable":
+        case "date":
+          details[key] = value;
+          break;
+        default:
+          details[key] = value; // catch-all for unexpected keys
+      }
+    }
+
+    weeks.push({
+      label: `Week ${weekNumber}: ${label}`,
+      weekNumber,
+      topic: details["topic"] || "",
+      activities: details["activities"] || "",
+      reading: details["reading"] || "",
+      deliverable: details["deliverable"] || "",
+      date: details["date"] || "",
+    });
+  }
+
+  return weeks;
 }
+
+
+
 
 export default function WeeklyStudyPlan() {
   const token = useAuthRedirect();
   const { loading, startLoading, stopLoading } = useLoading();
   const [studyPlan, setStudyPlan] = useState<string>(defaultStudyPlan);
-  const [weeksData, setWeeksData] = useState<
-    { title: string; items: string[] }[]
-  >(parseStudyPlan(defaultStudyPlan));
+  const [weeksData, setWeeksData] = useState(parseStudyPlan(defaultStudyPlan));
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { course_id } = useParams<{ course_id: string }>();
+  const [courseName, setCourseName] = useState<string>("");
+  const [syllabusInfo, setSyllabusInfo] = useState<{ url?: string; name?: string }>({});
+
+  const params = useParams();
+  const course_id = params?.course_id;
 
   useEffect(() => {
-    if (token && course_id) fetchStudyPlanData(course_id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!course_id) {
+      toast({
+        title: "Error",
+        description: "Course ID is missing from the URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (token) fetchStudyPlanData(course_id);
   }, [token, course_id]);
 
   useEffect(() => {
@@ -87,56 +138,132 @@ export default function WeeklyStudyPlan() {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      setCourseName(courseResponse.data.course_name || "Your Course");
+
+      if (courseResponse.data.course_syllabus_url) {
+        setSyllabusInfo({
+          url: courseResponse.data.course_syllabus_url,
+          name: courseResponse.data.course_syllabus_name || "Course Syllabus",
+        });
+      }
+
       const studyPlanUrl = courseResponse.data.course_study_plan_url;
+      if (!studyPlanUrl) return;
+
       const studyPlanResponse = await backend.get(studyPlanUrl, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
+
       const data = studyPlanResponse.data;
       if (data && typeof data === "string" && data.trim().length > 0) {
         setStudyPlan(data);
+        console.log(data);
       }
     } catch (error) {
       console.error("Error fetching study plan:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load study plan. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       stopLoading();
     }
   };
 
+  const handleRefresh = () => {
+    if (token && course_id) fetchStudyPlanData(course_id);
+  };
+
+  const handleUploadSuccess = () => {
+    setIsModalOpen(false);
+    handleRefresh();
+    toast({
+      title: "Success",
+      description: "Syllabus uploaded successfully.",
+    });
+  };
+
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
-    <div className="bg-muted relative flex min-h-screen items-center justify-center p-8">
-      <button
-        onClick={() => setIsModalOpen(true)}
-        type="button"
-        className="absolute right-4 top-4 rounded-lg bg-gray-700 px-4 py-2 text-white transition hover:bg-gray-900"
-      >
-        Update Syllabus
-      </button>
+    <div className="h-[92vh] bg-gradient-to-b from-muted/50 to-background p-6">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-3xl font-thin tracking-tight">{courseName}</h1>
+          <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 font-light">
+            <Upload className="size-4" />
+            <span>Upload/Update Syllabus</span>
+          </Button>
+        </header>
 
-      <UpdateUploadSyllabus
-        isOpen={isModalOpen}
-        modalTitle="Upload or Update Syllabus"
-        onClose={() => setIsModalOpen(false)}
-        course_id={course_id!}
-      />
+        <UpdateUploadSyllabus
+          isOpen={isModalOpen}
+          modalTitle="Upload or Update Syllabus"
+          onClose={() => setIsModalOpen(false)}
+          onUploadSuccess={handleUploadSuccess}
+          course_id={course_id as string}
+          existingSyllabus={syllabusInfo}
+        />
 
-      <div className="grid w-full max-w-5xl grid-cols-3 grid-rows-2 gap-6">
-        {weeksData.map((week, idx) => (
-          <Card key={idx} className="p-4">
-            <h3 className="mb-2 text-lg font-semibold">{week.title}</h3>
-            <ul className="list-inside list-disc space-y-1">
-              {week.items.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          </Card>
-        ))}
+        {weeksData.length > 0 ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {weeksData.map((week, idx) => (
+              <Card key={idx} className="overflow-hidden transition-all hover:shadow-md">
+                <CardHeader className="bg-muted/50 pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="mt-2 text-lg font-semibold">
+                      {week.label.replace(/Week \d+:\s*/i, "")}
+                    </CardTitle>
+                    <CalendarDays className="size-4 text-muted-foreground" />
+                  </div>
+
+                </CardHeader>
+                <CardContent className="pt-4">
+                  {week.topic && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-muted-foreground">Topic</h4>
+                      <p className="mt-1 font-light">{week.topic}</p>
+                    </div>
+                  )}
+                  {week.activities && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-muted-foreground">Activities</h4>
+                      <p className="mt-1 font-light">{week.activities}</p>
+                    </div>
+                  )}
+                  {week.deliverable && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Deliverable</h4>
+                      <p className="mt-1 font-light">{week.deliverable}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+            <FileText className="mb-4 size-12 text-muted-foreground/50" />
+            <h3 className="text-lg font-medium">No study plan available</h3>
+            <p className="mt-2 text-sm font-light text-muted-foreground">
+              Upload your course syllabus to generate a personalized weekly study plan.
+            </p>
+            <Button onClick={() => setIsModalOpen(true)} variant="outline" className="mt-4">
+              Upload Syllabus
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

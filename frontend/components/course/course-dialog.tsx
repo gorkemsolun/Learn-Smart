@@ -440,6 +440,9 @@ export function CourseDialogModal(props: CourseDialogProps) {
             </div>
           </div>
           <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleOpenChange} className="mt-2">
+              Cancel
+            </Button>
             <Button className="mt-2" type="submit" disabled={!courseName || !courseCode || disableSubmitButton}>
               {disableSubmitButton
                 ? props.isCreate
