@@ -1,4 +1,5 @@
 annotated-types==0.7.0
+anthropic==0.50.0
 anyio==4.4.0
 archspec==0.2.3
 bcrypt==3.2.0
@@ -39,6 +40,7 @@ jsonpointer==2.4
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 mdurl==0.1.2
+openai== 1.76.0
 orjson==3.10.5
 packaging==24.0
 pip==24.0

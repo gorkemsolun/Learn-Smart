@@ -3,7 +3,7 @@ FROM python:3.12.8
 RUN apt-get update && apt-get install -y default-mysql-client netcat-openbsd && rm -rf /var/lib/apt/lists/*
 WORKDIR /course_service
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 COPY . .
 RUN chmod +x app/wait-for-it.sh app/entrypoint.sh
 ENV PYTHONPATH=/
