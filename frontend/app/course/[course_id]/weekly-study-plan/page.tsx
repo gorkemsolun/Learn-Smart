@@ -14,52 +14,50 @@ import { useLoading } from "@/hooks/useLoading";
 import { toast } from "@/hooks/use-toast";
 
 type WeekData = {
-  label: string;
-  weekNumber: string;
-  topic: string;
-  activities: string;
-  reading: string;
-  deliverable: string;
-  date: string;
-};
+  label: string
+  weekNumber: string
+  topic: string
+  reading: string
+  deliverable: string
+}
 
 function parseStudyPlan(md: string): WeekData[] {
-  const weekRegex = /(?:\*\*|##)?\s*Week\s+(\d+)\s*:?\s*(.*?)\n([\s\S]*?)(?=(?:\*\*|##)?\s*Week\s+\d+|$)/gi;
+  // Fix: Ensure we only match headings like "## Week 2:"
+  const weekRegex = /^##\s*Week\s+(\d+):/gim;
+  const matches = [...md.matchAll(weekRegex)];
   const weeks: WeekData[] = [];
-  let match;
 
-  while ((match = weekRegex.exec(md)) !== null) {
-    const weekNumber = match[1].trim();
-    const rawLabel = match[2]?.trim() || "";
-    const body = match[3].trim();
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].index!;
+    const end = i + 1 < matches.length ? matches[i + 1].index! : md.length;
+    const weekNumber = matches[i][1];
+    const content = md.slice(start, end);
 
-    const label = rawLabel && rawLabel !== "**" ? rawLabel.replace(/\*\*/g, "").trim() : `Week ${weekNumber}`;
-
-    const lines = body.split("\n").map((line) => line.trim()).filter(Boolean);
-    const details: Record<string, string> = {};
-
-    for (const line of lines) {
-      const cleaned = line.replace(/^[-*]\s*/, "");
-      const [rawKey, ...rest] = cleaned.split(":");
-      if (!rawKey || rest.length === 0) continue;
-
-      const key = rawKey.trim().toLowerCase();
-      const value = rest.join(":").trim();
-      details[key] = value;
-    }
+    // Extract each field separately with clear boundaries
+    const topic = extractField(content, "Topic");
+    const reading = extractField(content, "Reading");
+    const deliverable = extractField(content, "Deliverable");
 
     weeks.push({
-      label: `Week ${weekNumber}: ${label}`,
+      label: `Week ${weekNumber}`,
       weekNumber,
-      topic: details["topic"] || "",
-      activities: details["activities"] || "",
-      reading: details["reading"] || "",
-      deliverable: details["deliverable"] || "",
-      date: details["date"] || "",
+      topic,
+      reading,
+      deliverable,
     });
   }
 
   return weeks;
+}
+
+function extractField(content: string, fieldName: string): string {
+  // Updated regex to better handle field boundaries
+  const regex = new RegExp(
+    `${fieldName}:\\s*([\\s\\S]*?)(?=\\n(?:\\*\\*?)?(?:Topic|Reading|Deliverable):|\\n##|$)`,
+    "i",
+  );
+  const match = content.match(regex);
+  return match ? match[1].trim() : "";
 }
 
 export default function WeeklyStudyPlan() {
@@ -180,10 +178,10 @@ export default function WeeklyStudyPlan() {
         />
 
         {weeksData.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {weeksData.map((week, idx) => (
               <Card key={idx} className="overflow-hidden transition-all hover:shadow-md">
-                <CardHeader className="bg-muted/50 pb-3">
+                <CardHeader className="bg-muted/50 pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="mt-2 text-lg font-semibold">
                       {week.label.replace(/Week \d+:\s*/i, "")}
@@ -191,21 +189,21 @@ export default function WeeklyStudyPlan() {
                     <CalendarDays className="size-4 text-muted-foreground" />
                   </div>
                 </CardHeader>
-                <CardContent className="pt-4">
+                <CardContent className="pt-2">
                   {week.topic && (
                     <div className="mb-3">
                       <h4 className="text-sm font-medium text-muted-foreground">Topic</h4>
                       <p className="mt-1 font-light">{week.topic}</p>
                     </div>
                   )}
-                  {week.activities && (
+                  {week.reading && (
                     <div className="mb-3">
-                      <h4 className="text-sm font-medium text-muted-foreground">Activities</h4>
-                      <p className="mt-1 font-light">{week.activities}</p>
+                      <h4 className="text-sm font-medium text-muted-foreground">Reading</h4>
+                      <p className="mt-1 font-light">{week.reading}</p>
                     </div>
                   )}
                   {week.deliverable && (
-                    <div>
+                    <div className="mb-3">
                       <h4 className="text-sm font-medium text-muted-foreground">Deliverable</h4>
                       <p className="mt-1 font-light">{week.deliverable}</p>
                     </div>
