@@ -1,6 +1,6 @@
 "use client";
 import { Icons } from "@/components/icons";
-import {Eye, EyeSlash, Envelope, LockWaves} from "@mynaui/icons-react";
+import { Eye, EyeSlash, Envelope, LockWaves } from "@mynaui/icons-react";
 import ImageSlider from "@/components/image-slider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +8,12 @@ import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
+import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 export default function SignIn() {
   const [email, setEmail] = useState<string>(Cookies.get("emailCookie") || "");
@@ -22,8 +24,10 @@ export default function SignIn() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
   const router = useRouter();
   const { toast } = useToast();
+  const { loading, startLoading, stopLoading } = useLoading(); // Initialize useLoading hook
 
   const fetchUserRole = useCallback(async () => {
     try {
@@ -68,8 +72,9 @@ export default function SignIn() {
   }, [router, role, fetchUserRole]);
 
   const handleSignIn = async () => {
-    await backendAPI
-      .post(
+    startLoading(); // Start loading before making the API call
+    try {
+      const response = await backendAPI.post(
         "/users/login",
         {
           username: email,
@@ -80,42 +85,45 @@ export default function SignIn() {
             Accept: "application/json",
             "Content-Type": "application/x-www-form-urlencoded",
           },
-        },
-      )
-      .then((response) => {
-        toast({
-          title: "Sign in successful",
-          variant: "default",
-        });
-
-        const data = response.data;
-        // Store the token in a cookie
-        Cookies.set("authToken", data["access_token"], { expires: 3 });
-        Cookies.set("signin_time", new Date().toISOString(), { path: "/" });
-
-        fetchUserRole();
-
-        if (role == null) {
-          router.push("/role-card");
-        } else if (role === "User") {
-          router.push("/edux-homepage");
-        } else if (role === "Instructor") {
-          router.push("/edux-homepage-instructor");
         }
-      })
-      .catch((error) => {
-        console.error("Sign in error:", error);
-        toast({
-          title: "There is no such user",
-          description: "Details you entered does not match with a record",
-          variant: "destructive",
-          action: <ToastAction altText="Try again">Try again</ToastAction>,
-        });
+      );
+
+      toast({
+        title: "Sign in successful",
+        variant: "default",
       });
+
+      const data = response.data;
+      // Store the token in a cookie
+      Cookies.set("authToken", data["access_token"], { expires: 3 });
+      Cookies.set("signin_time", new Date().toISOString(), { path: "/" });
+
+      await fetchUserRole();
+
+      if (!role) {
+        router.push("/role-card");
+      } else if (role === "User") {
+        router.push("/edux-homepage");
+      } else if (role === "Instructor") {
+        router.push("/edux-homepage-instructor");
+      }
+    } catch (error) {
+      console.error("Sign in error:", error);
+      toast({
+        title: "There is no such user",
+        description: "Details you entered do not match with a record",
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
+    } finally {
+      stopLoading(); // Stop loading after the API call completes
+    }
   };
 
   // TO-DO after domain acquired this place will be updated
   const handleGoogleSignIn = () => {};
+
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center p-6">
@@ -141,7 +149,10 @@ export default function SignIn() {
             </div>
 
             <Button
-              onClick={() => router.push("/sign-up")}
+              onClick={() => {
+                startLoading();
+                router.push("/sign-up")
+              }}
               className="absolute right-4 top-4 bg-transparent px-3 py-1.5 font-light text-sm text-foreground shadow-none hover:bg-foreground/10"
             >
               Sign up
@@ -187,10 +198,10 @@ export default function SignIn() {
                     </div>
                     <div className="flex w-full justify-end">
                       <Button
-                          type="button"
-                          variant="link"
-                          className="h-auto p-0 text-xs font-light text-foreground/70 hover:text-foreground"
-                          onClick={() => router.push("/forgot-password")}
+                        type="button"
+                        variant="link"
+                        className="h-auto p-0 text-xs font-light text-foreground/70 hover:text-foreground"
+                        onClick={() => router.push("/forgot-password")}
                       >
                         Forgot password?
                       </Button>

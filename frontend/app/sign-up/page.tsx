@@ -1,15 +1,17 @@
 "use client";
 
 import { Icons } from "@/components/icons";
-import { Eye, EyeSlash, LockWaves, Envelope, User, DangerCircle, CheckCircle} from "@mynaui/icons-react";
+import { Eye, EyeSlash, LockWaves, Envelope, User, DangerCircle, CheckCircle } from "@mynaui/icons-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
 import { backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
+import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 export default function SignUp() {
   const [username, setUsername] = useState<string>("");
@@ -21,6 +23,7 @@ export default function SignUp() {
 
   const router = useRouter();
   const { toast } = useToast();
+  const { loading, startLoading, stopLoading } = useLoading(); // Initialize useLoading hook
 
   const passwordsMatch = () => password === confirmPassword && password !== "";
 
@@ -68,8 +71,9 @@ export default function SignUp() {
       return;
     }
 
-    await backendAPI
-      .post(
+    startLoading(); // Start loading before making the API call
+    try {
+      const response = await backendAPI.post(
         "/users/create",
         {
           nickname: username,
@@ -81,27 +85,30 @@ export default function SignUp() {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-        },
-      )
-      .then((response) => {
-        if (response.status === 200) {
-          toast({
-            title: "Account created successfully",
-            variant: "default",
-          });
-          router.push("/sign-in");
         }
-      })
-      .catch((error) => {
-        console.error("Create account error:", error);
+      );
+
+      if (response.status === 200) {
         toast({
-          title: "Account creation failed",
-          description: "This user is already registered.",
-          variant: "destructive",
-          action: <ToastAction altText="Try again">Try again</ToastAction>,
+          title: "Account created successfully",
+          variant: "default",
         });
+        router.push("/sign-in");
+      }
+    } catch (error) {
+      console.error("Create account error:", error);
+      toast({
+        title: "Account creation failed",
+        description: "This user is already registered.",
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
+    } finally {
+      stopLoading(); // Stop loading after the API call completes
+    }
   };
+
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center p-6">
@@ -122,7 +129,10 @@ export default function SignUp() {
             </div>
 
             <Button
-              onClick={() => router.push("/sign-in")}
+              onClick={() => {
+                startLoading();
+                router.push("/sign-in")
+              }}
               className="absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm font-light text-foreground shadow-none hover:bg-foreground/10"
             >
               Sign in
