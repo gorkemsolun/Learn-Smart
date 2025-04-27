@@ -1,7 +1,14 @@
 #!/bin/bash
 
-# Set PYTHONPATH
-export PYTHONPATH="/Users/edizcivan/Workspace/edux/backend_microservices"
+# Get the absolute path of the backend_microservices directory
+BASE_DIR="$(pwd)"
+if [[ ! "$BASE_DIR" =~ /backend_microservices$ ]]; then
+    echo "Error: This script must be run from the backend_microservices directory"
+    exit 1
+fi
+
+# Set PYTHONPATH to current directory
+export PYTHONPATH="$BASE_DIR"
 
 # Define services and their respective ports
 declare -A services=(
@@ -13,8 +20,6 @@ declare -A services=(
     ["user_service"]=8007
 )
 
-# Base directory where the services are located
-BASE_DIR="/Users/edizcivan/Workspace/edux/backend_microservices"
 # Create logs directory if it doesn't exist
 LOGS_DIR="$BASE_DIR/logs"
 if [ ! -d "$LOGS_DIR" ]; then
@@ -31,24 +36,31 @@ for service in "${!services[@]}"; do
     service_path="$BASE_DIR/$service/app"
     
     if [ -d "$service_path" ]; then
+        echo "Starting $service on port $port..."
         cd "$service_path" || exit
-        nohup uvicorn main:app --reload --host 127.0.0.1 --port "$port" > "$BASE_DIR/logs/$service.log" 2>&1 &
+        nohup uvicorn main:app --reload --host 127.0.0.1 --port "$port" > "$LOGS_DIR/$service.log" 2>&1 &
         last_pid=$!
         
         # Check if process started successfully
         if ps -p $last_pid > /dev/null; then
+            echo "✓ $service started successfully (PID: $last_pid)"
             ((success_count++))
         else
-            echo "WARNING: Failed to start $service on port $port!"
+            echo "✗ Failed to start $service on port $port!"
         fi
+        
+        # Return to base directory
+        cd "$BASE_DIR" || exit
     else
-        echo "ERROR: Directory $service_path not found!"
+        echo "✗ Directory not found: $service/app"
     fi
 done
 
 # Print summary based on success
 if [ $success_count -eq $total_services ]; then
-    echo -e "All services started successfully!\n"
+    echo -e "\n✅ All services started successfully!"
 else
-    echo -e "WARNING: Started $success_count out of $total_services services.\n"
+    echo -e "\n⚠️  Started $success_count out of $total_services services"
 fi
+
+echo -e "\nLogs available in: ./logs/"
