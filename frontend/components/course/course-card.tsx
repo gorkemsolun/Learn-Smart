@@ -74,7 +74,10 @@ export function CourseCard(modalParameters: CourseCardProps) {
                   <Button
                       variant="ghost"
                       className="hover:text-primary-dark text-primary transition-colors"
-                      onClick={() => router.push(`/course/${modalParameters.course.course_id}`)}
+                      onClick={() => {
+                        modalParameters.startLoading?.();
+                        router.push(`/course/${modalParameters.course.course_id}`)
+                      }}
                   >
                       View Course
                   </Button>

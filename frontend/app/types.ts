@@ -91,6 +91,8 @@ export interface CoursesListProps {
   onCourseDelete: () => void;
   setCourseDialog: (value: boolean) => void;
   onCourseUpdate: () => void;
+  startLoading?: () => void;
+  stopLoading?: () => void;
 }
 
 export interface ConfirmationDialogProps {
@@ -104,6 +106,8 @@ export interface CourseCardProps {
   course: Course;
   onCourseDelete: (courseId: string | undefined) => void;
   onCourseUpdate: () => void;
+  startLoading?: () => void;
+  stopLoading?: () => void;
 }
 
 export interface CourseDialogProps {

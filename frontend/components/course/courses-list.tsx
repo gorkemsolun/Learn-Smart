@@ -54,6 +54,8 @@ export function CoursesList (modalParameters: CoursesListProps) {
                       course={Course}
                       onCourseDelete={handleDeleteCourse}
                       onCourseUpdate={modalParameters.onCourseUpdate}
+                      startLoading={modalParameters.startLoading}
+                      stopLoading={modalParameters.stopLoading}
                   />
                 </div>
             ))}

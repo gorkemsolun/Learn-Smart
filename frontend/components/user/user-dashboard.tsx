@@ -18,11 +18,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { backendAPI } from "@/environment/backend_api";
+import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
 
 import HubIcon from "@mui/icons-material/Hub";
 import ChatIcon from "@mui/icons-material/Chat";
 import PersonIcon from "@mui/icons-material/Person";
 import { AutoGraph } from "@mui/icons-material";
+import { LoadingSpinner } from "../loading-spinner";
+import { start } from "repl";
 
 // Helper function to map dates to weekdays
 const mapDateToDay = (dateString: string): string => {
@@ -44,14 +47,14 @@ export default function UserDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseDialog, setCourseDialog] = useState<boolean>(false);
   const token = Cookies.get("authToken") as string;
-  const [loading, setLoading] = useState(true);
+  const { loading, startLoading, stopLoading } = useLoading(); // Initialize useLoading hook
   const { toast } = useToast();
   const router = useRouter();
 
   const fetchDashboardData = useCallback(async () => {
     if (!token) return;
 
-    setLoading(true);
+    startLoading(); // Start loading before fetching data
     try {
       // Fetch courses first
       const coursesResponse = await backendAPI.get("/users/me", {
@@ -87,7 +90,7 @@ export default function UserDashboard() {
       }));
 
       const chartData = last7Days.map((date) => {
-        const found = formattedData.find((item) => item.date === date);
+        const found = formattedData.find((item: { date: string; timeSpent: number; timestamp: string }) => item.date === date);
         return {
           day: mapDateToDay(date),
           date,
@@ -98,16 +101,18 @@ export default function UserDashboard() {
       setChartData(chartData);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
+      /*
       toast({
         title: "Error",
-        description: `Failed to fetch dashboard data: ${error.message}`,
+        description: `Failed to fetch dashboard data: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive",
         action: <ToastAction altText="Retry">Retry</ToastAction>,
       });
+      */
     } finally {
-      setLoading(false);
+      stopLoading(); // Stop loading after data fetch completes
     }
-  }, [token, toast]);
+  }, [token, toast, startLoading, stopLoading]);
 
   useEffect(() => {
     if (token) {
@@ -160,9 +165,14 @@ export default function UserDashboard() {
       return;
     }
 
-    if (link) router.push(link);
+    if (link) {
+      startLoading(); // Start loading before navigation
+      router.push(link);
+    } 
   };
 
+  if (loading) return <LoadingSpinner />;
+  
   return (
     <div className="mx-auto space-y-6 p-4 sm:p-6 lg:p-4">
       {/* Cards Section */}
@@ -209,6 +219,8 @@ export default function UserDashboard() {
               onCourseDelete={fetchDashboardData}
               setCourseDialog={setCourseDialog}
               onCourseUpdate={fetchDashboardData}
+              startLoading={startLoading}
+              stopLoading={stopLoading}
             />
           </div>
         </div>

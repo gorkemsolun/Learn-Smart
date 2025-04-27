@@ -50,6 +50,7 @@ export default function CourseHomepage() {
   };
 
   const navigate = (path: string) => {
+    startLoading();
     router.push(path);
   };
 
