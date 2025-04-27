@@ -77,10 +77,10 @@ export default function SubscriptionTierCards() {
   [
     {
       name: "Edux Basic",
-      description: "RAG based content creation, and unlimited course creation in Edux.",
+      description: "Unlimited course and chat creation in Edux System.",
       monthlyPrice: "7.9",
       yearlyPrice: "64.9",
-      features: ["RAG based content creation.", "Unlimited course creation."],
+      features: ["Unlimited course/chat creation."],
       badge: currentTier === "basic" ? "Current Plan" : "",
       key: "basic",
       buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
@@ -90,14 +90,14 @@ export default function SubscriptionTierCards() {
     },
     {
       name: "Edux+ Premium",
-      description: "Personal Guidance, RAG, and unlimited course creation in Edux.",
+      description: "Personalized study mechanisms and unlimited course/chat creation in Edux.",
       monthlyPrice: isYearly
         ? "19.9"
         : calculateProratedPrice(19.9, currentMonthlyPrice),
       yearlyPrice: isYearly
         ? calculateProratedPrice(199.9, currentYearlyPrice)
         : calculateProratedPrice(199.9, currentMonthlyPrice),
-      features: ["Personalized guidance.", "RAG based content creation.", "Unlimited course creation."],
+      features: ["Personalized study mechanisms.", "Unlimited course/chat creation."],
       badge: currentTier === "premium" ? "Current Plan" : "Most Popular",
       key: "premium",
       buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
@@ -108,7 +108,7 @@ export default function SubscriptionTierCards() {
     },
     {
       name: "Edux+ Elite",
-      description: "Personal Guidance, RAG, LLM selection, and unlimited course creation in Edux.",
+      description: "Personalized study mechanisms, LLM selection, and unlimited course/chat creation in Edux.",
       monthlyPrice: isYearly
         ? "59.9"
         : calculateProratedPrice(59.9, currentMonthlyPrice),
@@ -116,8 +116,7 @@ export default function SubscriptionTierCards() {
         ? calculateProratedPrice(599.9, currentYearlyPrice)
         : calculateProratedPrice(599.9, currentMonthlyPrice),
       features: [
-        "Personalized guidance.",
-        "RAG based content creation.",
+        "Personalized study mechanisms.",
         "LLM selection for your smart tutor.",
         "Unlimited course creation.",
       ],
