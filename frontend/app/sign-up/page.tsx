@@ -23,7 +23,7 @@ export default function SignUp() {
 
   const router = useRouter();
   const { toast } = useToast();
-  const { loading, startLoading, stopLoading } = useLoading(); // Initialize useLoading hook
+  const { loading } = useLoading(); // Initialize useLoading hook
 
   const passwordsMatch = () => password === confirmPassword && password !== "";
 
@@ -71,7 +71,6 @@ export default function SignUp() {
       return;
     }
 
-    startLoading(); // Start loading before making the API call
     try {
       const response = await backendAPI.post(
         "/users/create",
@@ -103,8 +102,6 @@ export default function SignUp() {
         variant: "destructive",
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
-    } finally {
-      stopLoading(); // Stop loading after the API call completes
     }
   };
 
@@ -130,8 +127,7 @@ export default function SignUp() {
 
             <Button
               onClick={() => {
-                startLoading();
-                router.push("/sign-in")
+                router.push("/sign-in");
               }}
               className="absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm font-light text-foreground shadow-none hover:bg-foreground/10"
             >

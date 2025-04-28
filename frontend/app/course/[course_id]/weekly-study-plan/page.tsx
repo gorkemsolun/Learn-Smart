@@ -7,7 +7,7 @@ import { CalendarDays, FileText, Upload } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import UpdateUploadSyllabus from "@/components/upload-syllabus-modal";
+import UpdateUploadSyllabus from "@/components/course/upload-syllabus-dialog";
 import { backend, backendAPI } from "@/environment/backend_api";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";

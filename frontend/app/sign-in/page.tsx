@@ -150,8 +150,7 @@ export default function SignIn() {
 
             <Button
               onClick={() => {
-                startLoading();
-                router.push("/sign-up")
+                router.push("/sign-up");
               }}
               className="absolute right-4 top-4 bg-transparent px-3 py-1.5 font-light text-sm text-foreground shadow-none hover:bg-foreground/10"
             >
