@@ -54,7 +54,7 @@ async def create_chat(course_id: int, chat_title: str, slides: UploadFile = File
         
         storage_dir = get_chat_files_path(chat["chat_id"])
         os.makedirs(storage_dir, exist_ok=True)
-        slides_file_path = os.path.join(storage_dir, f"{generate_hash(name, strategy="uuid")}.{extension}")
+        slides_file_path = os.path.join(storage_dir, f"{generate_hash(name, strategy='uuid')}.{extension}")
         
         try:
             file = FileFactory()(file=slides)
@@ -463,13 +463,11 @@ async def create_quiz(chat_id: int, current_user: dict = Depends(auth.get_curren
         raise HTTPException(status_code=500, detail="Failed to generate quiz.")
     
     data = response_dict["data"]
-    if not validate_llm_quiz_response(data):
-        raise HTTPException(status_code=500, detail="An error occurred while generating the quiz.")
 
     quizzes_base_path = get_quizzes_folder_path(chat_id)
     os.makedirs(quizzes_base_path, exist_ok=True)
 
-    quiz_file_name = f"{generate_hash("", strategy='timestamp', human_readable=True)}.json"
+    quiz_file_name = f"{generate_hash('', strategy='timestamp', human_readable=True)}.json"
     quiz_file_path = os.path.join(quizzes_base_path, quiz_file_name)
 
     with open(quiz_file_path, 'w') as file:
@@ -522,7 +520,7 @@ async def create_flashcards(chat_id: int, current_user: dict = Depends(auth.get_
 
     flashcards_base_path = get_flashcards_folder_path(chat_id)
     os.makedirs(flashcards_base_path, exist_ok=True)
-    flashcards_file_name = f"{generate_hash("", strategy='timestamp', human_readable=True)}.json"
+    flashcards_file_name = f"{generate_hash('', strategy='timestamp', human_readable=True)}.json"
 
     flashcards_file_path = os.path.join(flashcards_base_path, flashcards_file_name)
 

@@ -1,6 +1,6 @@
 import { Icons } from "@/components/icons";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Searchbar } from "@/components/searchbar";
+import { Searchbar } from "@/components/searchbar/searchbar";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -10,19 +10,20 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import { userService } from "@/environment/backend_api";
 import { cn } from "@/lib/utils";
 import { ExitIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import {userService} from "@/environment/backend_api";
-import {useState} from "react";
+import { useState } from "react";
+import { Notification, Notifications } from "./notifications-dropdown";
 
 const components: { title: string; href: string; description: string }[] = [
   {
-    title: "Notifications",
-    href: "",
-    description: "Keep updated with the latest changes.",
+    title: "Profile",
+    href: "/profile",
+    description: "Adjust your preferences.",
   },
   {
     title: "Subscription Service",
@@ -37,9 +38,7 @@ interface NavbarHeaderParameters {
 
 export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
   const router = useRouter();
-  const [token] = useState<string>(
-        Cookies.get("authToken") as string
-  );
+  const [token] = useState<string>(Cookies.get("authToken") as string);
   const updateUsageData = async () => {
     if (!token) return;
 
@@ -51,30 +50,56 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
     }
 
     const signInDate = new Date(signInTime);
-    const timeDifferenceInSeconds = Math.floor((Date.now() - signInDate.getTime()) / 1000);
+    const timeDifferenceInSeconds = Math.floor(
+      (Date.now() - signInDate.getTime()) / 1000
+    );
 
     const data = {
-        date: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
-        time_spent: timeDifferenceInSeconds,
-        timestamp: new Date(signInTime).toISOString(),
+      date: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
+      time_spent: timeDifferenceInSeconds,
+      timestamp: new Date(signInTime).toISOString(),
     };
-    await userService.post(`/analytics`, data,{
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then((response) => {
-      console.log(response.data);
-    })
-    .catch((error) => {
-      console.error(error.response);
-    });
+    await userService
+      .post(`/analytics`, data, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        console.log(response.data);
+      })
+      .catch((error) => {
+        console.error(error.response);
+      });
   };
 
   const handleHomePageClick = async () => {
     router.replace("/edux-homepage");
   };
+
+  const mock: Notification[] = [
+    {
+      id: "1",
+      title: "Welcome!",
+      description: "Thanks for joining.",
+      time: "Just now",
+    },
+    {
+      id: "2",
+      title: "New message",
+      description: "You have a new message from John",
+      time: "5 minutes ago",
+      url: "/messages/1",
+    },
+    {
+      id: "3",
+      title: "New follower",
+      description: "Jane Doe is now following you",
+      time: "1 hour ago",
+      url: "/profile/jane-doe",
+    },
+  ];
 
   const handleLogout = () => {
     updateUsageData();
@@ -84,7 +109,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
   };
 
   return (
-    <div className="sticky top-0 z-50 w-full border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full backdrop-blur">
       <NavigationMenu>
         <NavigationMenuList>
           <Button
@@ -102,7 +127,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
           </Button>
           <NavigationMenuItem>
             <NavigationMenuTrigger
-              className="bg-transparent font-light text-foreground/60 hover:text-foreground/80
+              className="text-foreground/60 hover:text-foreground/80 bg-transparent font-light
             focus:bg-transparent group-hover:bg-transparent"
             >
               About
@@ -112,14 +137,14 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
                 <li className="row-span-3">
                   <NavigationMenuLink asChild>
                     <a
-                      className="flex size-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                      className="from-muted/50 to-muted flex size-full select-none flex-col justify-end rounded-md bg-gradient-to-b p-6 no-underline outline-none focus:shadow-md"
                       href="/"
                     >
                       <Icons.logo className="size-6" />
                       <div className="mb-2 mt-4 text-lg font-normal">
                         Edux/ai
                       </div>
-                      <p className="text-sm leading-tight text-muted-foreground">
+                      <p className="text-muted-foreground text-sm leading-tight">
                         Designed to help students study their courses more
                         effectively by intending to improve their grade output
                         with its learning guide.
@@ -140,7 +165,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
             </NavigationMenuContent>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuTrigger className="bg-transparent font-light text-foreground/60 hover:text-foreground/80 focus:bg-transparent group-hover:bg-transparent">
+            <NavigationMenuTrigger className="text-foreground/60 hover:text-foreground/80 bg-transparent font-light focus:bg-transparent group-hover:bg-transparent">
               Services
             </NavigationMenuTrigger>
             <NavigationMenuContent>
@@ -166,6 +191,9 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
             <ModeToggle />
           </NavigationMenuItem>
           <NavigationMenuItem>
+            <Notifications notifications={mock} />
+          </NavigationMenuItem>
+          <NavigationMenuItem>
             <Button
               variant="ghost"
               size="icon"
@@ -181,28 +209,34 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
   );
 }
 
-const ListItem = React.forwardRef<
-  React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
-  return (
-    <li>
-      <NavigationMenuLink asChild>
-        <a
-          ref={ref}
-          className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-            className
-          )}
-          {...props}
-        >
-          <div className="text-sm font-normal leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-            {children}
-          </p>
-        </a>
-      </NavigationMenuLink>
-    </li>
-  );
-});
+type ListItemProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+  title: string;
+  children: React.ReactNode;
+};
+
+const ListItem = React.forwardRef<HTMLAnchorElement, ListItemProps>(
+  function ListItem({ className, title, children, ...props }, ref) {
+    return (
+      <li>
+        <NavigationMenuLink asChild>
+          <a
+            ref={ref}
+            className={cn(
+              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors",
+              "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+              className
+            )}
+            {...props}
+          >
+            <div className="text-sm font-normal leading-none">{title}</div>
+            <p className="text-muted-foreground line-clamp-2 text-sm leading-snug">
+              {children}
+            </p>
+          </a>
+        </NavigationMenuLink>
+      </li>
+    );
+  }
+);
+
 ListItem.displayName = "ListItem";

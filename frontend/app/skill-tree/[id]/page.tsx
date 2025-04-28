@@ -1,257 +1,570 @@
 "use client";
 
-import { CustomSimulationNode, LinkData, NodeData } from "@/app/types";
-import * as d3 from "d3";
-import { useEffect, useRef } from "react";
+import NodeDetailsModal from "@/components/skill-tree/node-details-modal";
+import type { NodeData, SkillTreeProps } from "@/app/types";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import cytoscape from "cytoscape";
+import dagre from "cytoscape-dagre";
+import { Home, Info, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useRef, useState } from "react";
 
-// TO-DO IN BACKEND WE NEED TO LIMIT THE NUMBER OF BRANCHES A NODE CAN HAVE
-// TO-DO ADD QUIZ PARAMETERS TO NODE DATA
+cytoscape.use(dagre);
 
-// Group is the depth of the node where group 0 will be the root, the example set group root
-// starts with root being 1.
-const nodesData: NodeData[] = [
-  { id: "1", label: "Education Core", group: 1, completed: true },
-  { id: "2", label: "Learning Styles", group: 2, completed: true },
-  { id: "3", label: "Subjects", group: 2, completed: false },
-  { id: "4", label: "Skills", group: 3, completed: false },
-  { id: "5", label: "Career Paths", group: 3, completed: false },
-  { id: "6", label: "Visual Learners", group: 4, completed: false },
-  { id: "7", label: "Aesthetic Learners", group: 4, completed: false },
-  { id: "8", label: "Math", group: 5, completed: true },
-  { id: "9", label: "Science", group: 5, completed: true },
-  { id: "10", label: "Programming", group: 6, completed: true },
-  { id: "11", label: "Leadership", group: 6, completed: true },
-  { id: "12", label: "Engineer", group: 7, completed: true },
-  { id: "13", label: "Doctor", group: 7, completed: true },
+
+
+const defaultNodes: NodeData[] = [
+  {
+    id: "basics",
+    label: "Programming Fundamentals",
+    description: "Master the fundamental concepts that form the foundation of all programming languages.",
+    level: 1,
+    progress: 100,
+    completed: true,
+    skills: ["Variables", "Data Types", "Control Flow", "Functions", "Basic Algorithms"],
+    prerequisites: [],
+  },
+  {
+    id: "oop",
+    label: "Object-Oriented Programming & Design",
+    description: "Learn to structure code using objects, classes, and inheritance patterns.",
+    level: 2,
+    progress: 75,
+    completed: false,
+    skills: ["Classes", "Inheritance", "Polymorphism", "Encapsulation", "Abstraction"],
+    prerequisites: ["Programming Fundamentals"],
+  },
+  {
+    id: "algorithms",
+    label: "Algorithms & Data Structures",
+    description: "Understand how to efficiently store and manipulate data with optimized algorithms.",
+    level: 2,
+    progress: 60,
+    completed: false,
+    skills: ["Sorting Algorithms", "Search Algorithms", "Trees", "Graphs", "Dynamic Programming"],
+    prerequisites: ["Programming Fundamentals"],
+  },
+  {
+    id: "dataStructures",
+    label: "Advanced Data Structures",
+    description: "Master complex data structures for solving specialized problems.",
+    level: 3,
+    progress: 30,
+    completed: false,
+    skills: ["Balanced Trees", "Graph Algorithms", "Heaps", "Hash Tables", "Tries"],
+    prerequisites: ["Algorithms & Data Structures"],
+  },
+  {
+    id: "design",
+    label: "Design Patterns",
+    description: "Learn reusable solutions to common software design problems.",
+    level: 3,
+    progress: 45,
+    completed: false,
+    skills: ["Creational Patterns", "Structural Patterns", "Behavioral Patterns", "Architectural Patterns"],
+    prerequisites: ["Object-Oriented Programming & Design"],
+  },
+  {
+    id: "architecture",
+    label: "System Architecture",
+    description: "Design and implement large-scale software systems with multiple components.",
+    level: 4,
+    progress: 15,
+    completed: false,
+    skills: ["Distributed Systems", "Microservices", "Scalability", "Reliability", "Performance"],
+    prerequisites: ["Design Patterns", "Advanced Data Structures"],
+  },
 ];
 
-// Linking every link data with its child in the backend we will use heap strategy to align
-// parent and child, 2*n + 1 left child, 2*n + 2 will be the right child, parent floor((n-1)/2).
-const linksData: LinkData[] = [
-  { source: "1", target: "2" },
-  { source: "1", target: "3" },
-  { source: "1", target: "4" },
-  { source: "1", target: "5" },
-  { source: "2", target: "6" },
-  { source: "2", target: "7" },
-  { source: "3", target: "8" },
-  { source: "3", target: "9" },
-  { source: "4", target: "10" },
-  { source: "4", target: "11" },
-  { source: "5", target: "12" },
-  { source: "5", target: "13" },
+const defaultEdges = [
+  { source: "basics", target: "oop" },
+  { source: "basics", target: "algorithms" },
+  { source: "oop", target: "design" },
+  { source: "algorithms", target: "dataStructures" },
+  { source: "design", target: "architecture" },
+  { source: "dataStructures", target: "architecture" },
 ];
 
-export default function SkillTree() {
-  const svgRef = useRef<SVGSVGElement>(null!);
+// Update the color palette to be more neutral and subtle
+const nodeThemeColors = {
+  dark: {
+    background: "#0a0a0a",
+    foreground: "#f0f0f0",
+    primary: "#333333",
+    primaryForeground: "#f0f0f0",
+    border: "#2a2a2a",
+    accent: "#666666",
+    subtle: "rgba(255, 255, 255, 0.05)",
+  },
+  light: {
+    background: "#ffffff",
+    foreground: "#222222",
+    primary: "#e8e8e8",
+    primaryForeground: "#222222",
+    border: "#dddddd",
+    accent: "#888888",
+    subtle: "rgba(0, 0, 0, 0.02)",
+  },
+};
 
-  const getHSLWithOpacity = (hslColor: string, opacity: number) => {
-    const hsl = d3.hsl(hslColor);
-    return `hsla(${hsl.h}, ${hsl.s * 100}%, ${hsl.l * 100}%, ${opacity})`;
-  };
-
-  const colorScale = d3.scaleOrdinal<string>(d3.schemePastel2);
+export default function SkillTree({
+  nodes = defaultNodes,
+  edges = defaultEdges,
+  title = "Skill Progression Tree",
+}: SkillTreeProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cyReference = useRef<cytoscape.Core | null>(null);
+  const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
-    if (!svgRef.current) {
+    setIsClient(true);
+
+    if (!theme) {
+      setTheme("dark");
+    }
+  }, [theme, setTheme]);
+
+  useEffect(() => {
+    if (cyReference.current && isClient) {
+      const colors = theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
+
+      cyReference.current
+        .style()
+        .selector("core")
+        .style({
+          "background-color": colors.background,
+          "background-opacity": 0.9,
+          "border-width": 0,
+          "border-color": colors.border,
+          "border-style": "solid",
+        })
+        .update();
+
+      cyReference.current
+        .style()
+        .selector("node")
+        .style({
+          "background-color": colors.background,
+          "background-opacity": 0.7,
+          "border-width": 1,
+          "border-color": colors.border,
+          "border-style": "solid",
+          "text-valign": "center",
+          "text-halign": "center",
+          color: colors.primaryForeground,
+          "font-weight": "200",
+          "font-size": "13px",
+          "font-family": "'Inter', 'Helvetica Neue', sans-serif",
+          width: "label",
+          height: "label",
+          "padding-left": "22px",
+          "padding-right": "22px",
+          "padding-top": "14px",
+          "padding-bottom": "14px",
+          label: "data(label)",
+          "text-wrap": "wrap",
+          "text-max-width": "160px",
+          shape: "round-rectangle",
+          "border-radius": 12,
+          "shadow-blur": 15,
+          "shadow-color": colors.subtle,
+          "shadow-opacity": 0.8,
+          "shadow-offset-x": 0,
+          "shadow-offset-y": 2,
+          "text-outline-width": 0,
+          "text-outline-opacity": 0,
+          "text-margin-y": 0,
+          "text-transform": "none",
+          "text-letter-spacing": 0.3, // Elegant letter spacing
+        })
+        .selector("node:selected")
+        .style({
+          "border-color": colors.accent,
+          "border-width": 1.5,
+          "padding-left": "24px",
+          "padding-right": "24px",
+          "padding-top": "16px",
+          "padding-bottom": "16px",
+          "shadow-blur": 25,
+          "shadow-color": colors.accent,
+          "shadow-opacity": 0.3,
+          "shadow-offset-x": 0,
+          "shadow-offset-y": 3,
+        })
+        .selector("edge")
+        .style({
+          width: 1, // Ultra-thin lines
+          "curve-style": "unbundled-bezier",
+          "line-color": theme === "dark" ? "rgba(240, 240, 240, 0.2)" : "rgba(34, 34, 34, 0.15)",
+          "target-arrow-color": theme === "dark" ? "rgba(240, 240, 240, 0.3)" : "rgba(34, 34, 34, 0.25)",
+          "target-arrow-fill": "filled",
+          "target-arrow-shape": "triangle",
+          "arrow-scale": 0.8, // Smaller, more elegant arrows
+          opacity: 0.7,
+          "edge-distances": "node-position",
+          "control-point-step-size": 30, // Reduced for straighter lines
+          "control-point-weight": 0.3, // Reduced for straighter lines
+          "control-point-distances": [20, -20], // Reduced for straighter lines
+          "source-endpoint": "outside-to-node",
+          "target-endpoint": "outside-to-node",
+        })
+        .selector("edge:hover")
+        .style({
+          width: 1.5,
+          opacity: 1,
+          "line-color": colors.accent,
+          "target-arrow-color": colors.accent,
+          "transition-property": "opacity, width, line-color, target-arrow-color",
+          "transition-duration": "0.2s",
+          "transition-timing-function": "ease-in-out",
+        })
+        .update();
+
+      if (containerRef.current) {
+        containerRef.current.style.backgroundColor = colors.background;
+      }
+    }
+  }, [theme, isClient]);
+
+  const colors = theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
+
+  useEffect(() => {
+    if (!containerRef.current) {
       return;
     }
 
-    const svg = d3.select(svgRef.current);
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
+    const elements = [
+      ...nodes.map((node) => ({
+        data: {
+          ...node,
+          label: node.label || node.id,
+        },
+      })),
+      ...edges.map((edge) => ({
+        data: {
+          id: `${edge.source}-${edge.target}`,
+          source: edge.source,
+          target: edge.target,
+        },
+      })),
+    ];
 
-    svg.attr("viewBox", `0 0 ${width} ${height}`);
-    svg.selectAll("*").remove();
-
-    const hierarchy = d3
-      .stratify<NodeData>()
-      .id((d) => d.id)
-      .parentId((d) => linksData.find((link) => link.target === d.id)?.source)(
-        nodesData
-      )
-      .descendants() as CustomSimulationNode[];
-
-    hierarchy.forEach((node) => {
-      node.id = node.data.id;
-      node.label = node.data.label;
-      node.group = node.data.group;
+    const cy = cytoscape({
+      container: containerRef.current,
+      elements,
+      style: [
+        {
+          selector: "core",
+          style: {
+            "background-color": colors.background,
+            "background-opacity": 1,
+          },
+        },
+        {
+          selector: "node",
+          style: {
+            "background-color": colors.background,
+            "background-opacity": 0.7,
+            "border-width": 1, // Ultra-thin border
+            "border-color": colors.border,
+            "border-style": "solid",
+            "text-valign": "center",
+            "text-halign": "center",
+            color: colors.primaryForeground,
+            "font-weight": "200", // Extra light font weight
+            "font-size": "13px",
+            "font-family": "'Inter', 'Helvetica Neue', sans-serif", // More elegant font
+            width: "label",
+            height: "label",
+            "padding-left": "22px",
+            "padding-right": "22px",
+            "padding-top": "14px",
+            "padding-bottom": "14px",
+            label: "data(label)",
+            "text-wrap": "wrap",
+            "text-max-width": "160px", // Wider for better text flow
+            shape: "round-rectangle",
+            "border-radius": 12, // More rounded corners
+            "shadow-blur": 15,
+            "shadow-color": colors.subtle,
+            "shadow-opacity": 0.8,
+            "shadow-offset-x": 0,
+            "shadow-offset-y": 2,
+            "text-outline-width": 0,
+            "text-outline-opacity": 0,
+            "text-margin-y": 0,
+            "text-transform": "none",
+            "text-letter-spacing": 0.3, // Elegant letter spacing
+          },
+        },
+        {
+          selector: "node:selected",
+          style: {
+            "border-color": colors.accent,
+            "border-width": 1.5,
+            "padding-left": "24px",
+            "padding-right": "24px",
+            "padding-top": "16px",
+            "padding-bottom": "16px",
+            "shadow-blur": 25,
+            "shadow-color": colors.accent,
+            "shadow-opacity": 0.3,
+            "shadow-offset-x": 0,
+            "shadow-offset-y": 3,
+            "background-color": theme === "dark" ? "rgba(138, 133, 255, 0.05)" : "rgba(99, 102, 241, 0.03)",
+          },
+        },
+        {
+          selector: "node:active",
+          style: {
+            "overlay-color": colors.primary,
+            "overlay-padding": 10,
+            "overlay-opacity": 0.3,
+          },
+        },
+        {
+          selector: "edge",
+          style: {
+            width: 1, // Ultra-thin lines
+            "curve-style": "bezier", // Less pronounced curves
+            "line-color": theme === "dark" ? "rgba(240, 240, 240, 0.2)" : "rgba(34, 34, 34, 0.15)",
+            "target-arrow-color": theme === "dark" ? "rgba(240, 240, 240, 0.3)" : "rgba(34, 34, 34, 0.25)",
+            "target-arrow-fill": "filled",
+            "target-arrow-shape": "triangle",
+            "arrow-scale": 0.8, // Smaller, more elegant arrows
+            opacity: 0.7,
+            "edge-distances": "node-position",
+            "control-point-step-size": 30, // Reduced for straighter lines
+            "control-point-weight": 0.3, // Reduced for straighter lines
+            "control-point-distances": [20, -20], // Reduced for straighter lines
+            "source-endpoint": "outside-to-node",
+            "target-endpoint": "outside-to-node",
+          },
+        },
+        {
+          selector: "edge:hover",
+          style: {
+            width: 1.5,
+            opacity: 1,
+            "line-color": colors.accent,
+            "target-arrow-color": colors.accent,
+            "transition-property": "opacity, width, line-color, target-arrow-color",
+            "transition-duration": "0.2s",
+            "transition-timing-function": "ease-in-out",
+          },
+        },
+      ],
+      layout: {
+        name: "dagre",
+        rankDir: "LR", // Left to right layout
+        nodeSep: 120, // Much more space between nodes on same rank
+        edgeSep: 50, // More space between edges
+        rankSep: 180, // More space between ranks
+        padding: 80,
+        animate: true,
+        animationDuration: 900, // Slower animation for elegance
+        animationEasing: "ease-in-out-cubic", // Smoother easing
+      },
+      userZoomingEnabled: true,
+      userPanningEnabled: true,
+      boxSelectionEnabled: false,
+      autoungrabify: false,
+      wheelSensitivity: 0.2,
+      minZoom: 0.5,
+      maxZoom: 2,
     });
 
-    // Starts the simulation and links different hierarchical nodes together
-    const simulation = d3
-      .forceSimulation<CustomSimulationNode>(hierarchy)
-      .force(
-        "link",
-        d3
-          .forceLink<CustomSimulationNode>()
-          .links(
-            linksData.map((link) => ({
-              source: hierarchy.find((node) => node.id === link.source)!,
-              target: hierarchy.find((node) => node.id === link.target)!,
-            }))
-          )
-          .id((d) => d.id)
-          .distance(40)
-      )
-      .force("charge", d3.forceManyBody().strength(-500))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force(
-        "collision",
-        d3
-          .forceCollide<CustomSimulationNode>()
-          .radius((d) => getNodeRadius(d) + 5)
-      );
+    cy.nodes().grabify();
 
-    // Connectors of the circular nodes
-    const link = svg
-      .append("g")
-      .selectAll("line")
-      .data(
-        simulation
-          .force<d3.ForceLink<CustomSimulationNode, LinkData>>("link")!
-          .links()
-      )
-      .enter()
-      .append("line")
-      .attr("stroke", "hsl(var(--foreground))")
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", 1.5);
-
-    const node = svg
-      .append("g")
-      .selectAll("circle")
-      .data(hierarchy)
-      .enter()
-      .append("circle")
-      .attr("r", (d) => getNodeRadius(d))
-      .attr("fill", (d) =>
-        getHSLWithOpacity(colorScale(d.group.toString()), 0.95)
-      )
-      .call(
-        d3
-          .drag<SVGCircleElement, CustomSimulationNode>()
-          .on("start", dragStarted)
-          .on("drag", dragged)
-          .on("end", dragEnded)
-      );
-
-    // The labels written inside the circle
-    const label = svg
-      .append("g")
-      .selectAll("text")
-      .data(hierarchy)
-      .enter()
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "central")
-      .text((d) => d.label)
-      .style("fill", "black")
-      .style("font-size", 10)
-      .style("font-weight", "light")
-      .style("pointer-events", "none");
-
-    const cueSize = 16;
-    const cue = svg
-      .append("g")
-      .selectAll("rect")
-      .data(hierarchy)
-      .enter()
-      .append("rect")
-      .attr("width", cueSize)
-      .attr("height", cueSize)
-      .attr("fill", (d) => (d.data.completed ? "green" : "red")) // Green for complete, red for incomplete
-      .attr("stroke", "black")
-      .attr("stroke-width", 1)
-      .style("pointer-events", "none");
-
-    const cueIcons = svg
-      .append("g")
-      .selectAll("text")
-      .data(hierarchy)
-      .enter()
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle")
-      .text((d) => (d.data.completed ? "✔" : "✖")) // Tick for completed, X for incomplete
-      .style("font-size", "6px") // Adjust font size to fit in the square
-      .style("fill", "white")
-      .style("font-weight", "bold")
-      .style("pointer-events", "none");
-
-    simulation.on("tick", () => {
-      link
-        .attr("x1", (d) => (d.source as CustomSimulationNode).x!)
-        .attr("y1", (d) => (d.source as CustomSimulationNode).y!)
-        .attr("x2", (d) => (d.target as CustomSimulationNode).x!)
-        .attr("y2", (d) => (d.target as CustomSimulationNode).y!);
-
-      node.attr("cx", (d) => d.x!).attr("cy", (d) => d.y!);
-      label.attr("x", (d) => d.x!).attr("y", (d) => d.y!);
-
-      cue
-        .attr("x", (d) => d.x! + getNodeRadius(d) * 0.6) // top-right
-        .attr("y", (d) => d.y! - getNodeRadius(d) * 0.6);
-
-      cueIcons
-        .attr("x", (d) => d.x! + getNodeRadius(d) * 0.6 + cueSize / 2) // center of the square
-        .attr("y", (d) => d.y! - getNodeRadius(d) * 0.6 + cueSize / 2);
+    cy.on("tap", "node", (event) => {
+      const nodeId = event.target.id();
+      const node = nodes.find((n) => n.id === nodeId) || { id: nodeId };
+      setSelectedNode(node);
     });
 
-    function dragStarted(
-      event: d3.D3DragEvent<
-        SVGCircleElement,
-        CustomSimulationNode,
-        CustomSimulationNode
-      >,
-      d: CustomSimulationNode
-    ) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
+    cy.on("mouseover", "edge", (event) => {
+      event.target.addClass("hover");
+    });
+    cy.on("mouseout", "edge", (event) => {
+      event.target.removeClass("hover");
+    });
 
-    function dragged(
-      event: d3.D3DragEvent<
-        SVGCircleElement,
-        CustomSimulationNode,
-        CustomSimulationNode
-      >,
-      d: CustomSimulationNode
-    ) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
+    cyReference.current = cy;
+    cy.resize();
+    cy.fit(undefined, 50);
 
-    function dragEnded(
-      event: d3.D3DragEvent<
-        SVGCircleElement,
-        CustomSimulationNode,
-        CustomSimulationNode
-      >,
-      d: CustomSimulationNode
-    ) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
+    // keep it responsive if the window size changes
+    const handleResize = () => {
+      cy.resize();
+      cy.fit(undefined, 50);
+    };
+    window.addEventListener("resize", handleResize);
 
-    // Each child will be smaller in radius than its parent up until it reaches the threshold
-    function getNodeRadius(d: CustomSimulationNode): number {
-      const maxRadius = 40;
-      const minRadius = 30;
-      const depthFactor = 0.2;
-      return Math.max(minRadius, maxRadius - d.depth * depthFactor * minRadius);
+    if (containerRef.current) {
+      containerRef.current.style.backgroundColor = colors.background;
     }
 
     return () => {
-      simulation.stop();
+      window.removeEventListener("resize", handleResize);
+      cy.destroy();
+      cyReference.current = null;
     };
-  }, [colorScale]);
+  }, [nodes, edges, theme]);
+
+  const handleZoomIn = () => {
+    if (cyReference.current) {
+      const currentZoom = cyReference.current.zoom();
+      cyReference.current.zoom({
+        level: currentZoom * 1.2,
+        renderedPosition: {
+          x: cyReference.current.width() / 2,
+          y: cyReference.current.height() / 2,
+        },
+      });
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (cyReference.current) {
+      const currentZoom = cyReference.current.zoom();
+      cyReference.current.zoom({
+        level: currentZoom * 0.8,
+        renderedPosition: {
+          x: cyReference.current.width() / 2,
+          y: cyReference.current.height() / 2,
+        },
+      });
+    }
+  };
+
+  const handleReset = () => {
+    if (cyReference.current) {
+      cyReference.current.fit(undefined, 50);
+    }
+  };
+
+  const handleFullscreen = () => {
+    if (containerRef.current) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        containerRef.current.requestFullscreen();
+      }
+    }
+  };
 
   return (
-    <main>
-      <svg ref={svgRef} className="-mt-[8vh] h-screen w-full" />
-    </main>
+    <Card className="flex size-full flex-col border border-border bg-background text-foreground shadow-md">
+      <div className="border-b border-border bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-thin text-foreground/90">{title}</h3>
+          <div className="flex space-x-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleZoomIn}
+                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
+                  >
+                    <ZoomIn className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Zoom In</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleZoomOut}
+                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
+                  >
+                    <ZoomOut className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Zoom Out</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleReset}
+                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
+                  >
+                    <Home className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reset View</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleFullscreen}
+                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
+                  >
+                    <Maximize2 className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Fullscreen</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative">
+        <div
+          ref={containerRef}
+          className="h-[calc(94vh-4rem)] w-full bg-gradient-to-br from-background via-background to-background/95"
+          aria-label="Skill tree visualization"
+        />
+        <div className="absolute right-4 top-4">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="bg-background/80 text-foreground shadow-md hover:bg-muted"
+                >
+                  <Info className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Click on a node for details</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+
+      {isClient && selectedNode && (
+        <NodeDetailsModal node={selectedNode} open={!!selectedNode} onClose={() => setSelectedNode(null)} />
+      )}
+    </Card>
   );
 }
