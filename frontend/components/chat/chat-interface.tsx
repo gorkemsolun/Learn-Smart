@@ -161,7 +161,8 @@ export default function ChatInterface({
   };
 
   const getMediaUrl = (url: string) => {
-    return url.includes("blob:") ? url : `${backend.getUri()}/${url}`;
+    // return url.includes("blob:") ? url : `${backend.getUri()}/${url}`;
+    return null;
   };
 
   return (

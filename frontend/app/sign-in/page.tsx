@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
-import { authService, backendAPI } from "@/environment/backend_api";
+import { authService, userService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
 import { Envelope, Eye, EyeSlash, LockWaves } from "@mynaui/icons-react";
@@ -37,7 +37,7 @@ export default function SignIn() {
 
   const fetchUserRole = useCallback(async () => {
     try {
-      const response = await backendAPI.get("/users/me", {
+      const response = await userService.get("/user", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${Cookies.get("authToken")}`,

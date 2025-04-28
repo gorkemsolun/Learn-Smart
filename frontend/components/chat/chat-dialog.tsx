@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToastAction } from "@/components/ui/toast";
-import { backendAPI } from "@/environment/backend_api";
+import { chatService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { FileIcon, FileTextIcon } from 'lucide-react';
 import Cookies from "js-cookie";
@@ -123,7 +123,7 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
 
       if (isEditMode && chat) {
         // Edit mode
-        response = await backendAPI.put(
+        response = await chatService.put(
           `/chat/${chat.chat_id}`,
           file ? formData : { chat_title: chatName.trim() },
           {
@@ -141,7 +141,7 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
         };
       } else {
         // Create mode
-        response = await backendAPI.post(
+        response = await chatService.post(
           `/chat/create?course_id=${course_id}&chat_title=${chatName}`,
           file ? formData : {},
           {

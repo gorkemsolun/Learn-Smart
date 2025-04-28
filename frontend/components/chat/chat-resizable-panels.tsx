@@ -6,7 +6,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import type { ChatResizablePanelsProps, Slide, SlideResponse, ChatHistoryResponse } from "@/app/types";
 import SlidePanel from "@/components/chat/slide-panel";
 import ChatInterface from "@/components/chat/chat-interface";
-import {backend, backendAPI} from "@/environment/backend_api";
+import {backend, backendAPI, chatService} from "@/environment/backend_api";
 import { toast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import {Message} from "@/app/types";
@@ -38,7 +38,7 @@ export default function ChatResizablePanels({
     if (!token || !chatID) {
       return Promise.reject(new Error("Invalid parameters"));
     }
-    return backendAPI.get<ChatHistoryResponse>(`/chat/${chatID}`, {
+    return chatService.get<ChatHistoryResponse>(`/chat/${chatID}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -49,7 +49,7 @@ export default function ChatResizablePanels({
   // API call to fetch slide info
   const fetchSlideInfo = (slideID: string) => {
     if (!token || !slideID) return Promise.reject(new Error("Invalid parameters"));
-    return backendAPI.get<Slide>(`/chat/slides/${slideID}`, {
+    return chatService.get<Slide>(`/slides/${slideID}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -63,7 +63,7 @@ export default function ChatResizablePanels({
       console.error("Invalid parameters");
       return Promise.reject(new Error("Invalid parameters"));
     }
-    return backendAPI.get<SlideResponse>(`/chat/${chatID}/slide/${slideID}/page/${pageNumber}`, {
+    return chatService.get<SlideResponse>(`/chat/slide/${slideID}/page/${pageNumber}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -314,7 +314,7 @@ export default function ChatResizablePanels({
     ? `/chat/${activeChat.chat_id}/send_message?slide_id=${currentSlide.slide_id}&page_number=${currentSlidePage}`
     : `/chat/${activeChat?.chat_id}/send_message`;
 
-    backendAPI
+    chatService
       .post(url, formData, {
         headers: {
           Accept: "application/json",

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Cookies from "js-cookie";
-import { backendAPI } from "@/environment/backend_api";
+import { chatService, courseService, userService } from "@/environment/backend_api";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import { ChatDialog } from "@/components/chat/chat-dialog";
 import ChatResizablePanels from "@/components/chat/chat-resizable-panels";
@@ -62,7 +62,7 @@ export default function ChatPage() {
   const fetchCourses = useCallback(async () => {
     if (!token) return;
     try {
-      const response = await backendAPI.get("/users/me", {
+      const response = await userService.get("/user", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCourses(response.data?.courses || []);
@@ -88,7 +88,7 @@ export default function ChatPage() {
       if (!token || !courseId) return;
       setChatsLoaded(false);
       try {
-        const courseResponse = await backendAPI.get(`/course/${courseId}`, {
+        const courseResponse = await courseService.get(`/${courseId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCourse(courseResponse.data);
@@ -96,7 +96,7 @@ export default function ChatPage() {
         // Simulate a short delay
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        const chatResponse = await backendAPI.get(`/course/${courseId}/chats`, {
+        const chatResponse = await chatService.get(`/course/${courseId}/chats`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setChats(chatResponse.data || []);

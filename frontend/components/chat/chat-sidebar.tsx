@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ChevronDown, MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import type { Chat, ChatSidebarProps } from "@/app/types";
-import { backendAPI } from "@/environment/backend_api";
+import { chatService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -88,7 +88,7 @@ export default function ChatSidebar({
     if (!chatToDelete || !course) return;
 
     try {
-      await backendAPI.delete(`/chat/${chatToDelete.chat_id}`, {
+      await chatService.delete(`/chat/${chatToDelete.chat_id}`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,

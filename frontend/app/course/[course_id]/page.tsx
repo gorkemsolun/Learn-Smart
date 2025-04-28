@@ -4,7 +4,7 @@ import type { Course } from "@/app/types";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToastAction } from "@/components/ui/toast";
-import { backendAPI } from "@/environment/backend_api";
+import { courseService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
@@ -30,7 +30,7 @@ export default function CourseHomepage() {
   const fetchCourseData = async (course_id: string) => {
     startLoading();
     try {
-      const response = await backendAPI.get(`/course/${course_id}`, {
+      const response = await courseService.get(`/${course_id}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

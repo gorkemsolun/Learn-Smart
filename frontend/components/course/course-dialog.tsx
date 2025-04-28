@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
-import { backend, backendAPI } from "@/environment/backend_api";
+import { backend, courseService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import type * as React from "react";
@@ -214,7 +214,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
 
     try {
       if (!props.isCreate) {
-        await backendAPI.put(`/course/${props.course?.course_id}`, formData, {
+        await courseService.put(`/${props.course?.course_id}`, formData, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
@@ -236,7 +236,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
         });
       } else {
         // Send the form data to the backend
-        await backendAPI.post(`/course/create`, formData, {
+        await courseService.post(`/create`, formData, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
