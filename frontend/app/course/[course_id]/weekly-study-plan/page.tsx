@@ -8,7 +8,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import UpdateUploadSyllabus from "@/components/course/upload-syllabus-dialog";
-import { backend, backendAPI } from "@/environment/backend_api";
+import { courseService, filemanagerService } from "@/environment/backend_api";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
 import { toast } from "@/hooks/use-toast";
@@ -92,8 +92,10 @@ export default function WeeklyStudyPlan() {
 
   const fetchStudyPlanData = async (course_id: string) => {
     try {
-      startLoading();
-      const courseResponse = await backendAPI.get(`/course/${course_id}`, {
+      startLoading(); // Start loading
+
+      // Fetch course details to get the study plan URL
+      const courseResponse = await courseService.get(`/${course_id}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -109,21 +111,18 @@ export default function WeeklyStudyPlan() {
         });
       }
 
-      const studyPlanUrl = courseResponse.data.course_study_plan_url;
-      if (!studyPlanUrl) return;
-
-      const studyPlanResponse = await backend.get(studyPlanUrl, {
+      const studyPlanFID = courseResponse.data.course_study_plan_fid;
+      const response = await filemanagerService.get(`/${studyPlanFID}`, {
         headers: {
-          Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const data = studyPlanResponse.data;
-      if (typeof data === "string" && data.trim().length > 0) {
-        setStudyPlan(data);
-        console.log(data);
-      }
+      // Fetch the actual study plan content
+      const studyPlanResponse = await fetch(response.data.file_url);
+      const data = await studyPlanResponse.text();
+
+      setStudyPlan(data);
     } catch (error) {
       console.error("Error fetching study plan:", error);
       toast({

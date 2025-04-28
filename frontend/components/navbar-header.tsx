@@ -10,7 +10,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { backendAPI } from "@/environment/backend_api";
+import { userService } from "@/environment/backend_api";
 import { cn } from "@/lib/utils";
 import { ExitIcon } from "@radix-ui/react-icons";
 import Cookies from "js-cookie";
@@ -59,18 +59,19 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
       time_spent: timeDifferenceInSeconds,
       timestamp: new Date(signInTime).toISOString(),
     };
-    try {
-      const response = await backendAPI.post(`/analytics/log`, data, {
+    await userService
+      .post(`/analytics`, data, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+      })
+      .then((response) => {
+        console.log(response.data);
+      })
+      .catch((error) => {
+        console.error(error.response);
       });
-
-      console.log(response.data);
-    } catch (error: any) {
-      console.error(error.response);
-    }
   };
 
   const handleHomePageClick = async () => {

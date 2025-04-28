@@ -1,19 +1,25 @@
 "use client";
 import { Icons } from "@/components/icons";
-import { Eye, EyeSlash, Envelope, LockWaves } from "@mynaui/icons-react";
 import ImageSlider from "@/components/image-slider";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
-import { backendAPI } from "@/environment/backend_api";
+import { authService, backendAPI } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
+import { Envelope, Eye, EyeSlash, LockWaves } from "@mynaui/icons-react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { LoadingSpinner } from "@/components/loading-spinner";
 
 export default function SignIn() {
   const [email, setEmail] = useState<string>(Cookies.get("emailCookie") || "");
@@ -57,14 +63,7 @@ export default function SignIn() {
 
       const authToken = Cookies.get("authToken");
       if (authToken) {
-        await fetchUserRole();
-        if (!role) {
-          router.push("/role-card");
-        } else if (role === "User") {
-          router.push("/edux-homepage");
-        } else if (role === "Instructor") {
-          router.push("/edux-homepage-instructor");
-        }
+        router.push("/edux-homepage");
       }
     };
 
@@ -73,9 +72,9 @@ export default function SignIn() {
 
   const handleSignIn = async () => {
     startLoading(); // Start loading before making the API call
-    try {
-      const response = await backendAPI.post(
-        "/users/login",
+    await authService
+      .post(
+        "/login",
         {
           username: email,
           password: password,
@@ -86,38 +85,40 @@ export default function SignIn() {
             "Content-Type": "application/x-www-form-urlencoded",
           },
         }
-      );
+      )
+      .then(async (response) => {
+        toast({
+          title: "Sign in successful",
+          variant: "default",
+        });
 
-      toast({
-        title: "Sign in successful",
-        variant: "default",
+        const data = response.data;
+        // Store the token in a cookie
+        Cookies.set("authToken", data["access_token"], { expires: 3 });
+        Cookies.set("signin_time", new Date().toISOString(), { path: "/" });
+
+        await fetchUserRole();
+
+        if (role == null) {
+          router.push("/role-card");
+        } else if (role === "User") {
+          router.push("/edux-homepage");
+        } else if (role === "Instructor") {
+          router.push("/edux-homepage-instructor");
+        }
+      })
+      .catch((error) => {
+        console.error("Sign in error:", error);
+        toast({
+          title: "There is no such user",
+          description: "Details you entered does not match with a record",
+          variant: "destructive",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
+        });
+      })
+      .finally(() => {
+        stopLoading(); // Stop loading after the API call is complete
       });
-
-      const data = response.data;
-      // Store the token in a cookie
-      Cookies.set("authToken", data["access_token"], { expires: 3 });
-      Cookies.set("signin_time", new Date().toISOString(), { path: "/" });
-
-      await fetchUserRole();
-
-      if (!role) {
-        router.push("/role-card");
-      } else if (role === "User") {
-        router.push("/edux-homepage");
-      } else if (role === "Instructor") {
-        router.push("/edux-homepage-instructor");
-      }
-    } catch (error) {
-      console.error("Sign in error:", error);
-      toast({
-        title: "There is no such user",
-        description: "Details you entered do not match with a record",
-        variant: "destructive",
-        action: <ToastAction altText="Try again">Try again</ToastAction>,
-      });
-    } finally {
-      stopLoading(); // Stop loading after the API call completes
-    }
   };
 
   // TO-DO after domain acquired this place will be updated
@@ -158,7 +159,9 @@ export default function SignIn() {
             </Button>
 
             <CardHeader className="space-y-1 text-center">
-              <CardTitle className="p-4 text-xl font-thin sm:text-2xl">Sign in to your account</CardTitle>
+              <CardTitle className="p-4 text-xl font-thin sm:text-2xl">
+                Sign in to your account
+              </CardTitle>
             </CardHeader>
 
             <CardContent className="flex w-full flex-col items-center justify-center">
@@ -191,8 +194,14 @@ export default function SignIn() {
                         className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-gray-400"
                         onClick={togglePasswordVisibility}
                       >
-                        {showPassword ? <EyeSlash className="size-4" /> : <Eye className="size-4" />}
-                        <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                        {showPassword ? (
+                          <EyeSlash className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                        <span className="sr-only">
+                          {showPassword ? "Hide password" : "Show password"}
+                        </span>
                       </Button>
                     </div>
                     <div className="flex w-full justify-end">
@@ -223,7 +232,9 @@ export default function SignIn() {
                     <span className="w-full border-t"></span>
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 font-light text-muted-foreground">Or continue with</span>
+                    <span className="bg-background px-2 font-light text-muted-foreground">
+                      Or continue with
+                    </span>
                   </div>
                 </div>
                 <Button
@@ -239,11 +250,17 @@ export default function SignIn() {
             <CardFooter className="flex w-full justify-center">
               <p className="w-4/5 text-center text-xs font-light text-foreground/60">
                 By clicking continue, you agree to our{" "}
-                <a className="text-foreground/60 underline hover:text-foreground/80" href="">
+                <a
+                  className="text-foreground/60 underline hover:text-foreground/80"
+                  href=""
+                >
                   Terms of Service
                 </a>{" "}
                 and{" "}
-                <a className="text-foreground/60 underline hover:text-foreground/80" href="">
+                <a
+                  className="text-foreground/60 underline hover:text-foreground/80"
+                  href=""
+                >
                   Privacy Policy.
                 </a>
               </p>

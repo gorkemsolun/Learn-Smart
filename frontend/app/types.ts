@@ -1,4 +1,5 @@
 import { HierarchyNode, SimulationNodeDatum } from "d3";
+import { List } from "postcss/lib/list";
 import React, { ReactNode } from "react";
 
 export interface User {
@@ -15,8 +16,8 @@ export interface Course {
   course_name: string;
   course_code: string;
   course_description: string;
-  course_icon_url?: string;
-  course_syllabus_url?: string;
+  course_icon_fid?: string;
+  course_syllabus_fid?: string;
   course_syllabus?: File;
   course_icon?: File;
 }
@@ -41,10 +42,11 @@ export interface Tier {
   badge?: any; // TODO: Define the type for badge
 }
 export interface Message {
-  message_id: number;
-  role: "user" | "model";
+  role: "user" | "assistant";
   text: string;
-  media_url?: string | null;
+  filenames?: string[];
+  media_urls?: string[];
+  media_types?: string[];
 }
 
 export interface Chat {
@@ -60,9 +62,9 @@ export interface Slide {
   chat_id: string;
   slide_id: string;
   slides_file_name: string;
-  slides_file_url?: string;
+  slides_fid?: string;
   pages_count: number;
-  last_slide_number: number;
+  last_opened_page_number: number;
 }
 
 export interface Notification {
@@ -103,6 +105,7 @@ export interface ConfirmationDialogProps {
 }
 
 export interface CourseCardProps {
+  token: string;
   course: Course;
   onCourseDelete: (courseId: string | undefined) => void;
   onCourseUpdate: () => void;

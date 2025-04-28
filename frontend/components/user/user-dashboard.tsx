@@ -1,31 +1,24 @@
 "use client";
 
-import * as React from "react";
 import dayjs from "dayjs";
-import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 import { Course } from "@/app/types";
+import { UserChart } from "@/components/analytics/user-analytics";
 import { CourseDialogModal } from "@/components/course/course-dialog";
 import { CoursesList } from "@/components/course/courses-list";
-import { UserChart } from "@/components/analytics/user-analytics";
-import {
-  Card,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { ToastAction } from "@/components/ui/toast";
-import { backendAPI } from "@/environment/backend_api";
+import { userService } from "@/environment/backend_api";
+import { useToast } from "@/hooks/use-toast";
 import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
-
-import HubIcon from "@mui/icons-material/Hub";
-import ChatIcon from "@mui/icons-material/Chat";
-import PersonIcon from "@mui/icons-material/Person";
 import { AutoGraph } from "@mui/icons-material";
+import ChatIcon from "@mui/icons-material/Chat";
+import HubIcon from "@mui/icons-material/Hub";
+import PersonIcon from "@mui/icons-material/Person";
 import { LoadingSpinner } from "../loading-spinner";
-import { start } from "repl";
 
 // Helper function to map dates to weekdays
 const mapDateToDay = (dateString: string): string => {
@@ -57,7 +50,7 @@ export default function UserDashboard() {
     startLoading(); // Start loading before fetching data
     try {
       // Fetch courses first
-      const coursesResponse = await backendAPI.get("/users/me", {
+      const coursesResponse = await userService.get("/user", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -69,28 +62,36 @@ export default function UserDashboard() {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Fetch analytics
-      const analyticsResponse = await backendAPI.get("/analytics/", {
+      const analyticsResponse = await userService.get("/analytics", {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
 
       const getLast7Days = () => {
-        return [...Array(7)].map((_, i) => dayjs().subtract(6 - i, "day").format("YYYY-MM-DD"));
+        return [...Array(7)].map((_, i) =>
+          dayjs()
+            .subtract(6 - i, "day")
+            .format("YYYY-MM-DD")
+        );
       };
 
       const last7Days = getLast7Days(); // Get the last 7 days in order
 
-      const formattedData = analyticsResponse.data.map((item: { date: string; time_spent: number; timestamp: string }) => ({
-        day: mapDateToDay(item.date),
-        date: item.date,
-        timeSpent: item.time_spent,
-        timestamp: item.timestamp,
-      }));
+      const formattedData = analyticsResponse.data.map(
+        (item: { date: string; time_spent: number; timestamp: string }) => ({
+          day: mapDateToDay(item.date),
+          date: item.date,
+          timeSpent: item.time_spent,
+          timestamp: item.timestamp,
+        })
+      );
 
       const chartData = last7Days.map((date) => {
-        const found = formattedData.find((item: { date: string; timeSpent: number; timestamp: string }) => item.date === date);
+        const found = formattedData.find(
+          (item: { date: string; timeSpent: number; timestamp: string }) =>
+            item.date === date
+        );
         return {
           day: mapDateToDay(date),
           date,
@@ -99,6 +100,18 @@ export default function UserDashboard() {
         };
       });
       setChartData(chartData);
+
+      /* 
+      // Mock data until analytics service is implemented
+      setChartData([
+        { day: "Mon", timeSpent: 0 },
+        { day: "Tue", timeSpent: 0 },
+        { day: "Wed", timeSpent: 0 },
+        { day: "Thu", timeSpent: 0 },
+        { day: "Fri", timeSpent: 0 },
+        { day: "Sat", timeSpent: 0 },
+        { day: "Sun", timeSpent: 0 },
+      ]); */
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       /*
@@ -131,7 +144,10 @@ export default function UserDashboard() {
       title: "Chat",
       content: "Ask, learn using chatbot.",
       icon: <ChatIcon className="text-3xl md:text-4xl" />,
-      link: courses.length === 0 ? "error_chat" : `/course/${courses[0].course_id}/chat`,
+      link:
+        courses.length === 0
+          ? "error_chat"
+          : `/course/${courses[0].course_id}/chat`,
     },
     {
       title: "Engagement Metrics",
@@ -154,10 +170,7 @@ export default function UserDashboard() {
         description: "Please create a course before accessing the chat.",
         variant: "destructive",
         action: (
-          <ToastAction
-            altText="Create"
-            onClick={() => setCourseDialog(true)}
-          >
+          <ToastAction altText="Create" onClick={() => setCourseDialog(true)}>
             Create
           </ToastAction>
         ),
@@ -168,11 +181,11 @@ export default function UserDashboard() {
     if (link) {
       startLoading(); // Start loading before navigation
       router.push(link);
-    } 
+    }
   };
 
   if (loading) return <LoadingSpinner />;
-  
+
   return (
     <div className="mx-auto space-y-6 p-4 sm:p-6 lg:p-4">
       {/* Cards Section */}
@@ -183,17 +196,17 @@ export default function UserDashboard() {
             onClick={() => handleCardClick(card.link)}
             className="h-full cursor-pointer transition-shadow duration-300 hover:shadow-lg"
           >
-            <div className="flex h-[24vh] items-center rounded-xl bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-3 sm:p-4 lg:p-6">
+            <div className="from-primary/5 via-secondary/5 to-background flex h-[24vh] items-center rounded-xl bg-gradient-to-br p-3 sm:p-4 lg:p-6">
               <div className="min-w-0 grow space-y-2">
                 <CardTitle className="max-w-[90%] truncate text-base font-bold md:text-lg lg:text-xl">
                   {card.title}
                 </CardTitle>
-                <CardDescription className="max-w-[95%] truncate text-sm text-muted-foreground md:text-base">
+                <CardDescription className="text-muted-foreground max-w-[95%] truncate text-sm md:text-base">
                   {card.content}
                 </CardDescription>
               </div>
               <div
-                className="ml-2 flex size-[6vh] shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary md:size-[7vh]"
+                className="bg-primary/10 text-primary ml-2 flex size-[6vh] shrink-0 items-center justify-center rounded-full md:size-[7vh]"
                 aria-hidden="true"
               >
                 {card.icon}

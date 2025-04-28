@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Cookies from "js-cookie";
-import { backendAPI } from "@/environment/backend_api";
+import { backendAPI, userService } from "@/environment/backend_api";
 
 export default function useExitTracker() {
   const hasExited = useRef(false);
@@ -12,7 +12,7 @@ export default function useExitTracker() {
     const sendPendingAnalytics = () => {
       const pendingAnalytics = JSON.parse(localStorage.getItem("pendingAnalytics") || "[]");
       if (pendingAnalytics.length > 0) {
-        pendingAnalytics.forEach((item, index) => {
+        pendingAnalytics.forEach((item: { url: string | URL | Request; token: any; data: any; }, index: any) => {
           fetch(item.url, {
             method: "POST",
             headers: {
@@ -86,7 +86,7 @@ export default function useExitTracker() {
           );
 
           // Use fetch with keepalive flag which is designed for this scenario
-          fetch(`${backendAPI.defaults.baseURL}/analytics/log`, {
+          fetch(`${userService.defaults.baseURL}/analytics`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -106,7 +106,7 @@ export default function useExitTracker() {
         // If offline, store the analytics data to send later
         const pendingAnalytics = JSON.parse(localStorage.getItem("pendingAnalytics") || "[]");
         pendingAnalytics.push({
-          url: `${backendAPI.defaults.baseURL}/analytics/log`,
+          url: `${userService.defaults.baseURL}/analytics`,
           data,
           token,
         });

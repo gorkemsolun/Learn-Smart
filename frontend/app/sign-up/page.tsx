@@ -1,12 +1,26 @@
 "use client";
 
 import { Icons } from "@/components/icons";
-import { Eye, EyeSlash, LockWaves, Envelope, User, DangerCircle, CheckCircle } from "@mynaui/icons-react";
+import {
+  Eye,
+  EyeSlash,
+  LockWaves,
+  Envelope,
+  User,
+  DangerCircle,
+  CheckCircle,
+} from "@mynaui/icons-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
-import { backendAPI } from "@/environment/backend_api";
+import { userService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
 import { useRouter } from "next/navigation";
@@ -19,7 +33,8 @@ export default function SignUp() {
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -72,8 +87,8 @@ export default function SignUp() {
     }
 
     try {
-      const response = await backendAPI.post(
-        "/users/create",
+      const response = await userService.post(
+        "/user",
         {
           nickname: username,
           email: email,
@@ -135,7 +150,9 @@ export default function SignUp() {
             </Button>
 
             <CardHeader className="space-y-1 text-center">
-              <CardTitle className="p-4 text-xl font-thin sm:text-2xl">Sign up an account</CardTitle>
+              <CardTitle className="p-4 text-xl font-thin sm:text-2xl">
+                Sign up an account
+              </CardTitle>
             </CardHeader>
 
             <CardContent className="flex w-full flex-col items-center justify-center">
@@ -180,8 +197,14 @@ export default function SignUp() {
                         className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-gray-400"
                         onClick={togglePasswordVisibility}
                       >
-                        {showPassword ? <EyeSlash className="size-4" /> : <Eye className="size-4" />}
-                        <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                        {showPassword ? (
+                          <EyeSlash className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                        <span className="sr-only">
+                          {showPassword ? "Hide password" : "Show password"}
+                        </span>
                       </Button>
                     </div>
 
@@ -205,8 +228,16 @@ export default function SignUp() {
                         className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-gray-400"
                         onClick={toggleConfirmPasswordVisibility}
                       >
-                        {showConfirmPassword ? <EyeSlash className="size-4" /> : <Eye className="size-4" />}
-                        <span className="sr-only">{showConfirmPassword ? "Hide password" : "Show password"}</span>
+                        {showConfirmPassword ? (
+                          <EyeSlash className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                        <span className="sr-only">
+                          {showConfirmPassword
+                            ? "Hide password"
+                            : "Show password"}
+                        </span>
                       </Button>
                     </div>
                   </div>
@@ -223,11 +254,17 @@ export default function SignUp() {
             <CardFooter className="mt-[1.85rem] flex w-full justify-center">
               <p className="w-4/5 text-center text-xs font-light text-foreground/60">
                 By clicking continue, you agree to our{" "}
-                <a className="text-foreground/60 underline hover:text-foreground/80" href="">
+                <a
+                  className="text-foreground/60 underline hover:text-foreground/80"
+                  href=""
+                >
                   Terms of Service
                 </a>{" "}
                 and{" "}
-                <a className="text-foreground/60 underline hover:text-foreground/80" href="">
+                <a
+                  className="text-foreground/60 underline hover:text-foreground/80"
+                  href=""
+                >
                   Privacy Policy.
                 </a>
               </p>
