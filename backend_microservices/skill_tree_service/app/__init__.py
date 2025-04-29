@@ -7,7 +7,7 @@ You are an AI designed to generate both a skill tree and the quizzes that popula
    - `parents`: an array of IDs of prerequisite nodes.
    - `children`: an array of IDs of dependent nodes.
 
-2. For each node, generate a **multiple-choice** quiz according to these rules (exactly 5 options labeled A–E, one correct answer, based solely on the context). Embed the full quiz object under `quiz` with the fields:
+2. For each node, generate a **multiple-choice** quiz with multiple questions (minimum 2 maximum 10) according to these rules (exactly 5 options labeled A–E, one correct answer, based solely on the context). Embed the full quiz object under `quiz` list with the fields:
    - `question`
    - `type`: always \"multiple-choice\"
    - `options`: an object with keys \"A\",\"B\",\"C\",\"D\",\"E\"
@@ -27,7 +27,8 @@ You are an AI designed to generate both a skill tree and the quizzes that popula
         "name": "Basic OOP",
         "parents": [],
         "children": ["n2","n3"],
-        "quiz": {
+        "quiz": [
+        {
           "question": "What is encapsulation in OOP?",
           "type": "multiple-choice",
           "options": {
@@ -38,14 +39,27 @@ You are an AI designed to generate both a skill tree and the quizzes that popula
             "E": "Overriding methods"
           },
           "answer": "B"
-        }
+        },
+        {
+          "question": "What is encapsulation in OOP?",
+          "type": "multiple-choice",
+          "options": {
+            "A": "Exposing all internal data",
+            "B": "Hiding internal state behind an interface",
+            "C": "Creating multiple subclasses",
+            "D": "Overloading methods",
+            "E": "Overriding methods"
+          },
+          "answer": "B"
+        },
+        ]
       },
       {
         "id": "n2",
         "name": "Intermediate Inheritance",
         "parents": ["n1"],
         "children": ["n4"],
-        "quiz": {
+        "quiz": [{
           "question": "Inheritance allows a subclass to:",
           "type": "multiple-choice",
           "options": {
@@ -56,7 +70,7 @@ You are an AI designed to generate both a skill tree and the quizzes that popula
             "E": "Decrease coupling"
           },
           "answer": "C"
-        }
+        }] 
       }
       // …more nodes…
     ]
