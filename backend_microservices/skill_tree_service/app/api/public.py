@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 from skill_tree_service.app.database.model import Quiz, SkillTree, SkillTreeEdge, SkillTreeNode
 from sqlalchemy.orm import Session
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/public", tags=["SkillTree - Public API"])
 async def create_skill_tree(course_id: int, 
                      current_user: dict = Depends(user.get_current_user),
                      db: Session = Depends(get_db)):
+    
     
     pass
 
@@ -65,14 +67,14 @@ async def get_skill_tree(course_id: int,
     for n in nodes:
         q = quiz_map.get(n.id)
     
-        #TODO: Fetch from filemanager
-        quiz_payload = []
+        quiz_bytes = await filemanager.download(file_id=q.quiz_fid)
+        quiz_dict = json.loads(quiz_bytes.decode('utf-8'))
 
         title = q.quiz_title if q else f"Quiz {n.id}"
         nodes_payload.append({
             "id":   f"n{n.id}",
             "name": title,
-            "quiz": quiz_payload,                          # placeholder for later
+            "quiz": quiz_dict,                          # placeholder for later
             "state": n.state.value,
         })
 
