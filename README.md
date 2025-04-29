@@ -81,12 +81,7 @@ In summary, Edux provides essential tools and resources through a web applicatio
 
 ## Docker Setup
 
-1. Create a .env file as described above but change DATABASE_URL= (your MySQL DB URI, example: `mysql://\<username>:\<password>@database/<database_name>`) instead of using @localhost use @database. Credentials provided in `init.sql`.
-
-2. Add the following string to the .env file: `MYSQL_ROOT_PASSWORD=<your_password>` you can change the password as you wish
-
-3. Make sure docker is running and run the following command line: `docker compose up`.
-
-4. If you make changes to the database do: `docker compose rm` and `docker volume rm learn-smart_db` then do `docker compose build` then `docker compose up`. You may need to stop before removing.
-
-5. If you get an error indicating that port 3306 is being used, stop mysql daemon in your machine or change the port in the docker-compose.yml as `3307:3306`.
+1. Put the .env files to the respective service's app folder. Make sure they have "LF" line ending.
+2. docker compose up --build (for the first time and when you make changes to your files, otherwise you don't need --build).
+3. If you want to delete your database, run docker compose down -v.
+4. If you want to quickly make a change in a service and don't want to put everything down you can do: docker compose stop <service_name (e.g. user_service>, docker compose build <service_name> then docker compose start <service_name> 
