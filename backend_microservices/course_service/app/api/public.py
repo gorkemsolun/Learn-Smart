@@ -308,38 +308,47 @@ async def delete_course(course_id: int,
                         current_user: dict = Depends(user.get_current_user),
                         db: Session = Depends(get_db)):
     """
-    Delete a course.
+   Delete a course.
 
-    Args:
-        course_id (int): The ID of the course to delete.
-        current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
+   Args:
+       course_id (int): The ID of the course to delete.
+       current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
 
-    Returns:
-        Success message.
+   Returns:
+       Success message.
 
-    Raises:
-        HTTPException: If there is an error deleting the course.
-    """
+   Raises:
+       HTTPException: If there is an error deleting the course.
+   """
+    # 1) fetch & auth
     course = CourseDB.fetch(db, course_id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
-
     if course["user_id"] != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Forbidden - Not authorized to delete this course.")
+        raise HTTPException(status_code=403, detail="Forbidden.")
 
-    course_syllabus_fid = course["course_syllabus_fid"]
-    if course_syllabus_fid: 
-        await filemanager.delete(course_syllabus_fid)
-    
-    course_icon_fid = course["course_icon_fid"]
-    if course_icon_fid: 
-        await filemanager.delete(course_icon_fid)
-        
-    course_study_plan_fid = course["course_study_plan_fid"]
-    if course_study_plan_fid: 
-        await filemanager.delete(course_study_plan_fid)
+    # 2) delete any stored files, but swallow errors
+    for fid in (
+        course.get("course_syllabus_fid"),
+        course.get("course_icon_fid"),
+        course.get("course_study_plan_fid"),
+    ):
+        if fid:
+            try:
+                await filemanager.delete(fid)
+            except Exception:
+                pass
 
-    await chat.delete_chats(course_id=course_id)
+    # 3) delete chats, but swallow “not found”
+    try:
+        await chat.delete_chats(course_id=course_id)
+    except Exception:
+        pass
 
-    CourseDB.delete(course_id=course_id)  # delete the course
-    return {"status": "Success", "course": course}
+    # 4) delete from DB
+    try:
+        deleted = CourseDB.delete(db, course_id=course_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"status": "Success", "deleted": deleted}

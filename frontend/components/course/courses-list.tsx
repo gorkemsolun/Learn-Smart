@@ -16,9 +16,9 @@ export function CoursesList(modalParameters: CoursesListProps) {
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const { toast } = useToast();
 
-  const handleDeleteCourse = async (courseId: string) => {
+  const handleDeleteCourse = async (courseId: string | undefined) => {
       try {
-        await courseService.delete(`/course/${courseId}`, {
+        await courseService.delete(`/${courseId}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,

@@ -145,11 +145,6 @@ export function CourseCard(modalParameters: CourseCardProps) {
                 description={`Are you sure you want to delete course "${modalParameters.course.course_name}"? This action cannot be undone.`}
                 triggerButtonLabel={<Trash className="size-4" />}
                 onConfirm={() => modalParameters.onCourseDelete(modalParameters.course.course_id)}
-                triggerButtonProps={{
-                  size: "icon",
-                  variant: "outline",
-                  "aria-label": "Delete course",
-                }}
               />
             </div>
           </CardFooter>
