@@ -1,27 +1,41 @@
 "use client";
 
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
-import type { Course, CourseDialogProps } from "@/app/types";
+import type { Course } from "@/app/types";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
 import { courseService, filemanagerService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
+import { FileCheck, FileText, Image } from "@mynaui/icons-react";
 import Cookies from "js-cookie";
 import type * as React from "react";
-import { useCallback, useEffect, useState, useRef } from "react";
-import { Label } from "@/components/ui/label";
-import { FileCheck, FileText, Image } from "@mynaui/icons-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export function CourseDialogModal(props: CourseDialogProps) {
+export function CourseDialogModal(props: {
+  isCreate: boolean;
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onCourseUpdate: () => void;
+  onCourseCreation?: () => void;
+  course: Course;
+}) {
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
-  const [disableSubmitButton, setDisableSubmitButton] = useState<boolean>(false);
+  const [disableSubmitButton, setDisableSubmitButton] =
+    useState<boolean>(false);
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const [originalCourseData, setOriginalCourseData] = useState<Course>();
 
@@ -65,17 +79,25 @@ export function CourseDialogModal(props: CourseDialogProps) {
       let iconFile: File | undefined = undefined;
 
       if (course_syllabus_fid) {
+        console.log("course_syllabus_fid", course_syllabus_fid);
         try {
-          const response = await filemanagerService.get(`/${course_syllabus_fid}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const response = await filemanagerService.get(
+            `/${course_syllabus_fid}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           const syllabus_url = response.data.file_url;
           const syllabus_filename = response.data.file_name;
           const syllabusBlob = await (await fetch(syllabus_url)).blob();
           const syllabusExtension = syllabus_filename.split(".").pop();
-          syllabusFile = new File([syllabusBlob], `syllabus.${syllabusExtension}`, {
-            type: syllabusBlob.type,
-          });
+          syllabusFile = new File(
+            [syllabusBlob],
+            `syllabus.${syllabusExtension}`,
+            {
+              type: syllabusBlob.type,
+            }
+          );
           setSyllabus(syllabusFile);
         } catch (syllabusError) {
           console.error("Error fetching syllabus file:", syllabusError);
@@ -83,6 +105,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
       }
 
       if (course_icon_fid) {
+        console.log("course_icon_fid", course_icon_fid);
         try {
           const response = await filemanagerService.get(`/${course_icon_fid}`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -101,6 +124,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
       }
 
       setOriginalCourseData({
+        course_id: props.course?.course_id,
         course_name,
         course_code,
         course_description,
@@ -118,7 +142,6 @@ export function CourseDialogModal(props: CourseDialogProps) {
     }
   }, [props.course, toast]);
 
-
   useEffect(() => {
     if (!props.isCreate && props.isOpen) {
       fetchCourseDetails();
@@ -128,17 +151,32 @@ export function CourseDialogModal(props: CourseDialogProps) {
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
     setter: React.Dispatch<React.SetStateAction<File | null>>,
-    fileType: string,
+    fileType: string
   ) {
     const file = event.target.files && event.target.files[0];
     handleFile(file, setter, fileType);
+    console.log("handleFileChange", file);
   }
 
-  function handleFile(file: File | null, setter: React.Dispatch<React.SetStateAction<File | null>>, fileType: string) {
+  function handleFile(
+    file: File | null,
+    setter: React.Dispatch<React.SetStateAction<File | null>>,
+    fileType: string
+  ) {
+    console.log("handleFile", file, fileType);
+
     // Check if file is of correct type for document
-    if (file && fileType === "document" && documentMimeTypes.includes(file.type)) {
+    if (
+      file &&
+      fileType === "document" &&
+      documentMimeTypes.includes(file.type)
+    ) {
       setter(file);
-    } else if (file && fileType === "image" && imageMimeTypes.includes(file.type)) {
+    } else if (
+      file &&
+      fileType === "image" &&
+      imageMimeTypes.includes(file.type)
+    ) {
       setter(file);
     } else {
       setter(null);
@@ -185,10 +223,10 @@ export function CourseDialogModal(props: CourseDialogProps) {
       if (!props.isCreate) {
         formData.append("course_update_syllabus", "true");
       }
-    } else if(!props.isCreate && originalCourseData?.course_syllabus) {
-      {/* TO-DO THIS DOESN'T WORK BACKEND SHOULD FIX THIS HAVE ADDITIONAL FIELD */}
+    } else if (!props.isCreate && originalCourseData?.course_syllabus) {
       formData.append("course_update_syllabus", "true");
     }
+
     if (icon) {
       formData.append("course_icon_file", icon);
       if (!props.isCreate) {
@@ -212,13 +250,19 @@ export function CourseDialogModal(props: CourseDialogProps) {
 
     try {
       if (!props.isCreate) {
-        await courseService.put(`/${props.course?.course_id}`, formData, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        const response = await courseService.put(
+          `/${props.course?.course_id}`,
+          formData,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        console.log("response", response.data);
 
         props.onCourseUpdate();
         toast({
@@ -259,6 +303,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
         });
       }
     } catch (error) {
+      console.error("Error:", error);
       toast({
         title: "Error",
         description: `Error ${props.isCreate ? "creating" : "updating"} course`,
@@ -277,7 +322,9 @@ export function CourseDialogModal(props: CourseDialogProps) {
     <Dialog open={props.isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[650px]">
         <DialogHeader>
-          <DialogTitle>{props.isCreate ? "Create" : "Edit"} Individual Study</DialogTitle>
+          <DialogTitle>
+            {props.isCreate ? "Create" : "Edit"} Individual Study
+          </DialogTitle>
         </DialogHeader>
 
         <form className="space-y-2 py-2" onSubmit={handleSubmit}>
@@ -327,7 +374,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
                 Syllabus (PDF or DOCX)
               </Label>
               <div
-                className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
+                className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -338,16 +385,24 @@ export function CourseDialogModal(props: CourseDialogProps) {
                 {syllabus ? (
                   <div className="flex flex-col items-center text-center">
                     {syllabus.name.endsWith(".pdf") ? (
-                        <div className="mb-2 rounded-full bg-primary/10 p-2">
-                          <FileCheck className="size-6 text-primary" />
-                        </div>
+                      <div className="bg-primary/10 mb-2 rounded-full p-2">
+                        <FileCheck
+                          className="text-primary size-6"
+                          aria-hidden="true"
+                        />
+                      </div>
                     ) : (
-                      <div className="mb-2 rounded-full bg-primary/10 p-2">
-                        <FileText className="size-6 text-primary" />
+                      <div className="bg-primary/10 mb-2 rounded-full p-2">
+                        <FileText
+                          className="text-primary size-6"
+                          aria-hidden="true"
+                        />
                       </div>
                     )}
                     <p className="text-sm font-medium">{syllabus.name}</p>
-                    <p className="text-xs text-muted-foreground">{(syllabus.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p className="text-muted-foreground text-xs">
+                      {(syllabus.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
                     <Button
                       type="button"
                       variant="outline"
@@ -364,21 +419,29 @@ export function CourseDialogModal(props: CourseDialogProps) {
                     </Button>
                   </div>
                 ) : (
-                  <label htmlFor="syllabus" className="flex cursor-pointer flex-col items-center text-center">
-                    <div className="mb-2 rounded-full bg-primary/10 p-2">
-                      <FileText className="size-6 text-primary" />
+                  <label
+                    htmlFor="syllabus"
+                    className="flex cursor-pointer flex-col items-center text-center"
+                  >
+                    <div className="bg-primary/10 mb-2 rounded-full p-2">
+                      <FileText className="text-primary size-6" />
                     </div>
                     <p className="text-sm font-light">
-                      <span className="text-primary">Click to upload</span> or drag and drop
+                      <span className="text-primary">Click to upload</span> or
+                      drag and drop
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">PDF or DOCX (max 10MB)</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      PDF or DOCX (max 10MB)
+                    </p>
                   </label>
                 )}
                 <input
                   id="syllabus"
                   type="file"
                   accept=".pdf,.docx"
-                  onChange={(event) => handleFileChange(event, setSyllabus, "document")}
+                  onChange={(event) =>
+                    handleFileChange(event, setSyllabus, "document")
+                  }
                   className="hidden"
                   ref={syllabusInputRef}
                 />
@@ -390,7 +453,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
                 Course Icon (JPG, JPEG or PNG)
               </Label>
               <div
-                className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
+                className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -400,11 +463,13 @@ export function CourseDialogModal(props: CourseDialogProps) {
               >
                 {icon ? (
                   <div className="flex flex-col items-center text-center">
-                    <div className="mb-2 rounded-full bg-primary/10 p-2">
-                      <Image className="size-6 text-primary" />
+                    <div className="bg-primary/10 mb-2 rounded-full p-2">
+                      <Image className="text-primary size-6" />
                     </div>
                     <p className="text-sm font-medium">{icon.name}</p>
-                    <p className="text-xs text-muted-foreground">{(icon.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p className="text-muted-foreground text-xs">
+                      {(icon.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
                     <Button
                       type="button"
                       variant="outline"
@@ -421,21 +486,29 @@ export function CourseDialogModal(props: CourseDialogProps) {
                     </Button>
                   </div>
                 ) : (
-                  <label htmlFor="image" className="flex cursor-pointer flex-col items-center text-center">
-                    <div className="mb-2 rounded-full bg-primary/10 p-2">
-                      <Image className="size-6 text-primary" />
+                  <label
+                    htmlFor="image"
+                    className="flex cursor-pointer flex-col items-center text-center"
+                  >
+                    <div className="bg-primary/10 mb-2 rounded-full p-2">
+                      <Image className="text-primary size-6" />
                     </div>
                     <p className="text-sm font-light">
-                      <span className="text-primary">Click to upload</span> or drag and drop
+                      <span className="text-primary">Click to upload</span> or
+                      drag and drop
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">JPG, JPEG or PNG (max 10MB)</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      JPG, JPEG or PNG (max 10MB)
+                    </p>
                   </label>
                 )}
                 <input
                   id="image"
                   type="file"
                   accept=".jpg,.jpeg,.png"
-                  onChange={(event) => handleFileChange(event, setIcon, "image")}
+                  onChange={(event) =>
+                    handleFileChange(event, setIcon, "image")
+                  }
                   className="hidden"
                   ref={iconInputRef}
                 />
@@ -443,10 +516,19 @@ export function CourseDialogModal(props: CourseDialogProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleOpenChange} className="mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleOpenChange}
+              className="mt-2"
+            >
               Cancel
             </Button>
-            <Button className="mt-2" type="submit" disabled={!courseName || !courseCode || disableSubmitButton}>
+            <Button
+              className="mt-2"
+              type="submit"
+              disabled={!courseName || !courseCode || disableSubmitButton}
+            >
               {disableSubmitButton
                 ? props.isCreate
                   ? "Creating..."

@@ -65,7 +65,7 @@ async def create_course(course_name: str = Form(...),
             )
 
             # send the syllabus to GenAI service for weekly study plan generation
-            study_plan_text = await genai.create_study_plan(course_syllabus_file)
+            study_plan_text = await genai.create_study_plan(course_syllabus_file, timeout=120)
             
             with tempfile.NamedTemporaryFile(
                 suffix='.md', mode='w+', encoding='utf-8', delete=True
@@ -341,5 +341,5 @@ async def delete_course(course_id: int,
 
     await chat.delete_chats(course_id=course_id)
 
-    CourseDB.delete(course_id=course_id)  # delete the course
+    CourseDB.delete(db, course_id=course_id)  # delete the course
     return {"status": "Success", "course": course}
