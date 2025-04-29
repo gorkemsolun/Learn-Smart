@@ -5,6 +5,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8001:8001"
+    develop:  
+      watch:
+        - action: sync+restart
+          path: ./auth_service        # host folder to watch
+          target: /auth_service 
     env_file:
       - ./auth_service/app/.env
     networks:
@@ -16,8 +21,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8002:8002"
-    depends_on:
-      - mysql_chat
+    develop:  
+      watch:
+        - action: sync+restart
+          path: ./chat_service        # host folder to watch
+          target: /chat_service 
     env_file:
       - ./chat_service/app/.env
     networks:
@@ -29,6 +37,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8003:8003"
+    develop:  
+      watch:
+        - action: sync+restart
+          path: ./course_service        # host folder to watch
+          target: /course_service 
     depends_on:
       - mysql_course
     env_file:
@@ -42,6 +55,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8004:8004"
+    develop:  
+      watch:
+        - action: sync+restart
+          path: ./filemanager_service        # host folder to watch
+          target: /filemanager_service 
     depends_on:
       - mysql_filemanager
     env_file:
@@ -55,6 +73,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8005:8005"
+    develop:  
+      watch:
+        - action: sync+restart
+          path: ./genai_service        # host folder to watch
+          target: /genai_service 
     env_file:
       - ./genai_service/app/.env.devel
     networks:
@@ -66,6 +89,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8007:8007"
+    develop:  
+      watch:
+        - action: sync+restart
+          path: ./user_service        # host folder to watch
+          target: /user_service 
     depends_on:
       - mysql_user
     env_file:

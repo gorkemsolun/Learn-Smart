@@ -61,7 +61,7 @@ async def get_all_chat_histories_of_course(course_id: int,
                        db: Session = Depends(get_db)):
     
     chats = ChatDB.fetch(db, course_id=course_id, all=True)
-    all_histories = [] #ChatHistory list
+    all_history_fids= [] 
     for chat in chats:
         if chat["slides_mode"]:
             history_fids = []
@@ -74,23 +74,12 @@ async def get_all_chat_histories_of_course(course_id: int,
 
             if len(history_fids) == 0:
                 raise HTTPException(status_code=400, detail="No messages found in the chat history to generate quiz.")
-            
-            history_fids = sorted(history_fids)
-            histories = []
-            for history_fid in history_fids:
-                history_bytes = await filemanager.download(file_id=history_fid)
-                history = ChatHistory.from_bytes(history_bytes)
-                histories.append(history)
-
-            history = ChatHistory.merge(histories)
-            all_histories.append(history)
-
         else:
-            history_fid = chat["history_fid"]
-            if not history_fid:
+            history_fids = chat["history_fid"]
+            if not history_fids:
                 raise HTTPException(status_code=400, detail="No chat history found to generate quiz.")
-            history_bytes = await filemanager.download(file_id=history_fid)
-            history = ChatHistory.from_bytes(history_bytes)
-            all_histories.append(history)
+        all_history_fids.extend(history_fids)    
+    
+    all_history_fids = sorted(all_history_fids)
 
-    return {"status": "success", "data": json.dumps([h.google() for h in all_histories])}
+    return {"status": "success", "data": json.dumps(all_history_fids)}

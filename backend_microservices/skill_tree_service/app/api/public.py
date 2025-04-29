@@ -11,7 +11,7 @@ from skill_tree_service.app.database.session import get_db
 from skill_tree_service.app.util import validate_file_extension, resize_image
 #from skill_tree_service.app.schemas import SkillTreeCreationRequest, SkillTreeUpdateRequest
 
-from skill_tree_service.app.clients import user, genai, filemanager, course
+from skill_tree_service.app.clients import user, genai, filemanager, chat
 
 router = APIRouter(prefix="/public", tags=["SkillTree - Public API"])
 
@@ -19,6 +19,8 @@ router = APIRouter(prefix="/public", tags=["SkillTree - Public API"])
 async def create_skill_tree(course_id: int, 
                      current_user: dict = Depends(user.get_current_user),
                      db: Session = Depends(get_db)):
+    
+    all_history_fids = await chat.get_all_chat_histories_of_course(course_id)
     
     
     pass
