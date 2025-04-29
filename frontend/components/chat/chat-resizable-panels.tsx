@@ -3,10 +3,10 @@
 import type React from "react";
 import {useEffect, useRef, useState} from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import type { ChatResizablePanelsProps, Slide, SlideResponse, ChatHistoryResponse } from "@/app/types";
+import type { ChatResizablePanelsProps, Slide, ChatHistoryResponse } from "@/app/types";
 import SlidePanel from "@/components/chat/slide-panel";
 import ChatInterface from "@/components/chat/chat-interface";
-import {backend, backendAPI, chatService} from "@/environment/backend_api";
+import {chatService, filemanagerService} from "@/environment/backend_api";
 import { toast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import {Message} from "@/app/types";
@@ -21,7 +21,7 @@ export default function ChatResizablePanels({
   const [currentSlidePage, setCurrentSlidePage] = useState(1); // Current slide page number
   const [isSlidesLoading, setIsSlidesLoading] = useState(false); // Loading state for slide fetches
   const [isMessagesLoading, setIsMessagesLoading] = useState(false); // Loading state for slide fetches
-  const [presentationFiles, setPresentationFiles] = useState<{ slide_id: string; slides_file_name: string }[]>([]);
+  const [presentationFiles, setPresentationFiles] = useState<{slide_id: string, slides_file_name: string}[]>([]);
   const [activeFile, setActiveFile] = useState<{ filename: string; slide_id: string }>({
     filename: "",
     slide_id: "",
@@ -57,13 +57,117 @@ export default function ChatResizablePanels({
     });
   };
 
-  // API call to fetch a specific slide page
-  const fetchSlide = (chatID: string, slideID: string, pageNumber: number) => {
-    if (!token || !chatID || !slideID || pageNumber <= 0) {
-      console.error("Invalid parameters");
+  useEffect(() => {
+    if (activeChat) {
+      const slideID = activeChat.slides_mode ? activeChat.last_opened_slide_id : null;
+      if (slideID) {
+        setPresentationFiles(
+          activeChat.slides
+            ? activeChat.slides.map((slide) => ({
+                slide_id: slide.slide_id,
+                slides_file_name: slide.slides_file_name,
+              }))
+            : []
+        );
+        fetchSlideInfo(slideID)
+          .then((response) => {
+            const slide: Slide = response.data;
+            const lastPageNumber = slide.last_opened_page_number; // last page seen by user
+
+            setActiveFile({ filename: slide.slides_file_name, slide_id: slide.slide_id });
+
+            setCurrentSlide(slide);
+            setCurrentSlidePage((lastPageNumber));
+            fetchSlidePage(slideID, lastPageNumber)
+              .then(async (response) => {
+                const slideBase64 = response.data.slide;
+                const history = response.data.history;
+                const formattedHistory = await formatHistory(history);
+                setImgSrc(`data:image/png;base64,${slideBase64}`);
+                setActiveMessages(formattedHistory);
+              })
+              .catch((error) => {
+                console.error("Error fetching slide:", error);
+              });
+          })
+          .catch((error) => {
+            console.error("Error fetching slide info:", error);
+          });
+      } else {
+        setActiveFile({ filename: '', slide_id: '' });
+        setCurrentSlide({} as Slide);
+        setCurrentSlidePage(-1);
+        setPresentationFiles([]);
+        setImgSrc(undefined);
+
+        const chatID = activeChat.chat_id;
+        if (chatID) {
+          fetchChat(activeChat.chat_id)
+            .then(async (response) => {
+              const history = response.data.history;
+
+              // Convert fids to urls and wait for all promises to resolve
+              const formattedHistory = await formatHistory(history);
+              setActiveMessages(formattedHistory);
+            })
+            .catch((error) => {
+              console.error("Error fetching chat messages:", error);
+            });
+        }
+      }
+    }
+  }, [activeChat]);
+
+  // Fetch slide info and messages when activeFile changes (for slide-enabled chats)
+  useEffect(() => {
+     if (!activeFile.filename || !activeChat || !activeChat.slides_mode) return;
+
+    setIsSlidesLoading(true);
+    setIsMessagesLoading(true);
+
+    if (activeFile.filename) {
+      fetchSlideInfo(activeFile.slide_id)
+      .then((response) => {
+        const slide: Slide = response.data;
+        const lastSlideNumber = slide.last_opened_page_number; // last page seen by user
+
+        setCurrentSlide(slide);
+        setCurrentSlidePage((lastSlideNumber));
+        fetchSlidePage(activeFile.slide_id, lastSlideNumber)
+          .then(async (response) => {
+            const slideBase64 = response.data.slide;
+            const history = response.data.history;
+            setImgSrc(`data:image/png;base64,${slideBase64}`);
+            const formattedHistory = await formatHistory(history);
+            setActiveMessages(formattedHistory);
+          })
+          .catch((error) => {
+            console.error("Error fetching slide:", error);
+          });
+      })
+      .catch((error) => {
+        console.error("Error fetching slide info:", error);
+      }).finally(() => {
+        setIsSlidesLoading(false);
+        setIsMessagesLoading(false);
+      });
+    }
+  }, [activeFile]);
+
+  // Scroll to bottom of chat messages
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [activeMessages]);
+
+  // Functions
+  const fetchMediaData = (fid: string) => {
+    if (!token || !fid) {
       return Promise.reject(new Error("Invalid parameters"));
     }
-    return chatService.get<SlideResponse>(`/chat/slide/${slideID}/page/${pageNumber}`, {
+
+    return filemanagerService.get(`/${fid}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -71,111 +175,38 @@ export default function ChatResizablePanels({
     });
   };
 
-  // Fetch slide info and image when activeChat changes
-  useEffect(() => {
-    if (!activeChat) return;
+  const formatHistory = async (history: Message[]) => {
+    return await Promise.all(
+      history.map(async (message: any) => {
+        let media_urls: string[] = [];
+        let media_types: string[] = [];
+        let filenames: string[] = [];
 
-    // Check if this chat uses slides
-    if (activeChat.slides_mode && activeChat.last_opened_slide_id) {
-      const slideID = activeChat.last_opened_slide_id;
-      // TO-DO Backend does not save the slides information
-      setPresentationFiles(
-        activeChat.slides
-          ? activeChat.slides.map((slide) => ({
-              slide_id: slide.slide_id,
-              slides_file_name: slide.slides_file_name,
-            }))
-          : []
-      );
+        if (message.fids?.length) {
+          // Wait for all URL fetches to complete
+          const media_data = await Promise.all(
+            message.fids.map(async (fid: string) => {
+              const response = await fetchMediaData(fid);
+              return response.data;
+            })
+          );
 
-      fetchSlideInfo(slideID)
-        .then(({ data: slide }) => {
-          const lastSlideNumber = slide.last_slide_number;
+          // Extract URLs, types and filenames from media data
+          media_urls = media_data.map(data => data.file_url);
+          media_types = media_data.map(data => data.mime_type);
+          filenames = media_data.map(data => data.file_name);
+        }
 
-          setActiveFile({ filename: slide.slides_file_name, slide_id: slide.slide_id });
-          setCurrentSlide(slide);
-          setCurrentSlidePage(lastSlideNumber);
-
-          return fetchSlide(activeChat.chat_id, slideID, lastSlideNumber);
-        })
-        .then(({ data }) => {
-          const slideBase64 = data.slide;
-          const history = data.history || [];
-
-          setImgSrc(`data:image/png;base64,${slideBase64}`);
-          setActiveMessages(history);
-          setLastMessageID(history.length > 0 ? history[history.length - 1].message_id : 0);
-        })
-        .catch((error) => {
-          console.error("Error fetching slide data:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load slide data",
-            variant: "destructive",
-          });
-        });
-    } else {
-      // For chats that do not have slide mode enabled, fall back to loading chat messages
-      setActiveFile({ filename: "", slide_id: "" });
-      setCurrentSlide({} as Slide);
-      setCurrentSlidePage(-1);
-      setPresentationFiles([]);
-      setImgSrc(undefined);
-
-      fetchChat(activeChat.chat_id)
-        .then(({ data }) => {
-          const history = data.history || [];
-          setActiveMessages(history);
-          setLastMessageID(history.length > 0 ? history[history.length - 1].message_id : 0);
-        })
-        .catch((error) => {
-          console.error("Error fetching chat messages:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load chat messages",
-            variant: "destructive",
-          });
-        });
-    }
-  }, [activeChat]);
-
-  // Fetch slide info and messages when activeFile changes (for slide-enabled chats)
-  useEffect(() => {
-    if (!activeFile.filename || !activeChat || !activeChat.slides_mode) return;
-
-    setIsSlidesLoading(true);
-    setIsMessagesLoading(true);
-
-    fetchSlideInfo(activeFile.slide_id)
-      .then(({ data: slide }) => {
-        const lastSlideNumber = slide.last_slide_number;
-
-        setCurrentSlide(slide);
-        setCurrentSlidePage(lastSlideNumber);
-
-        return fetchSlide(activeChat.chat_id, activeFile.slide_id, lastSlideNumber);
+        return {
+          text: message.content,
+          role: message.role,
+          media_urls,
+          media_types,
+          filenames,
+        };
       })
-      .then(({ data }) => {
-        const slideBase64 = data.slide;
-        const history = data.history || [];
-
-        setImgSrc(`data:image/png;base64,${slideBase64}`);
-        setActiveMessages(history);
-        setLastMessageID(history.length > 0 ? history[history.length - 1].message_id : 0);
-      })
-      .catch((error) => {
-        console.error("Error fetching slide data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load slide data",
-          variant: "destructive",
-        });
-      })
-      .finally(() => {
-        setIsSlidesLoading(false);
-        setIsMessagesLoading(false);
-      });
-  }, [activeFile, activeChat]);
+    );
+  };
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -183,26 +214,22 @@ export default function ChatResizablePanels({
     }
   }, [activeMessages]);
 
-  // Handle slide navigation
   const handlePreviousSlide = () => {
-    if (!activeChat || !activeChat.last_opened_slide_id || currentSlidePage <= 1) {
+    if (!activeChat || !activeChat.last_opened_slide_id) {
+      console.error("Invalid active chat or slide ID");
       return;
     }
-
     setIsSlidesLoading(true);
-
-    fetchSlide(activeChat.chat_id, activeChat.last_opened_slide_id, currentSlidePage - 1)
-      .then(({ data }) => {
-        const slideBase64 = data.slide;
-        const history = data.history || [];
-
+    fetchSlidePage(activeChat.last_opened_slide_id, currentSlidePage - 1)
+      .then(async (response) => {
+        const slideBase64 = response.data.slide;
+        const history = response.data.history;
         setImgSrc(`data:image/png;base64,${slideBase64}`);
         setCurrentSlidePage(currentSlidePage - 1);
-        setActiveMessages(history);
-        setLastMessageID(history.length > 0 ? history[history.length - 1].message_id : 0);
+        const formattedHistory = await formatHistory(history);
+        setActiveMessages(formattedHistory);
       })
       .catch((error) => {
-        console.error("Error fetching previous slide:", error);
         toast({
           title: "Error",
           description: "Failed to fetch previous slide",
@@ -215,24 +242,21 @@ export default function ChatResizablePanels({
   };
 
   const handleNextSlide = () => {
-    if (!activeChat || !activeChat.last_opened_slide_id || currentSlidePage >= (currentSlide.pages_count || 1)) {
+    if (!activeChat || !activeChat.last_opened_slide_id) {
+      console.error("Invalid active chat or slide ID");
       return;
     }
-
     setIsSlidesLoading(true);
-
-    fetchSlide(activeChat.chat_id, activeChat.last_opened_slide_id, currentSlidePage + 1)
-      .then(({ data }) => {
-        const slideBase64 = data.slide;
-        const history = data.history || [];
-
+    fetchSlidePage(activeChat.last_opened_slide_id, currentSlidePage + 1)
+      .then(async (response) => {
+        const slideBase64 = response.data.slide;
+        const history = response.data.history;
         setImgSrc(`data:image/png;base64,${slideBase64}`);
         setCurrentSlidePage(currentSlidePage + 1);
-        setActiveMessages(history);
-        setLastMessageID(history.length > 0 ? history[history.length - 1].message_id : 0);
+        const formattedHistory = await formatHistory(history);
+        setActiveMessages(formattedHistory);
       })
       .catch((error) => {
-        console.error("Error fetching next slide:", error);
         toast({
           title: "Error",
           description: "Failed to fetch next slide",
@@ -243,6 +267,7 @@ export default function ChatResizablePanels({
         setIsSlidesLoading(false);
       });
   };
+
 
   // Handle file change for slide selection
   const handleFileChange = (slide_id: string) => {
@@ -259,21 +284,15 @@ export default function ChatResizablePanels({
   };
 
   const handleFetchSlide = (slideID: string, pageNumber: number) => {
-    const chatID =
-      activeChat && "chat_id" in activeChat ? activeChat.chat_id : "";
     setIsSlidesLoading(true);
-    return fetchSlide(chatID, slideID, pageNumber)
-      .then(({ data }) => {
-        const slideBase64 = data.slide;
-        const history = data.history || [];
-        // Update the image source, which should trigger the <img> onLoad in SlidePanel
+    return fetchSlidePage(slideID, pageNumber)
+      .then(async (response) => {
+        const slideBase64 = response.data.slide;
+        const history = response.data.history;
         setImgSrc(`data:image/png;base64,${slideBase64}`);
         setCurrentSlidePage(pageNumber);
-        setActiveMessages(history);
-        setLastMessageID(
-          history.length > 0 ? history[history.length - 1].message_id : 0
-        );
-        return data;
+        const formattedHistory = await formatHistory(history);
+        setActiveMessages(formattedHistory);
       })
       .catch((error) => {
         console.error("Error fetching slide:", error);
@@ -288,30 +307,42 @@ export default function ChatResizablePanels({
       });
   };
 
+  const fetchSlidePage = (slideID: string, pageNumber: number) => {
+    if (!token || !slideID || pageNumber <= 0) {
+      console.error("Invalid parameters");
+      return Promise.reject(new Error("Invalid parameters"));
+    }
+
+    return chatService.get(`/chat/slide/${slideID}/page/${pageNumber}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  };
+
   const handleSendMessage = () => {
     if (!inputMessage.trim()) return;
 
     const formData = new FormData();
     formData.append("text", inputMessage);
 
-    console.log(formData);
-
-    if (inputFile) formData.append("file", inputFile);
+    if (inputFile) formData.append("files", inputFile);
 
     const newMessage: Message = {
       text: inputMessage,
       role: "user",
-      message_id: lastMessageID + 1,
-      media_url: inputFile ? URL.createObjectURL(inputFile) : null,
+      filenames: inputFile ? [inputFile.name] : [],
+      media_urls: inputFile ? [URL.createObjectURL(inputFile)] : [],
+      media_types: inputFile ? [inputFile.type] : [], // Now an array of MIME types
     };
-
     setActiveMessages((messages: Message[]) => [...messages, newMessage]);
     setIsMessagesLoading(true);
     setInputMessage("");
-    if (inputFile) setInputFile(null);
+    setInputFile(null);
 
     const url = activeChat?.slides_mode
-    ? `/chat/${activeChat.chat_id}/send_message?slide_id=${currentSlide.slide_id}&page_number=${currentSlidePage}`
+    ? `/chat/${activeChat?.chat_id}/send_message?slide_id=${currentSlide.slide_id}&page_number=${currentSlidePage}`
     : `/chat/${activeChat?.chat_id}/send_message`;
 
     chatService
@@ -323,16 +354,13 @@ export default function ChatResizablePanels({
         },
       })
       .then((response) => {
+        console.log("Message: ", response.data);
         const modelResponse = {
           text: response.data.text,
           role: response.data.role,
-          media_url: response.data.media_url
-            ? `${backend.getUri()}/${response.data.media_url}`
-            : null,
-          message_id: lastMessageID + 2,
+          media_url: null,
         };
         setActiveMessages((messages) => [...messages, modelResponse]);
-        setLastMessageID(lastMessageID + 2);
       })
       .catch((error) => {
         console.error("Error sending message:", error);
@@ -340,8 +368,8 @@ export default function ChatResizablePanels({
       .finally(() => {
         setIsMessagesLoading(false);
       });
-
   };
+
   console.log(presentationFiles);
   return (
     <ResizablePanelGroup direction="horizontal" className="max-h-[calc(100%-4rem)] flex-1">

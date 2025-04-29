@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
-import { backend, courseService } from "@/environment/backend_api";
+import { courseService, filemanagerService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import type * as React from "react";
@@ -53,8 +53,8 @@ export function CourseDialogModal(props: CourseDialogProps) {
         course_name = "",
         course_code = "",
         course_description = "",
-        course_syllabus_url = "",
-        course_icon_url = "",
+        course_syllabus_fid = "",
+        course_icon_fid = "",
       }: Course = props.course as Course;
 
       setCourseName(course_name);
@@ -69,12 +69,23 @@ export function CourseDialogModal(props: CourseDialogProps) {
         course_icon: undefined,
       });
 
-      if (course_syllabus_url) {
-        const syllabusResponse = await fetch(`${backend.getUri()}/${course_syllabus_url}`);
+      if (course_syllabus_fid) {
+        const response = await filemanagerService.get(`/${course_syllabus_fid}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const syllabus_url = response.data.file_url;
+        const syllabus_filename = response.data.file_name;
+        const syllabusResponse = await fetch(syllabus_url);
         const syllabusBlob = await syllabusResponse.blob();
         const syllabusType = syllabusBlob.type;
-        const syllabusExtension = syllabusType.split("/")[1];
-        const syllabusFile = new File([syllabusBlob], `syllabus.${syllabusExtension}`, { type: syllabusType });
+        const syllabusExtension = syllabus_filename.split(".")[1];
+        const syllabusFile = new File(
+          [syllabusBlob],
+          `syllabus.${syllabusExtension}`,
+          { type: syllabusType }
+        );
         setSyllabus(syllabusFile);
         setOriginalCourseData((prev) => ({
           ...prev,
@@ -85,8 +96,16 @@ export function CourseDialogModal(props: CourseDialogProps) {
         }));
       }
 
-      if (course_icon_url) {
-        const iconResponse = await fetch(`${backend.getUri()}/${course_icon_url}`);
+      if (course_icon_fid) {
+        const response = await filemanagerService.get(`/${course_icon_fid}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const icon_url = response.data.file_url;
+        const icon_file_name = response.data.file_name;
+
+        const iconResponse = await fetch(icon_url);
         const iconBlob = await iconResponse.blob();
         setOriginalCourseData((prev) => ({
           ...prev,
@@ -97,12 +116,15 @@ export function CourseDialogModal(props: CourseDialogProps) {
           course_icon: iconFile,
         }));
         const iconType = iconBlob.type;
-        const iconExtension = iconType.split("/")[1];
+        const iconExtension = icon_file_name.split(".").pop();
         const iconFile = new File([iconBlob], `icon.${iconExtension}`, {
           type: iconType,
         });
         setIcon(iconFile);
-        setOriginalCourseData((prev) => ({ ...prev, icon: iconFile }));
+        setOriginalCourseData((prev) => ({
+          ...prev,
+          course_icon: iconFile,
+        }));
       }
       setOriginalCourseData((prev) => ({
         ...prev,

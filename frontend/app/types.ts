@@ -105,7 +105,6 @@ export interface ConfirmationDialogProps {
 }
 
 export interface CourseCardProps {
-  token: string;
   course: Course;
   onCourseDelete: (courseId: string | undefined) => void;
   onCourseUpdate: () => void;
@@ -232,4 +231,11 @@ export interface HotkeyConfig {
   metaKey?: boolean
   shiftKey?: boolean
   altKey?: boolean
+}
+
+export interface ImageContainerProps {
+  imageUrl: string
+  fallbackImage: string
+  alt: string
+  className?: string
 }

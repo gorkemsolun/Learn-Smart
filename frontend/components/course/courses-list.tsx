@@ -51,7 +51,6 @@ export function CoursesList (modalParameters: CoursesListProps) {
                     className="flex items-center justify-between"
                 >
                   <CourseCard
-                      token={token}
                       course={Course}
                       onCourseDelete={handleDeleteCourse}
                       onCourseUpdate={modalParameters.onCourseUpdate}

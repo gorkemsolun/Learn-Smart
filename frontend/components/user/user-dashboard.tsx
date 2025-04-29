@@ -58,9 +58,6 @@ export default function UserDashboard() {
       });
       setCourses(coursesResponse.data?.courses || []);
 
-      // Ensure no overlapping requests before analytics fetch
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
       // Fetch analytics
       const analyticsResponse = await userService.get("/analytics", {
         headers: {
@@ -100,28 +97,14 @@ export default function UserDashboard() {
         };
       });
       setChartData(chartData);
-
-      /* 
-      // Mock data until analytics service is implemented
-      setChartData([
-        { day: "Mon", timeSpent: 0 },
-        { day: "Tue", timeSpent: 0 },
-        { day: "Wed", timeSpent: 0 },
-        { day: "Thu", timeSpent: 0 },
-        { day: "Fri", timeSpent: 0 },
-        { day: "Sat", timeSpent: 0 },
-        { day: "Sun", timeSpent: 0 },
-      ]); */
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      /*
       toast({
         title: "Error",
         description: `Failed to fetch dashboard data: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive",
         action: <ToastAction altText="Retry">Retry</ToastAction>,
       });
-      */
     } finally {
       stopLoading(); // Stop loading after data fetch completes
     }

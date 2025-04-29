@@ -9,22 +9,17 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Paperclip, File, FileText, FileImage, FileAudio, FileVideo, X, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { backend } from "@/environment/backend_api";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useGenerateFlashcard } from "@/hooks/useCreateFlashcards";
 import { useGenerateQuiz } from "@/hooks/useCreateQuiz";
 import { useParams } from "next/navigation";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
+import { Badge } from "@/components/ui/badge";
+import { Message } from "@/app/types";
 
-interface ImageWithFallbackProps {
-  url: string;
-  getMediaUrl: (url: string) => string;
-  getFileIcon: (fileName: string) => React.ReactNode;
-}
 export default function ChatInterface({
   messages,
   input,
@@ -44,33 +39,6 @@ export default function ChatInterface({
   const { generateFlashcard, isLoadingFlashcard, errorFlashcard, flashcardData } = useGenerateFlashcard();
   const { generateQuiz, isLoadingQuiz, errorQuiz, quizData } = useGenerateQuiz();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  function ImageWithFallback({ url, getMediaUrl, getFileIcon }: ImageWithFallbackProps) {
-    const [hasError, setHasError] = useState(false);
-
-    return !hasError ? (
-      <img
-        key={url}
-        src={getMediaUrl(url) || "/placeholder.svg"}
-        alt="Uploaded content"
-        className="object-fit h-[250px] w-[180px] rounded-lg"
-        loading="lazy"
-        onError={() => setHasError(true)}
-      />
-    ) : (
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 p-2">
-        {getFileIcon(url)}
-        <a
-          href={getMediaUrl(url)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline"
-        >
-          {url.split("/").pop()}
-        </a>
-      </div>
-    );
-  }
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -139,7 +107,7 @@ export default function ChatInterface({
     }
   };
 
-  const getFileIcon = (fileName: string) => {
+  const getFileIcon = (fileName: undefined | string) => {
     const extension = fileName.split(".").pop()?.toLowerCase();
     switch (extension) {
       case "pdf":
@@ -158,11 +126,6 @@ export default function ChatInterface({
       default:
         return <File className="size-5" />;
     }
-  };
-
-  const getMediaUrl = (url: string) => {
-    // return url.includes("blob:") ? url : `${backend.getUri()}/${url}`;
-    return null;
   };
 
   return (
@@ -214,26 +177,45 @@ export default function ChatInterface({
       {/* Messages Area */}
       <ScrollArea className="scrollbar-hidden flex-1 p-4">
         <div className="space-y-6">
-          {messages.map((message) => (
-            <div
-              key={message.message_id}
-              className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}
-            >
-              {/* Role indicator */}
-              <Badge variant={message.role === "user" ? "default" : "secondary"} className="mb-1">
-                {message.role === "user" ? "You" : "Assistant"}
-              </Badge>
+          {messages.map((message: Message, index) => (
+          <div
+            key={index}
+            className={`mb-6 flex flex-col ${
+              message.role === 'user' ? 'items-end' : 'items-start'
+            }`}
+          >
+            {/* Render image files */}
+            {message.media_urls?.map((url, idx) => {
+              const mimeType = message.media_types && message.media_types[idx];
+              const isImage = mimeType
+                ? mimeType.startsWith('image/')
+                : /\.(jpeg|jpg|gif|png|webp)$/i.test(url);
 
-              {/* Media content */}
-              {message.media_url && (
-                <div className="mb-2 max-w-[80%]">
-                  <ImageWithFallback
-                    url={message.media_url}
-                    getMediaUrl={getMediaUrl}
-                    getFileIcon={getFileIcon}
+              return isImage ? (
+                <div key={idx} className="mb-2">
+                  <img
+                    height={250}
+                    width={250}
+                    src={url}
+                    alt="Uploaded content"
+                    className="max-w-xs sm:max-w-sm h-auto rounded-lg"
+                    loading="lazy"
                   />
                 </div>
-              )}
+              ) : (
+                <div key={idx} className="mb-2 flex items-center space-x-2">
+                  {getFileIcon(mimeType)}
+                  <a
+                    href={url}
+                    className="text-blue-500 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {message.filenames && message.filenames[idx]}
+                  </a>
+                </div>
+              );
+            })}
 
               {/* Message content */}
               {message.text && (

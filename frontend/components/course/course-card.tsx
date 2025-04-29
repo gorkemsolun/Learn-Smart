@@ -6,103 +6,163 @@ import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { CourseDialogModal } from "@/components/course/course-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import { backend } from "@/environment/backend_api";
-import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { filemanagerService } from "@/environment/backend_api";
+import { cn } from "@/lib/utils";
+import { Edit, Trash, ArrowUpRight } from "@mynaui/icons-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import Cookies from "js-cookie";
 
 export function CourseCard(modalParameters: CourseCardProps) {
   const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
-  const courseIconUrl = modalParameters.course.course_icon_url || "";
-  const image_url: string = courseIconUrl
-    ? `${backend.getUri()}/${courseIconUrl}?t=${Date.now()}`
-    : (default_study_logo as string);
+  const courseIconFid = modalParameters.course.course_icon_fid || "";
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState<boolean>(true);
+  const [imageError, setImageError] = useState<boolean>(false);
+  const [token] = useState<string>(
+        Cookies.get("authToken") as string
+  );
+
+  useEffect(() => {
+    const fetchImageUrl = async () => {
+      setIsImageLoading(true);
+      setImageError(false);
+
+      if (courseIconFid) {
+        try {
+          // Access the filemanager service endpoint to get the image
+          const response = await filemanagerService.get(`/${courseIconFid}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          setImageUrl(response.data.file_url);
+        } catch (error) {
+          console.error("Error fetching course image:", error);
+          setImageError(true);
+        } finally {
+          setIsImageLoading(false);
+        }
+      } else {
+        setImageUrl(null);
+        setIsImageLoading(false);
+      }
+    };
+
+    fetchImageUrl();
+  }, [courseIconFid, token]);
+
+  const handleViewCourse = () => {
+    modalParameters.startLoading?.();
+    router.push(`/course/${modalParameters.course.course_id}`);
+  };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-      <Card
-          className="g-gradient-to-br h-80 w-[17rem] overflow-hidden rounded-xl from-primary/10 to-secondary/10 shadow-md
-               transition-shadow duration-300 hover:shadow-lg"
-      >
-        <div className="group relative h-40 overflow-hidden p-2">
-          <div className="absolute left-4 top-4 z-10">
-            <Badge
-              variant="secondary"
-              className="pointer-events-none line-clamp-1
-                      cursor-default select-none
-                      overflow-hidden bg-foreground/20
-                      text-xs
-                      font-semibold
-                      text-background/70"
+    <TooltipProvider>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <Card className="h-80 w-[17rem] overflow-hidden rounded-xl border bg-gradient-to-br from-card/50 to-background shadow-sm transition-all duration-300 hover:shadow-md">
+          <CardHeader className="relative bg-muted/80 p-0">
+            <div className="absolute left-3 top-3 z-10">
+              <Badge
+                variant="secondary"
+                className="pointer-events-none line-clamp-1 cursor-default select-none bg-primary/90 text-xs font-thin text-primary-foreground"
+              >
+                {modalParameters.course.course_code}
+              </Badge>
+            </div>
+            <div className="relative h-40 w-full overflow-hidden">
+              {isImageLoading ? (
+                <div className="flex size-full items-center justify-center">
+                  <Skeleton className="size-32 rounded-md" />
+                </div>
+              ) : (
+                <Image
+                  src={imageError || !imageUrl ? (default_study_logo as unknown as string) : imageUrl}
+                  alt={modalParameters.course.course_name}
+                  width={1000}
+                  height={1000}
+                  className={cn(
+                    "size-full object-contain transition-opacity duration-300",
+                    isImageLoading ? "opacity-0" : "opacity-100",
+                  )}
+                  onError={() => setImageError(true)}
+                  priority
+                />
+              )}
+            </div>
+          </CardHeader>
+
+          <CardContent className="flex flex-col p-4 pt-3">
+            <CardTitle className="line-clamp-1 text-lg font-thin text-foreground">
+              {modalParameters.course.course_name}
+            </CardTitle>
+            <CardDescription
+              className="mt-1.5 line-clamp-2 h-10 text-sm text-muted-foreground"
+              title={modalParameters.course.course_description}
             >
-              {modalParameters.course.course_code}
-            </Badge>
-          </div>
-          <Image
-            src={image_url || "/placeholder.svg"}
-            alt={modalParameters.course.course_name}
-            width={250}
-            height={250}
-            className="bg-foreground/10"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              justifySelf: "center",
-              borderRadius: "0.75rem",
-            }}
-            priority
-          />
-        </div>
-          <CardContent className="flex min-h-40 w-full flex-col p-4">
-              <CardTitle className="text-darker mb-1 line-clamp-1 text-lg font-semibold">
-                  {modalParameters.course.course_name}
-              </CardTitle>
-              <div className="h-10 w-full overflow-hidden">
-                  <CardDescription
-                      className="block w-full truncate text-sm"
-                      title={modalParameters.course.course_description}
-                  >
-                      {modalParameters.course.course_description}
-                  </CardDescription>
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                  <Button
-                      variant="ghost"
-                      className="hover:text-primary-dark text-primary transition-colors"
-                      onClick={() => {
-                        modalParameters.startLoading?.();
-                        router.push(`/course/${modalParameters.course.course_id}`)
-                      }}
-                  >
-                      View Course
-                  </Button>
-                  <div className="flex space-x-2">
-                      <Button size="icon" variant="outline" onClick={() => setEditDialogOpen(true)}>
-                          <Pencil2Icon/>
-                      </Button>
-                      <ConfirmationDialog
-                          title="Confirm Deleting Study"
-                          description={`Are you sure you want to delete course ${modalParameters.course.course_name}? This action cannot be undone.`}
-                          triggerButtonLabel={<TrashIcon/>}
-                          onConfirm={() => modalParameters.onCourseDelete(modalParameters.course.course_id)}
-                      />
-                  </div>
-              </div>
+              {modalParameters.course.course_description || "No description available"}
+            </CardDescription>
           </CardContent>
-      </Card>
+
+          <CardFooter className="flex items-center justify-between p-4 pt-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="default" size="sm" className="gap-1.5" onClick={handleViewCourse}>
+                  <span>View Course</span>
+                  <ArrowUpRight className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Open course details</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <div className="flex space-x-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setEditDialogOpen(true)}
+                    aria-label="Edit course"
+                  >
+                    <Edit className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Edit course</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <ConfirmationDialog
+                title="Confirm Deleting Course"
+                description={`Are you sure you want to delete course "${modalParameters.course.course_name}"? This action cannot be undone.`}
+                triggerButtonLabel={<Trash className="size-4" />}
+                onConfirm={() => modalParameters.onCourseDelete(modalParameters.course.course_id)}
+                triggerButtonProps={{
+                  size: "icon",
+                  variant: "outline",
+                  "aria-label": "Delete course",
+                }}
+              />
+            </div>
+          </CardFooter>
+        </Card>
+
         <CourseDialogModal
-            isCreate={false}
-            isOpen={editDialogOpen}
-            onClose={() => setEditDialogOpen(false)}
-            course={modalParameters.course}
-            onCourseUpdate={modalParameters.onCourseUpdate}
+          isCreate={false}
+          isOpen={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          course={modalParameters.course}
+          onCourseUpdate={modalParameters.onCourseUpdate}
         />
-    </motion.div>
+      </motion.div>
+    </TooltipProvider>
   );
 }
-
