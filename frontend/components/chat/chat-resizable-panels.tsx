@@ -27,7 +27,6 @@ export default function ChatResizablePanels({
     slide_id: "",
   });
   const [activeMessages, setActiveMessages] = useState<Message[]>([]);
-  const [lastMessageID, setLastMessageID] = useState<number>(0);
   const [inputMessage, setInputMessage] = useState(''); // Text field input in the chat
   const [inputFile, setInputFile] = useState<File | null>(null); // File input in the chat
   const token = Cookies.get("authToken") as string;
@@ -370,7 +369,7 @@ export default function ChatResizablePanels({
       });
   };
 
-  console.log(presentationFiles);
+
   return (
     <ResizablePanelGroup direction="horizontal" className="max-h-[calc(100%-4rem)] flex-1">
       {activeChat ? (
