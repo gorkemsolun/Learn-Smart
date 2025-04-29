@@ -1,6 +1,6 @@
 "use client";
 
-import type { CourseCardProps } from "@/app/types";
+import { Course } from "@/app/types";
 import default_study_logo from "@/assets/default_study_logo.png";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { CourseDialogModal } from "@/components/course/course-dialog";
@@ -30,7 +30,13 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export function CourseCard(modalParameters: CourseCardProps) {
+export function CourseCard(modalParameters: {
+  course: Course;
+  onCourseDelete: (courseId: string) => void;
+  onCourseUpdate: () => void;
+  startLoading?: () => void;
+  stopLoading?: () => void;
+}) {
   const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
   const courseIconFid = modalParameters.course.course_icon_fid || "";

@@ -79,7 +79,6 @@ export function CourseDialogModal(props: {
       let iconFile: File | undefined = undefined;
 
       if (course_syllabus_fid) {
-        console.log("course_syllabus_fid", course_syllabus_fid);
         try {
           const response = await filemanagerService.get(
             `/${course_syllabus_fid}`,
@@ -105,7 +104,6 @@ export function CourseDialogModal(props: {
       }
 
       if (course_icon_fid) {
-        console.log("course_icon_fid", course_icon_fid);
         try {
           const response = await filemanagerService.get(`/${course_icon_fid}`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -132,7 +130,7 @@ export function CourseDialogModal(props: {
         course_icon: iconFile,
       });
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching course details:", error);
       toast({
         title: "Error",
         description: "Error fetching course details",
@@ -155,7 +153,6 @@ export function CourseDialogModal(props: {
   ) {
     const file = event.target.files && event.target.files[0];
     handleFile(file, setter, fileType);
-    console.log("handleFileChange", file);
   }
 
   function handleFile(
@@ -163,8 +160,6 @@ export function CourseDialogModal(props: {
     setter: React.Dispatch<React.SetStateAction<File | null>>,
     fileType: string
   ) {
-    console.log("handleFile", file, fileType);
-
     // Check if file is of correct type for document
     if (
       file &&
@@ -250,7 +245,7 @@ export function CourseDialogModal(props: {
 
     try {
       if (!props.isCreate) {
-        const response = await courseService.put(
+        await courseService.put(
           `/${props.course?.course_id}`,
           formData,
           {
@@ -261,8 +256,6 @@ export function CourseDialogModal(props: {
             },
           }
         );
-
-        console.log("response", response.data);
 
         props.onCourseUpdate();
         toast({

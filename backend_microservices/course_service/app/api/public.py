@@ -211,6 +211,7 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         try:
             if old_icon_id:
                 await filemanager.delete(course["course_icon_fid"])  # delete old image
+                new_icon_fid = "-1"
         except Exception as e:
             error = True
             error_message = str(e)
@@ -234,9 +235,11 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         try:
             if old_syllabus_id:
                 await filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
+                new_syllabus_fid = "-1"
             
             if old_study_plan_id:
                 await filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
+                new_study_plan_fid = "-1"
         except Exception as e:
             error = True
             error_message = str(e)

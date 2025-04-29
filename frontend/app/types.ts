@@ -103,14 +103,6 @@ export interface ConfirmationDialogProps {
   triggerButtonLabel: ReactNode;
 }
 
-export interface CourseCardProps {
-  course: Course;
-  onCourseDelete: (courseId: string) => void;
-  onCourseUpdate: () => void;
-  startLoading?: () => void;
-  stopLoading?: () => void;
-}
-
 export interface LinkData {
   source: string;
   target: string;
