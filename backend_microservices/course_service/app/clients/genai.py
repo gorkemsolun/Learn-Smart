@@ -3,7 +3,7 @@ from fastapi import HTTPException, UploadFile, HTTPException
 
 from course_service.app.clients import GENAI_SERVICE_URL, GENAI_CLIENT_KEY
 
-async def create_study_plan(course_syllabus_file: UploadFile):
+async def create_study_plan(course_syllabus_file: UploadFile, timeout: int = 120):
     """
     Call GenAI service to generate a weekly study plan for a course.
 
@@ -25,7 +25,7 @@ async def create_study_plan(course_syllabus_file: UploadFile):
                         course_syllabus_file.content_type
                     )
                 },
-                timeout=12 # set timeout to 12 seconds to create study plan
+                timeout=timeout
             )
         response.raise_for_status()
         response_dict = response.json()

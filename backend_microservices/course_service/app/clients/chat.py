@@ -16,7 +16,7 @@ async def delete_chats(course_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.delete(
-                f"{CHAT_SERVICE_URL}/public/course/{course_id}",
+                f"{CHAT_SERVICE_URL}/private/course/{course_id}",
                 headers={"X-API-Key": CHAT_CLIENT_KEY}
             )
             response.raise_for_status()  # Raise an exception for HTTP errors

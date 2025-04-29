@@ -136,7 +136,7 @@ class GoogleChatClient(ChatClientBase):
             generation_config=generation_config,
         )
 
-        response = model.start_chat(history=history).send_message(" ") # empty message to trigger chat completion
+        response = model.start_chat(history=history).send_message("Continue.")
         content = response.text
         return content
 

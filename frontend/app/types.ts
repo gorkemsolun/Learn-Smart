@@ -1,5 +1,4 @@
 import { HierarchyNode, SimulationNodeDatum } from "d3";
-import { List } from "postcss/lib/list";
 import React, { ReactNode } from "react";
 
 export interface User {
@@ -12,7 +11,7 @@ export interface User {
 }
 
 export interface Course {
-  course_id?: string;
+  course_id: string;
   course_name: string;
   course_code: string;
   course_description: string;
@@ -104,23 +103,6 @@ export interface ConfirmationDialogProps {
   triggerButtonLabel: ReactNode;
 }
 
-export interface CourseCardProps {
-  course: Course;
-  onCourseDelete: (courseId: string | undefined) => void;
-  onCourseUpdate: () => void;
-  startLoading?: () => void;
-  stopLoading?: () => void;
-}
-
-export interface CourseDialogProps {
-  isCreate: boolean;
-  isOpen: boolean;
-  onClose: (value: boolean) => void;
-  onCourseUpdate: () => void;
-  onCourseCreation?: () => void;
-  course?: Course;
-}
-
 export interface LinkData {
   source: string;
   target: string;
@@ -135,9 +117,9 @@ export interface CustomSimulationNode
 }
 
 export interface SkillTreeProps {
-  nodes?: NodeData[]
-  edges?: { source: string; target: string }[]
-  title?: string
+  nodes?: NodeData[];
+  edges?: { source: string; target: string }[];
+  title?: string;
 }
 
 export interface SkillTreeCard {
@@ -212,30 +194,30 @@ export interface SlideResponse {
   history?: ChatMessage[];
 }
 export interface SlidePanelProps {
-  imgSrc?: string
-  currentSlidePage: number
-  totalPages: number
-  isSlidesLoading: boolean
-  presentationFiles: { slide_id: string; slides_file_name: string }[]
-  currentSlide: Slide
-  onFileChange: (slide_id: string) => void
-  onPreviousSlide: () => void
-  onNextSlide: () => void
+  imgSrc?: string;
+  currentSlidePage: number;
+  totalPages: number;
+  isSlidesLoading: boolean;
+  presentationFiles: { slide_id: string; slides_file_name: string }[];
+  currentSlide: Slide;
+  onFileChange: (slide_id: string) => void;
+  onPreviousSlide: () => void;
+  onNextSlide: () => void;
   fetchSlide: (slideID: string, pageNumber: number) => Promise<any>;
 }
 
 export interface HotkeyConfig {
-  key: string
-  callback: () => void
-  ctrlKey?: boolean
-  metaKey?: boolean
-  shiftKey?: boolean
-  altKey?: boolean
+  key: string;
+  callback: () => void;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  shiftKey?: boolean;
+  altKey?: boolean;
 }
 
 export interface ImageContainerProps {
-  imageUrl: string
-  fallbackImage: string
-  alt: string
-  className?: string
+  imageUrl: string;
+  fallbackImage: string;
+  alt: string;
+  className?: string;
 }

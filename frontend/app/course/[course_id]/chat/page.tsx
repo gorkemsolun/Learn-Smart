@@ -163,7 +163,7 @@ export default function ChatPage() {
               </div>
           ) : (
               <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-background font-thin">
-                {/* Elegant background with subtle gradients */}
+              {/* Elegant background with subtle gradients */}
               <div className="absolute inset-0 overflow-hidden opacity-60">
                 <div className="absolute left-1/4 top-0 size-[500px] rounded-full bg-gradient-to-b from-primary/5 to-transparent blur-[120px]" />
                 <div className="absolute bottom-0 right-1/4 size-[400px] rounded-full bg-gradient-to-t from-primary/5 to-transparent blur-[100px]" />

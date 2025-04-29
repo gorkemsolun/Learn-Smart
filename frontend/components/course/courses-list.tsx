@@ -1,50 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { PlusIcon } from "lucide-react";
 import type { CoursesListProps } from "@/app/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CourseCard } from "@/components/course/course-card";
-import { courseService } from "@/environment/backend_api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ToastAction } from "@/components/ui/toast";
+import { courseService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
+import { PlusIcon } from "lucide-react";
+import { useState } from "react";
 
 export function CoursesList(modalParameters: CoursesListProps) {
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const { toast } = useToast();
 
   const handleDeleteCourse = async (courseId: string) => {
-      try {
-        await courseService.delete(`/course/${courseId}`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        modalParameters.onCourseDelete();
-      } catch (error) {
-        toast({
-              title: "Error",
-              description: "Error deleting course:" + error,
-              variant: "destructive",
-              action: <ToastAction altText="Try again">Try again</ToastAction>,
-        });
-      }
+    try {
+      await courseService.delete(`/${courseId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      modalParameters.onCourseDelete();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error deleting course:" + error,
+        variant: "destructive",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
+    }
   };
 
   return (
     <>
-      <Card className="h-full border-opacity-50 bg-gradient-to-br from-primary/5 via-secondary/5 to-background shadow-md">
+      <Card className="from-primary/5 via-secondary/5 to-background border/50 h-full bg-gradient-to-br shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="font-semibold">Your Studies</CardTitle>
           <Button
             onClick={() => modalParameters.setCourseDialog(true)}
             variant="outline"
             size="sm"
-            className="gap-1 hover:bg-primary/10"
+            className="hover:bg-primary/10 gap-1"
           >
             <PlusIcon className="size-4" />
             <span className="hidden sm:inline">Add Course</span>
@@ -53,25 +53,25 @@ export function CoursesList(modalParameters: CoursesListProps) {
 
         <CardContent className="p-0">
           <ScrollArea className="-mt-2 h-[47vh] w-full bg-transparent">
-          <div className="p-4">
-            <div className="flex flex-wrap gap-6">
-            {modalParameters.courses.map((Course, index) => (
-                <div
+            <div className="p-4">
+              <div className="flex flex-wrap gap-6">
+                {modalParameters.courses.map((Course, index) => (
+                  <div
                     key={index}
                     className="flex items-center justify-between"
-                >
-                  <CourseCard
+                  >
+                    <CourseCard
                       course={Course}
                       onCourseDelete={handleDeleteCourse}
                       onCourseUpdate={modalParameters.onCourseUpdate}
                       startLoading={modalParameters.startLoading}
                       stopLoading={modalParameters.stopLoading}
-                  />
-                </div>
-            ))}
-           </div>
-          </div>
-        </ScrollArea>
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
     </>

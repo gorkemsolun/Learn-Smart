@@ -65,7 +65,7 @@ async def create_course(course_name: str = Form(...),
             )
 
             # send the syllabus to GenAI service for weekly study plan generation
-            study_plan_text = await genai.create_study_plan(course_syllabus_file)
+            study_plan_text = await genai.create_study_plan(course_syllabus_file, timeout=120)
             
             with tempfile.NamedTemporaryFile(
                 suffix='.md', mode='w+', encoding='utf-8', delete=True
@@ -211,6 +211,7 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         try:
             if old_icon_id:
                 await filemanager.delete(course["course_icon_fid"])  # delete old image
+                new_icon_fid = "-1"
         except Exception as e:
             error = True
             error_message = str(e)
@@ -234,9 +235,11 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         try:
             if old_syllabus_id:
                 await filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
+                new_syllabus_fid = "-1"
             
             if old_study_plan_id:
                 await filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
+                new_study_plan_fid = "-1"
         except Exception as e:
             error = True
             error_message = str(e)
@@ -308,22 +311,22 @@ async def delete_course(course_id: int,
                         current_user: dict = Depends(user.get_current_user),
                         db: Session = Depends(get_db)):
     """
-    Delete a course.
+   Delete a course.
 
-    Args:
-        course_id (int): The ID of the course to delete.
-        current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
+   Args:
+       course_id (int): The ID of the course to delete.
+       current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
 
-    Returns:
-        Success message.
+   Returns:
+       Success message.
 
-    Raises:
-        HTTPException: If there is an error deleting the course.
-    """
+   Raises:
+       HTTPException: If there is an error deleting the course.
+   """
+    # 1) fetch & auth
     course = CourseDB.fetch(db, course_id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
-
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden - Not authorized to delete this course.")
 
@@ -341,5 +344,5 @@ async def delete_course(course_id: int,
 
     await chat.delete_chats(course_id=course_id)
 
-    CourseDB.delete(course_id=course_id)  # delete the course
+    CourseDB.delete(db, course_id=course_id)  # delete the course
     return {"status": "Success", "course": course}
