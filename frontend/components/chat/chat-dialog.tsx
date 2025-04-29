@@ -30,8 +30,8 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
   const course_id = params.course_id;
   const [chatName, setChatName] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const authToken = Cookies.get("authToken") as string;
   const { toast } = useToast();
 

@@ -308,22 +308,22 @@ async def delete_course(course_id: int,
                         current_user: dict = Depends(user.get_current_user),
                         db: Session = Depends(get_db)):
     """
-    Delete a course.
+   Delete a course.
 
-    Args:
-        course_id (int): The ID of the course to delete.
-        current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
+   Args:
+       course_id (int): The ID of the course to delete.
+       current_user (dict, optional): The current user. Defaults to Depends(auth.get_current_user).
 
-    Returns:
-        Success message.
+   Returns:
+       Success message.
 
-    Raises:
-        HTTPException: If there is an error deleting the course.
-    """
+   Raises:
+       HTTPException: If there is an error deleting the course.
+   """
+    # 1) fetch & auth
     course = CourseDB.fetch(db, course_id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
-
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden - Not authorized to delete this course.")
 

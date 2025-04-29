@@ -494,15 +494,25 @@ async def get_slide(slide_id: int,
         history.add_message(role="assistant", content=explanation)
 
         history_fid = await save_chat_history(history, current_user["user_id"])
-        
-        # Create the page record
-        page_db = SlidePageDB.create(
-            db,
-            slide_id=slide_id,
-            page_number=page_number,
-            content_fid=page_fid,
-            chat_history_fid=history_fid
-        )
+
+        existing_page = SlidePageDB.fetch(db, slide_id=slide_id, page_number=page_number)
+        if existing_page:
+            page_db = SlidePageDB.update(
+                db,
+                slide_id=slide_id,
+                page_number=page_number,
+                content_fid=page_fid,
+                chat_history_fid=history_fid
+            )
+        else:
+            page_db = SlidePageDB.create(
+                db,
+                slide_id=slide_id,
+                page_number=page_number,
+                content_fid=page_fid,
+                chat_history_fid=history_fid
+            )
+
 
     else:
         page_fid = page_db["content_fid"]
