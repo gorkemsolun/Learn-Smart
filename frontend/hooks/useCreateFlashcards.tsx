@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { backendAPI } from "@/environment/backend_api";
+import { chatService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 
@@ -19,8 +19,8 @@ export const useGenerateFlashcard = () => {
     setError(null);
 
     try {
-      const response = await backendAPI.post(
-        `/chat/${chat_id}/create_flashcards`,
+      const response = await chatService.post(
+        `/flashcard?chat_id=${chat_id}`,
         {},
         {
           headers: {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { backendAPI } from "@/environment/backend_api";
+import { chatService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
@@ -16,8 +16,8 @@ export const useGenerateQuiz = () => {
   const generateQuiz = async (course_id: string, chat_id: string, token: string) => {
     setIsLoading(true);
     try {
-      const response = await backendAPI.post(
-        `/chat/${chat_id}/create_quiz`,
+      const response = await chatService.post(
+        `/quiz?chat_id=${chat_id}`,
         {},
         {
           headers: {
