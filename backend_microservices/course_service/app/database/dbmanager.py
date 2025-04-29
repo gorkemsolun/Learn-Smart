@@ -161,17 +161,17 @@ class CourseDB:
         if course_description is not None:
             course.course_description = course_description
 
-        if course_syllabus_fid is "-1":
+        if course_syllabus_fid == "-1":
             course.course_syllabus_fid = None
         elif course_syllabus_fid is not None:
             course.course_syllabus_fid = course_syllabus_fid
 
-        if course_icon_fid is "-1":
+        if course_icon_fid == "-1":
             course.course_icon_fid = None
         elif course_icon_fid is not None:
             course.course_icon_fid = course_icon_fid
 
-        if course_study_plan_fid is "-1":
+        if course_study_plan_fid == "-1":
             course.course_study_plan_fid = None
         elif course_study_plan_fid is not None:
             course.course_study_plan_fid = course_study_plan_fid
