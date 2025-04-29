@@ -56,7 +56,7 @@ export function CourseCard(modalParameters: CourseCardProps) {
     };
 
     fetchImageUrl();
-  }, [courseIconFid, token]);
+  }, [modalParameters.course.course_icon_fid, token]);
 
   const handleViewCourse = () => {
     modalParameters.startLoading?.();

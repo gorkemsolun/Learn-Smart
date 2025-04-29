@@ -61,77 +61,52 @@ export function CourseDialogModal(props: CourseDialogProps) {
       setCourseCode(course_code);
       setCourseDescription(course_description);
 
-      setOriginalCourseData({
-        course_name: course_name,
-        course_code: course_code,
-        course_description: course_description,
-        course_syllabus: undefined,
-        course_icon: undefined,
-      });
+      let syllabusFile: File | undefined = undefined;
+      let iconFile: File | undefined = undefined;
 
       if (course_syllabus_fid) {
-        const response = await filemanagerService.get(`/${course_syllabus_fid}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const syllabus_url = response.data.file_url;
-        const syllabus_filename = response.data.file_name;
-        const syllabusResponse = await fetch(syllabus_url);
-        const syllabusBlob = await syllabusResponse.blob();
-        const syllabusType = syllabusBlob.type;
-        const syllabusExtension = syllabus_filename.split(".")[1];
-        const syllabusFile = new File(
-          [syllabusBlob],
-          `syllabus.${syllabusExtension}`,
-          { type: syllabusType }
-        );
-        setSyllabus(syllabusFile);
-        setOriginalCourseData((prev) => ({
-          ...prev,
-          course_name: prev?.course_name || "",
-          course_code: prev?.course_code || "",
-          course_description: prev?.course_description || "",
-          syllabus: syllabusFile,
-        }));
+        try {
+          const response = await filemanagerService.get(`/${course_syllabus_fid}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const syllabus_url = response.data.file_url;
+          const syllabus_filename = response.data.file_name;
+          const syllabusBlob = await (await fetch(syllabus_url)).blob();
+          const syllabusExtension = syllabus_filename.split(".").pop();
+          syllabusFile = new File([syllabusBlob], `syllabus.${syllabusExtension}`, {
+            type: syllabusBlob.type,
+          });
+          setSyllabus(syllabusFile);
+        } catch (syllabusError) {
+          console.error("Error fetching syllabus file:", syllabusError);
+        }
       }
 
       if (course_icon_fid) {
-        const response = await filemanagerService.get(`/${course_icon_fid}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const icon_url = response.data.file_url;
-        const icon_file_name = response.data.file_name;
-
-        const iconResponse = await fetch(icon_url);
-        const iconBlob = await iconResponse.blob();
-        setOriginalCourseData((prev) => ({
-          ...prev,
-          course_name: prev?.course_name || "",
-          course_code: prev?.course_code || "",
-          course_description: prev?.course_description || "",
-          course_syllabus: prev?.course_syllabus,
-          course_icon: iconFile,
-        }));
-        const iconType = iconBlob.type;
-        const iconExtension = icon_file_name.split(".").pop();
-        const iconFile = new File([iconBlob], `icon.${iconExtension}`, {
-          type: iconType,
-        });
-        setIcon(iconFile);
-        setOriginalCourseData((prev) => ({
-          ...prev,
-          course_icon: iconFile,
-        }));
+        try {
+          const response = await filemanagerService.get(`/${course_icon_fid}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const icon_url = response.data.file_url;
+          const icon_file_name = response.data.file_name;
+          const iconBlob = await (await fetch(icon_url)).blob();
+          const iconExtension = icon_file_name.split(".").pop();
+          iconFile = new File([iconBlob], `icon.${iconExtension}`, {
+            type: iconBlob.type,
+          });
+          setIcon(iconFile);
+        } catch (iconError) {
+          console.error("Error fetching icon file:", iconError);
+        }
       }
-      setOriginalCourseData((prev) => ({
-        ...prev,
-        course_name: course_name,
-        course_code: course_code,
-        course_description: course_description,
-      }));
+
+      setOriginalCourseData({
+        course_name,
+        course_code,
+        course_description,
+        course_syllabus: syllabusFile,
+        course_icon: iconFile,
+      });
     } catch (error) {
       console.log(error);
       toast({
@@ -142,6 +117,7 @@ export function CourseDialogModal(props: CourseDialogProps) {
       });
     }
   }, [props.course, toast]);
+
 
   useEffect(() => {
     if (!props.isCreate && props.isOpen) {
