@@ -20,6 +20,9 @@ import { FileCheck, FileText, Image } from "@mynaui/icons-react";
 import Cookies from "js-cookie";
 import type * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Upload, X, AlertCircle, Eye } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription} from "@/components/ui/alert";
 
 export function CourseDialogModal({
   isCreate,
@@ -43,13 +46,20 @@ export function CourseDialogModal({
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
-  const [disableSubmitButton, setDisableSubmitButton] =
-    useState<boolean>(false);
+  const [disableSubmitButton, setDisableSubmitButton] = useState<boolean>(false);
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const [originalCourseData, setOriginalCourseData] = useState<Course>();
 
   const syllabusInputRef = useRef<HTMLInputElement>(null);
   const iconInputRef = useRef<HTMLInputElement>(null);
+
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasExistingSyllabus, setHasExistingSyllabus] = useState<boolean>(false);
+  const [existingSyllabus, setExistingSyllabus] = useState<{ name: string; url: string | null }>({
+    name: "",
+    url: null,
+  });
 
   const { toast } = useToast();
 
@@ -68,6 +78,8 @@ export function CourseDialogModal({
       setSyllabus(null);
       setIcon(null);
     }
+    setUploadProgress(0);
+    setIsDragging(false);
   };
 
   const fetchCourseDetails = useCallback(async () => {
@@ -100,6 +112,13 @@ export function CourseDialogModal({
           );
           const syllabus_url = response.data.file_url;
           const syllabus_filename = response.data.file_name;
+
+          setHasExistingSyllabus(true);
+          setExistingSyllabus({
+            name: syllabus_filename,
+            url: syllabus_url,
+          });
+
           const syllabusBlob = await (await fetch(syllabus_url)).blob();
           const syllabusExtension = syllabus_filename.split(".").pop();
           syllabusFile = new File(
@@ -244,6 +263,7 @@ export function CourseDialogModal({
     }
 
     setDisableSubmitButton(true);
+    setUploadProgress(10);
 
     if (!isCreate && !course) {
       toast({
@@ -263,7 +283,16 @@ export function CourseDialogModal({
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percentCompleted);
+            }
+          },
         });
+
+        setUploadProgress(100);
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
         onCourseUpdate();
         toast({
@@ -285,7 +314,16 @@ export function CourseDialogModal({
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percentCompleted);
+            }
+          },
         });
+
+        setUploadProgress(100);
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
         // Call the onCourseCreation callback to update the course list
         if (onCourseCreation) {
@@ -311,6 +349,7 @@ export function CourseDialogModal({
         variant: "destructive",
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
+      setUploadProgress(0);
     } finally {
       // Reset form fields and close the modal
       setDisableSubmitButton(false);
@@ -321,20 +360,41 @@ export function CourseDialogModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className={`${!isFromSyllabusPage ? "sm:max-w-[650px]" : "sm:max-w-[350px]"}`}
-      >
+      <DialogContent className={"sm:max-w-[650px]"}>
         <DialogHeader>
           <DialogTitle>
-            {!isFromSyllabusPage
-              ? isCreate
-                ? "Create Individual Study"
-                : "Edit Individual Study"
-              : "Edit Syllabus"}
+            {!isFromSyllabusPage ? (isCreate ? "Create Individual Study" : "Edit Individual Study") : "Edit Syllabus"}
           </DialogTitle>
         </DialogHeader>
 
         <form className="space-y-2 py-2" onSubmit={handleSubmit}>
+          {hasExistingSyllabus && isFromSyllabusPage && (
+            <div className="rounded-md border border-border bg-muted/30 p-4">
+              <h3 className="mb-2 text-sm font-medium">Current Syllabus</h3>
+              <div className="flex items-start space-x-3">
+                <div className="rounded-full bg-primary/10 p-2">
+                  <FileText className="size-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{existingSyllabus.name || "Course Syllabus"}</p>
+                  <div className="mt-1 flex items-center space-x-2">
+                    {existingSyllabus.url && (
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-xs font-light"
+                        onClick={() => window.open(existingSyllabus?.url, "_blank")}
+                      >
+                        <Eye className="mr-1 size-3" />
+                        View syllabus
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           {!isFromSyllabusPage && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -379,18 +439,25 @@ export function CourseDialogModal({
             </div>
           )}
 
-          <div
-            className={`${!isFromSyllabusPage ? "grid grid-cols-2 gap-4" : ""}`}
-          >
+          <div className={`${!isFromSyllabusPage ? "grid grid-cols-2 gap-4" : ""}`}>
             <div className="space-y-2">
               <Label htmlFor="syllabus" className="text-sm font-medium">
                 Syllabus (PDF or DOCX)
               </Label>
               <div
-                className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
-                onDragOver={(e) => e.preventDefault()}
+                className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors ${
+                  isDragging
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
                 onDrop={(e) => {
                   e.preventDefault();
+                  setIsDragging(false);
                   const file = e.dataTransfer.files[0];
                   handleFile(file, setSyllabus, "document");
                 }}
@@ -398,29 +465,21 @@ export function CourseDialogModal({
                 {syllabus ? (
                   <div className="flex flex-col items-center text-center">
                     {syllabus.name.endsWith(".pdf") ? (
-                      <div className="bg-primary/10 mb-2 rounded-full p-2">
-                        <FileCheck
-                          className="text-primary size-6"
-                          aria-hidden="true"
-                        />
+                      <div className="mb-2 rounded-full bg-primary/10 p-2">
+                        <FileCheck className="size-6 text-primary" aria-hidden="true" />
                       </div>
                     ) : (
-                      <div className="bg-primary/10 mb-2 rounded-full p-2">
-                        <FileText
-                          className="text-primary size-6"
-                          aria-hidden="true"
-                        />
+                      <div className="mb-2 rounded-full bg-primary/10 p-2">
+                        <FileText className="size-6 text-primary" aria-hidden="true" />
                       </div>
                     )}
                     <p className="text-sm font-medium">{syllabus.name}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {(syllabus.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                    <p className="text-xs text-muted-foreground">{(syllabus.size / 1024 / 1024).toFixed(2)} MB</p>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="mt-2"
+                      className="mt-2 flex items-center gap-1"
                       onClick={() => {
                         setSyllabus(null);
                         if (syllabusInputRef.current) {
@@ -428,6 +487,7 @@ export function CourseDialogModal({
                         }
                       }}
                     >
+                      <X className="size-3" />
                       Remove
                     </Button>
                   </div>
@@ -439,22 +499,18 @@ export function CourseDialogModal({
                     <div className="bg-primary/10 mb-2 rounded-full p-2">
                       <FileText className="text-primary size-6" />
                     </div>
-                    <p className="text-sm font-light">
+                    <p className="text-sm font-medium">
                       <span className="text-primary">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      PDF or DOCX (max 10MB)
-                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">PDF or DOCX (max 10MB)</p>
                   </label>
                 )}
                 <input
                   id="syllabus"
                   type="file"
                   accept=".pdf,.docx"
-                  onChange={(event) =>
-                    handleFileChange(event, setSyllabus, "document")
-                  }
+                  onChange={(event) => handleFileChange(event, setSyllabus, "document")}
                   className="hidden"
                   ref={syllabusInputRef}
                 />
@@ -467,7 +523,7 @@ export function CourseDialogModal({
                   Course Icon (JPG, JPEG or PNG)
                 </Label>
                 <div
-                  className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -478,12 +534,10 @@ export function CourseDialogModal({
                   {icon ? (
                     <div className="flex flex-col items-center text-center">
                       <div className="bg-primary/10 mb-2 rounded-full p-2">
-                        <Image className="text-primary size-6" />
+                        <Image className="size-6 text-primary" />
                       </div>
                       <p className="text-sm font-medium">{icon.name}</p>
-                      <p className="text-muted-foreground text-xs">
-                        {(icon.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
+                      <p className="text-xs text-muted-foreground">{(icon.size / 1024 / 1024).toFixed(2)} MB</p>
                       <Button
                         type="button"
                         variant="outline"
@@ -500,29 +554,21 @@ export function CourseDialogModal({
                       </Button>
                     </div>
                   ) : (
-                    <label
-                      htmlFor="image"
-                      className="flex cursor-pointer flex-col items-center text-center"
-                    >
+                    <label htmlFor="image" className="flex cursor-pointer flex-col items-center text-center">
                       <div className="bg-primary/10 mb-2 rounded-full p-2">
-                        <Image className="text-primary size-6" />
+                        <Upload className="size-6 text-primary" />
                       </div>
-                      <p className="text-sm font-light">
-                        <span className="text-primary">Click to upload</span> or
-                        drag and drop
+                      <p className="text-sm font-medium">
+                        <span className="text-primary">Click to upload</span> or drag and drop
                       </p>
-                      <p className="text-muted-foreground mt-1 text-xs">
-                        JPG, JPEG or PNG (max 10MB)
-                      </p>
+                      <p className="mt-1 text-xs font-light text-muted-foreground">JPG, JPEG or PNG (max 10MB)</p>
                     </label>
                   )}
                   <input
                     id="image"
                     type="file"
                     accept=".jpg,.jpeg,.png"
-                    onChange={(event) =>
-                      handleFileChange(event, setIcon, "image")
-                    }
+                    onChange={(event) => handleFileChange(event, setIcon, "image")}
                     className="hidden"
                     ref={iconInputRef}
                   />
@@ -530,27 +576,21 @@ export function CourseDialogModal({
               </div>
             )}
           </div>
+          {disableSubmitButton && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium">Uploading...</span>
+                <span className="text-xs font-light text-muted-foreground">{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="h-2" />
+            </div>
+          )}
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleOpenChange}
-              className="mt-2"
-            >
+            <Button type="button" variant="outline" onClick={handleOpenChange} className="mt-2">
               Cancel
             </Button>
-            <Button
-              className="mt-2"
-              type="submit"
-              disabled={!courseName || !courseCode || disableSubmitButton}
-            >
-              {disableSubmitButton
-                ? isCreate
-                  ? "Creating..."
-                  : "Updating..."
-                : isCreate
-                  ? "Create"
-                  : "Update"}
+            <Button className="mt-2" type="submit" disabled={!courseName || !courseCode || disableSubmitButton}>
+              {disableSubmitButton ? (isCreate ? "Creating..." : "Updating...") : isCreate ? "Create" : "Update"}
             </Button>
           </DialogFooter>
         </form>

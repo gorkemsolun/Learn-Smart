@@ -179,7 +179,7 @@ export default function UserDashboard() {
           <Card
             key={index}
             onClick={() => handleCardClick(card.link)}
-            className="h-full cursor-pointer transition-shadow duration-300 hover:shadow-lg"
+            className="h-full bg-gradient-to-br from-primary/5 via-secondary/5 to-background shadow-md cursor-pointer transition-shadow duration-300 hover:shadow-lg"
           >
             <div className="from-primary/5 via-secondary/5 to-background flex h-[24vh] items-center rounded-xl bg-gradient-to-br p-3 sm:p-4 lg:p-6">
               <div className="min-w-0 grow space-y-2">

@@ -1,7 +1,6 @@
 "use client";
 import { Icons } from "@/components/icons";
 import ImageSlider from "@/components/image-slider";
-import { LoadingSpinner } from "@/components/loading-spinner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
 import { authService, userService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
-import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
 import { Envelope, Eye, EyeSlash, LockWaves } from "@mynaui/icons-react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
@@ -113,7 +111,7 @@ export default function SignIn() {
           variant: "destructive",
           action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
-      })
+      });
   };
 
   // TO-DO after domain acquired this place will be updated

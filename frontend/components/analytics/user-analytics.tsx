@@ -19,6 +19,7 @@ import {
   ResponsiveContainer,
   XAxis,
   YAxis,
+  TooltipProps
 } from "recharts";
 
 const chartConfig = {
@@ -34,9 +35,9 @@ const formatTime = (seconds: number) => {
   return `${hours}h ${minutes}m`;
 };
 
-const CustomTooltip = ({ active, payload }: never) => {
+const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
-    const { day, timeSpent } = payload[0].payload;
+    const { day, timeSpent } = payload[0].payload as { day: string; timeSpent: number };
     return (
       <div className="bg-background text-foreground rounded p-2 shadow-md">
         <p className="text-sm font-medium">{`Day: ${day}`}</p>
@@ -47,13 +48,14 @@ const CustomTooltip = ({ active, payload }: never) => {
   return null;
 };
 
+
 export function UserChart({
   chartData,
 }: {
   chartData: { day: string; timeSpent: number }[];
 }) {
   return (
-    <Card className="from-primary/5 via-secondary/5 to-background h-full bg-gradient-to-br">
+   <Card className="h-full bg-gradient-to-br from-primary/5 via-secondary/5 to-background shadow-md">
       <CardHeader className="pb-4">
         <CardTitle>User Analytics</CardTitle>
         <CardDescription></CardDescription>

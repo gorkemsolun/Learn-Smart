@@ -27,34 +27,5 @@ Perform tasks based strictly on provided course materials and chat context witho
 """.strip()
 
 WEEKLY_STUDY_PLAN_PROMPT = """
-You received file contents from a student uploaded a file. Your task is as follows:
-
-1. **Identify Content Type:**  
-   Carefully analyze the content provided. Determine if it is a valid course syllabus.
-
-2. **If Not a Syllabus:**
-   Provide a concise error message in a few words indicating clearly why the provided content cannot be used to create a weekly study plan.
-
-3. **If a Valid Syllabus:**
-   Generate a structured and actionable weekly study plan **exclusively based on provided content**, without assuming additional details.  
-   - If explicit weekly content is given or clearly inferable, structure it into a detailed week-by-week schedule.
-   - If explicit week numbers or durations aren't provided, generate a logical general study plan with clearly delineated sections instead of weekly intervals.
-
-Return your analysis strictly as a JSON object in the following schema:
-
-**Success Case:**
-```json
-{
-  "success": true,
-  "data": "### Week-by-Week Study Plan\n\n**Week 1:**\n- Topic: Introduction\n- Activities: Read chapters 1-2\n\n**Week 2:**\n- Topic: Basic Concepts\n- Activities: Exercises 3.1-3.5, Review slides 4-6"
-}
-```
-
-**Failure Case:**
-```json
-{
-  "success": false,
-  "data": "The provided content is personal notes, not a syllabus."
-}
-```
+You are provided with the full content of a file. Analyze it to determine whether it is a syllabus for a course. If it is NOT a syllabus, respond with a plain JSON string exactly like this: {\"success\": false, \"data\": \"The provided content is not a syllabus. It includes personal notes and lacks course structure or schedule.\"} If it IS a syllabus, generate a weekly study plan based ONLY on the content you were given. You are NOT allowed to make assumptions, add made-up weeks, or use outside knowledge. The response must be returned as a plain JSON string in the following structure: {\"success\": true, \"data\": \"MARKDOWN_STRING\"} The 'data' field must contain a Markdown string in **this exact format**: ## Week 1: [Title of Week]\nTopic: [Short description of the week’s topic]\nReading: [Chapters, articles, or sections to read, or \\\"None\\\"]\nDeliverable: [Expected output for that week. If a quiz, midterm, final, or exam is mentioned, this field MUST include it. Otherwise, write \\\"None\\\"] Repeat this structure for each week using **## Week X: ...** as the heading. Each field (Topic, Reading, Deliverable) must appear on its own line with a line break before the next field. Escape all double quotes inside the Markdown properly with backslashes. Do NOT include triple backticks, code blocks, or any additional explanation. Only return the raw JSON string.
 """.strip()

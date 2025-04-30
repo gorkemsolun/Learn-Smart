@@ -118,6 +118,7 @@ export default function WeeklyStudyPlan() {
         // Fetch the actual study plan content
         const studyPlanResponse = await fetch(response.data.file_url);
         const data = await studyPlanResponse.text();
+        console.log(data);
         setStudyPlan(data);
       } else {
         setStudyPlan("");
@@ -151,103 +152,101 @@ export default function WeeklyStudyPlan() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner />
+      <LoadingSpinner />
+    );
+  } else {
+   return (
+      <div className="h-[92vh] bg-gradient-to-b from-muted/50 to-background p-6">
+        <div className="mx-auto max-w-7xl">
+          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-3xl font-thin tracking-tight">
+              {course.course_name}
+            </h1>
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 font-light"
+            >
+              <Upload className="size-4" />
+              <span>Upload/Update Syllabus</span>
+            </Button>
+          </header>
+
+          <CourseDialogModal
+            isCreate={false}
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            course={course}
+            onCourseUpdate={onCourseUpdate}
+            isFromSyllabusPage={true}
+          />
+
+          {weeksData.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {weeksData.map((week, idx) => (
+                <Card
+                  key={idx}
+                  className="overflow-hidden transition-all hover:shadow-md"
+                >
+                  <CardHeader className="bg-muted/50 pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="mt-2 text-lg font-semibold">
+                        {week.label.replace(/Week \\d+:\\s*/i, "")}
+                      </CardTitle>
+                      <CalendarDays className="size-4 text-muted-foreground" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    {week.topic && (
+                      <div className="mb-3">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Topic
+                        </h4>
+                        <p className="mt-1 font-light">{week.topic}</p>
+                      </div>
+                    )}
+                    {week.reading && (
+                      <div className="mb-3">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Reading
+                        </h4>
+                        <p className="mt-1 font-light">{week.reading}</p>
+                      </div>
+                    )}
+                    {week.deliverable && (
+                      <div className="mb-3">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Deliverable
+                        </h4>
+                        <p className="mt-1 font-light">{week.deliverable}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : studyPlan ? (
+            <div className="prose max-w-none">
+              <ReactMarkdown>{studyPlan}</ReactMarkdown>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+              <FileText className="mb-4 size-12 text-muted-foreground/50" />
+              <h3 className="text-lg font-medium">No study plan available</h3>
+              <p className="mt-2 text-sm font-light text-muted-foreground">
+                Upload your course syllabus to generate a personalized weekly
+                study plan.
+              </p>
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                variant="outline"
+                className="mt-4"
+              >
+                Upload Syllabus
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
-
-  return (
-    <div className="from-muted/50 to-background h-[92vh] bg-gradient-to-b p-6">
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-thin tracking-tight">
-            {course.course_name}
-          </h1>
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 font-light"
-          >
-            <Upload className="size-4" />
-            <span>Upload/Update Syllabus</span>
-          </Button>
-        </header>
-
-        <CourseDialogModal
-          isCreate={false}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          course={course}
-          onCourseUpdate={onCourseUpdate}
-          isFromSyllabusPage={true}
-        />
-
-        {weeksData.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {weeksData.map((week, idx) => (
-              <Card
-                key={idx}
-                className="overflow-hidden transition-all hover:shadow-md"
-              >
-                <CardHeader className="bg-muted/50 pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="mt-2 text-lg font-semibold">
-                      {week.label.replace(/Week \\d+:\\s*/i, "")}
-                    </CardTitle>
-                    <CalendarDays className="text-muted-foreground size-4" />
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-2">
-                  {week.topic && (
-                    <div className="mb-3">
-                      <h4 className="text-muted-foreground text-sm font-medium">
-                        Topic
-                      </h4>
-                      <p className="mt-1 font-light">{week.topic}</p>
-                    </div>
-                  )}
-                  {week.reading && (
-                    <div className="mb-3">
-                      <h4 className="text-muted-foreground text-sm font-medium">
-                        Reading
-                      </h4>
-                      <p className="mt-1 font-light">{week.reading}</p>
-                    </div>
-                  )}
-                  {week.deliverable && (
-                    <div className="mb-3">
-                      <h4 className="text-muted-foreground text-sm font-medium">
-                        Deliverable
-                      </h4>
-                      <p className="mt-1 font-light">{week.deliverable}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : studyPlan ? (
-          <div className="prose max-w-none">
-            <ReactMarkdown>{studyPlan}</ReactMarkdown>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-            <FileText className="text-muted-foreground/50 mb-4 size-12" />
-            <h3 className="text-lg font-medium">No study plan available</h3>
-            <p className="text-muted-foreground mt-2 text-sm font-light">
-              Upload your course syllabus to generate a personalized weekly
-              study plan.
-            </p>
-            <Button
-              onClick={() => setIsModalOpen(true)}
-              variant="outline"
-              className="mt-4"
-            >
-              Upload Syllabus
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 }
