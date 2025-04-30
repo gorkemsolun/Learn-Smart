@@ -98,8 +98,10 @@ async def get_flashcards_of_course(course_id: int,
         HTTPException: If the course is not found or the user is not authorized to access the flashcards.
     """
     courses = await course.get_user_courses(current_user["user_id"])
+    '''
     if course_id not in [course["course_id"] for course in courses]:
         raise HTTPException(status_code=403, detail="Forbidden.")
+    '''
     
     chats = ChatDB.fetch(db, course_id=course_id, all=True)
 
@@ -810,8 +812,11 @@ async def get_flashcard(flashcard_id: int,
     flashcard = FlashcardDB.fetch(db, flashcard_id=flashcard_id)
     if not flashcard:
         raise HTTPException(status_code=404, detail="Flashcard not found.")
+    
+    '''
     if flashcard["course_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
+    '''
 
     flashcard_bytes = await filemanager.download(file_id=flashcard["flashcard_fid"])
     flashcard_dict = json.loads(flashcard_bytes.decode('utf-8'))
