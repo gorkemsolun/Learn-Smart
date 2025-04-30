@@ -138,7 +138,7 @@ export default function Home() {
       link:
         courses.length === 0
           ? "error_chat"
-          : `/course/${courses[0].course_id}/quizzes`,
+          : `/all-quizzes`,
     },
     {
       title: "Flashcards",
