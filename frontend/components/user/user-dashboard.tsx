@@ -45,7 +45,9 @@ export default function UserDashboard() {
   const router = useRouter();
 
   const fetchDashboardData = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      return;
+    }
 
     startLoading(); // Start loading before fetching data
     try {

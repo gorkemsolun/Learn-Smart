@@ -5,7 +5,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
-import UpdateUploadSyllabus from "@/components/course/upload-syllabus-dialog";
+import { Course } from "@/app/types";
+import { CourseDialogModal } from "@/components/course/course-dialog";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,11 +68,7 @@ export default function WeeklyStudyPlan() {
   const [studyPlan, setStudyPlan] = useState<string>("");
   const [weeksData, setWeeksData] = useState<WeekData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [courseName, setCourseName] = useState<string>("");
-  const [syllabusInfo, setSyllabusInfo] = useState<{
-    url?: string;
-    name?: string;
-  }>({});
+  const [course, setCourse] = useState<Course>({} as Course);
 
   const params = useParams();
   const course_id = params?.course_id;
@@ -106,28 +103,25 @@ export default function WeeklyStudyPlan() {
         },
       });
 
-      setCourseName(courseResponse.data.course_name || "Your Course");
+      setCourse(courseResponse.data);
 
-      if (courseResponse.data.course_syllabus_url) {
-        setSyllabusInfo({
-          url: courseResponse.data.course_syllabus_url,
-          name: courseResponse.data.course_syllabus_name || "Course Syllabus",
-        });
+      if (courseResponse.data.course_syllabus_fid) {
+        const response = await filemanagerService.get(
+          `/${courseResponse.data.course_study_plan_fid}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // Fetch the actual study plan content
+        const studyPlanResponse = await fetch(response.data.file_url);
+        const data = await studyPlanResponse.text();
+        setStudyPlan(data);
+      } else {
+        setStudyPlan("");
       }
-
-      const response = await filemanagerService.get(
-        `/${courseResponse.data.course_study_plan_fid}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      // Fetch the actual study plan content
-      const studyPlanResponse = await fetch(response.data.file_url);
-      const data = await studyPlanResponse.text();
-      setStudyPlan(data);
     } catch (error) {
       console.error("Error fetching study plan:", error);
       toast({
@@ -141,10 +135,12 @@ export default function WeeklyStudyPlan() {
   };
 
   const handleRefresh = () => {
-    if (token && course_id) fetchStudyPlanData(course_id as string);
+    if (token && course_id) {
+      fetchStudyPlanData(course_id as string);
+    }
   };
 
-  const handleUploadSuccess = () => {
+  const onCourseUpdate = () => {
     setIsModalOpen(false);
     handleRefresh();
     toast({
@@ -165,7 +161,9 @@ export default function WeeklyStudyPlan() {
     <div className="from-muted/50 to-background h-[92vh] bg-gradient-to-b p-6">
       <div className="mx-auto max-w-7xl">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-thin tracking-tight">{courseName}</h1>
+          <h1 className="text-3xl font-thin tracking-tight">
+            {course.course_name}
+          </h1>
           <Button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center gap-2 font-light"
@@ -175,13 +173,13 @@ export default function WeeklyStudyPlan() {
           </Button>
         </header>
 
-        <UpdateUploadSyllabus
+        <CourseDialogModal
+          isCreate={false}
           isOpen={isModalOpen}
-          modalTitle="Upload or Update Syllabus"
           onClose={() => setIsModalOpen(false)}
-          onUploadSuccess={handleUploadSuccess}
-          course_id={course_id as string}
-          existingSyllabus={syllabusInfo}
+          course={course}
+          onCourseUpdate={onCourseUpdate}
+          isFromSyllabusPage={true}
         />
 
         {weeksData.length > 0 ? (
