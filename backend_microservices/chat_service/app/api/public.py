@@ -64,11 +64,8 @@ async def get_quizzes_of_course(course_id: int,
         HTTPException: If the course is not found or the user is not authorized to access the quizzes.
     """
     courses = await course.get_user_courses(current_user["user_id"])
-
-    '''
     if course_id not in [course["course_id"] for course in courses]:
         raise HTTPException(status_code=403, detail="Forbidden.")
-    '''
     
     chats = ChatDB.fetch(db, course_id=course_id, all=True)
 
