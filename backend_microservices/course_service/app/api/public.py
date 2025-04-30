@@ -197,7 +197,10 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
     CourseDB.update(
         db,
         course_id=course_id, course_name=course_name, course_code=course_code,
-        course_description=course_description, update_description=update_description
+        course_description=course_description, update_description=update_description,
+        course_icon_fid=course["course_icon_fid"],
+        course_syllabus_fid=course["course_syllabus_fid"],
+        course_study_plan_fid=course["course_study_plan_fid"]
     )
 
     error, error_message = False, None
