@@ -59,7 +59,7 @@ export function CoursesList(modalParameters: {
         </CardHeader>
 
         <CardContent className="p-0">
-          <ScrollArea className="-mt-2 h-[47vh] w-full bg-transparent">
+          <ScrollArea className="-mt-2 h-[50vh] w-full bg-transparent">
             <div className="p-4">
               <div className="flex flex-wrap gap-6">
                 {modalParameters.courses.map((Course, index) => (
