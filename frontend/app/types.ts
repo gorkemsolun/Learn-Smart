@@ -122,33 +122,14 @@ export interface SkillTreeProps {
   title?: string;
 }
 
-export interface SkillTreeCard {
+export interface SkillTree {
   id: string;
   title: string;
   description: string;
-}
-
-export interface SkillTreeListProps {
-  skillTrees: SkillTreeCard[];
 }
 
 export interface SkillTreeCreateProps {
   onSkillTreeSubmit: () => void;
-}
-
-export interface SkillTreeCardProps {
-  id: string;
-  title: string;
-  description: string;
-  onSkillTreeDelete: (id: string) => void;
-}
-
-export interface SkillTreeEditCreateDialogProps {
-  isOpen: boolean;
-  onClose: (value: boolean) => void;
-  onSkillTreeSubmit: () => void;
-  skillTree?: SkillTreeCard;
-  isEdit?: boolean;
 }
 
 export interface CheckPasswordDialogProps {
@@ -203,7 +184,7 @@ export interface SlidePanelProps {
   onFileChange: (slide_id: string) => void;
   onPreviousSlide: () => void;
   onNextSlide: () => void;
-  fetchSlide: (slideID: string, pageNumber: number) => Promise<any>;
+  fetchSlide: (slideID: string, pageNumber: number) => Promise<SlideResponse>;
 }
 
 export interface HotkeyConfig {
