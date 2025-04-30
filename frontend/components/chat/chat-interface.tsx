@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { Message } from "@/app/types";
+import { Chat, Message } from "@/app/types";
 import {
   Accordion,
   AccordionContent,
