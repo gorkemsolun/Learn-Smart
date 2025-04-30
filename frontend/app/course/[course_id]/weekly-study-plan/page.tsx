@@ -1,25 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { CalendarDays, FileText, Upload } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
-import { LoadingSpinner } from "@/components/loading-spinner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import UpdateUploadSyllabus from "@/components/course/upload-syllabus-dialog";
+import { LoadingSpinner } from "@/components/loading-spinner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { courseService, filemanagerService } from "@/environment/backend_api";
+import { toast } from "@/hooks/use-toast";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
-import { toast } from "@/hooks/use-toast";
 
 type WeekData = {
-  label: string
-  weekNumber: string
-  topic: string
-  reading: string
-  deliverable: string
-}
+  label: string;
+  weekNumber: string;
+  topic: string;
+  reading: string;
+  deliverable: string;
+};
 
 function parseStudyPlan(md: string): WeekData[] {
   // Fix: Ensure we only match headings like "## Week 2:"
@@ -54,7 +55,7 @@ function extractField(content: string, fieldName: string): string {
   // Updated regex to better handle field boundaries
   const regex = new RegExp(
     `${fieldName}:\\s*([\\s\\S]*?)(?=\\n(?:\\*\\*?)?(?:Topic|Reading|Deliverable):|\\n##|$)`,
-    "i",
+    "i"
   );
   const match = content.match(regex);
   return match ? match[1].trim() : "";
@@ -67,7 +68,10 @@ export default function WeeklyStudyPlan() {
   const [weeksData, setWeeksData] = useState<WeekData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [courseName, setCourseName] = useState<string>("");
-  const [syllabusInfo, setSyllabusInfo] = useState<{ url?: string; name?: string }>({});
+  const [syllabusInfo, setSyllabusInfo] = useState<{
+    url?: string;
+    name?: string;
+  }>({});
 
   const params = useParams();
   const course_id = params?.course_id;
@@ -92,7 +96,7 @@ export default function WeeklyStudyPlan() {
 
   const fetchStudyPlanData = async (course_id: string) => {
     try {
-      startLoading(); // Start loading
+      startLoading();
 
       // Fetch course details to get the study plan URL
       const courseResponse = await courseService.get(`/${course_id}`, {
@@ -111,17 +115,18 @@ export default function WeeklyStudyPlan() {
         });
       }
 
-      const studyPlanFID = courseResponse.data.course_study_plan_fid;
-      const response = await filemanagerService.get(`/${studyPlanFID}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await filemanagerService.get(
+        `/${courseResponse.data.course_study_plan_fid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       // Fetch the actual study plan content
       const studyPlanResponse = await fetch(response.data.file_url);
       const data = await studyPlanResponse.text();
-
       setStudyPlan(data);
     } catch (error) {
       console.error("Error fetching study plan:", error);
@@ -157,11 +162,14 @@ export default function WeeklyStudyPlan() {
   }
 
   return (
-    <div className="h-[92vh] bg-gradient-to-b from-muted/50 to-background p-6">
+    <div className="from-muted/50 to-background h-[92vh] bg-gradient-to-b p-6">
       <div className="mx-auto max-w-7xl">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-3xl font-thin tracking-tight">{courseName}</h1>
-          <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 font-light">
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 font-light"
+          >
             <Upload className="size-4" />
             <span>Upload/Update Syllabus</span>
           </Button>
@@ -179,31 +187,40 @@ export default function WeeklyStudyPlan() {
         {weeksData.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {weeksData.map((week, idx) => (
-              <Card key={idx} className="overflow-hidden transition-all hover:shadow-md">
+              <Card
+                key={idx}
+                className="overflow-hidden transition-all hover:shadow-md"
+              >
                 <CardHeader className="bg-muted/50 pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="mt-2 text-lg font-semibold">
-                      {week.label.replace(/Week \d+:\s*/i, "")}
+                      {week.label.replace(/Week \\d+:\\s*/i, "")}
                     </CardTitle>
-                    <CalendarDays className="size-4 text-muted-foreground" />
+                    <CalendarDays className="text-muted-foreground size-4" />
                   </div>
                 </CardHeader>
                 <CardContent className="pt-2">
                   {week.topic && (
                     <div className="mb-3">
-                      <h4 className="text-sm font-medium text-muted-foreground">Topic</h4>
+                      <h4 className="text-muted-foreground text-sm font-medium">
+                        Topic
+                      </h4>
                       <p className="mt-1 font-light">{week.topic}</p>
                     </div>
                   )}
                   {week.reading && (
                     <div className="mb-3">
-                      <h4 className="text-sm font-medium text-muted-foreground">Reading</h4>
+                      <h4 className="text-muted-foreground text-sm font-medium">
+                        Reading
+                      </h4>
                       <p className="mt-1 font-light">{week.reading}</p>
                     </div>
                   )}
                   {week.deliverable && (
                     <div className="mb-3">
-                      <h4 className="text-sm font-medium text-muted-foreground">Deliverable</h4>
+                      <h4 className="text-muted-foreground text-sm font-medium">
+                        Deliverable
+                      </h4>
                       <p className="mt-1 font-light">{week.deliverable}</p>
                     </div>
                   )}
@@ -211,14 +228,23 @@ export default function WeeklyStudyPlan() {
               </Card>
             ))}
           </div>
+        ) : studyPlan ? (
+          <div className="prose max-w-none">
+            <ReactMarkdown>{studyPlan}</ReactMarkdown>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-            <FileText className="mb-4 size-12 text-muted-foreground/50" />
+            <FileText className="text-muted-foreground/50 mb-4 size-12" />
             <h3 className="text-lg font-medium">No study plan available</h3>
-            <p className="mt-2 text-sm font-light text-muted-foreground">
-              Upload your course syllabus to generate a personalized weekly study plan.
+            <p className="text-muted-foreground mt-2 text-sm font-light">
+              Upload your course syllabus to generate a personalized weekly
+              study plan.
             </p>
-            <Button onClick={() => setIsModalOpen(true)} variant="outline" className="mt-4">
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              variant="outline"
+              className="mt-4"
+            >
               Upload Syllabus
             </Button>
           </div>
