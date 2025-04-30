@@ -195,13 +195,6 @@ export default function ChatResizablePanels({
     };
   }, [activeFile, activeChat]);
 
-  // Scroll to bottom of chat messages
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [activeMessages]);
-
   // Functions
   const fetchMediaData = (fid: string) => {
     if (!token || !fid) {
@@ -338,28 +331,26 @@ export default function ChatResizablePanels({
     }
   };
 
-  const handleFetchSlide = (slideID: string, pageNumber: number) => {
+  const handleFetchSlide = async (slideID: string, pageNumber: number) => {
     setIsSlidesLoading(true);
-    return fetchSlidePage(slideID, pageNumber)
-      .then(async (response) => {
-        const slideBase64 = response.data.slide;
-        const history = response.data.history;
-        setImgSrc(`data:image/png;base64,${slideBase64}`);
-        setCurrentSlidePage(pageNumber);
-        const formattedHistory = await formatHistory(history);
-        setActiveMessages(formattedHistory);
-      })
-      .catch((error) => {
-        console.error("Error fetching slide:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch slide data",
-          variant: "destructive",
-        });
-      })
-      .finally(() => {
-        setIsSlidesLoading(false);
+    try {
+      const response = await fetchSlidePage(slideID, pageNumber);
+      const slideBase64 = response.data.slide;
+      const history = response.data.history;
+      setImgSrc(`data:image/png;base64,${slideBase64}`);
+      setCurrentSlidePage(pageNumber);
+      const formattedHistory = await formatHistory(history);
+      setActiveMessages(formattedHistory);
+    } catch (error) {
+      console.error("Error fetching slide:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch slide data",
+        variant: "destructive",
       });
+    } finally {
+      setIsSlidesLoading(false);
+    }
   };
 
   const fetchSlidePage = (slideID: string, pageNumber: number) => {

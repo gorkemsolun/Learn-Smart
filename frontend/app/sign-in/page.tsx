@@ -33,7 +33,6 @@ export default function SignIn() {
 
   const router = useRouter();
   const { toast } = useToast();
-  const { loading, startLoading, stopLoading } = useLoading(); // Initialize useLoading hook
 
   const fetchUserRole = useCallback(async () => {
     try {
@@ -71,7 +70,6 @@ export default function SignIn() {
   }, [router, role, fetchUserRole]);
 
   const handleSignIn = async () => {
-    startLoading(); // Start loading before making the API call
     await authService
       .post(
         "/login",
@@ -116,15 +114,10 @@ export default function SignIn() {
           action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
       })
-      .finally(() => {
-        stopLoading(); // Stop loading after the API call is complete
-      });
   };
 
   // TO-DO after domain acquired this place will be updated
   const handleGoogleSignIn = () => {};
-
-  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center p-6">

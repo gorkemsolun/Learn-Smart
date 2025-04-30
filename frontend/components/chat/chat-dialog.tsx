@@ -24,7 +24,7 @@ import type { ChatDialogProps } from "@/app/types";
 /*
 * TO-DO write the backend for the edit where you may change the current slide with another,
 * users will also be able to add multiple slides this one will change the current slide only.
-* */
+*/
 export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDialogProps) {
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
