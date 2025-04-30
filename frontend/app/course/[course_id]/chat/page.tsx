@@ -57,6 +57,8 @@ export default function ChatPage() {
       return [...prevChats, chat];
     });
 
+    setActiveChat(chat);
+
     if (chat.slides_mode && token) {
       chatService.get(`/chat/${chat.chat_id}`, {
         headers: { Authorization: `Bearer ${token}` },

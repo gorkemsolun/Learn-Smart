@@ -281,6 +281,7 @@ export default function SlidePanel({
   }, []);
 
   const handleSlideSubmit = useCallback(() => {
+    if (currentSlidePage.toString() === userSlideInput) {return;}
     const slideNumber = Number.parseInt(userSlideInput, 10);
     if (isNaN(slideNumber) || slideNumber < 1 || slideNumber > totalPages) {
       toast({

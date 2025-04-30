@@ -1,4 +1,3 @@
-import { HierarchyNode, SimulationNodeDatum } from "d3";
 import React, { ReactNode } from "react";
 
 export interface User {
@@ -40,6 +39,7 @@ export interface Tier {
   features: string[];
   badge?: any; // TODO: Define the type for badge
 }
+
 export interface Message {
   role: "user" | "assistant";
   text: string;
@@ -101,19 +101,6 @@ export interface ConfirmationDialogProps {
   description: string;
   onConfirm: () => void;
   triggerButtonLabel: ReactNode;
-}
-
-export interface LinkData {
-  source: string;
-  target: string;
-}
-
-export interface CustomSimulationNode
-  extends SimulationNodeDatum,
-    HierarchyNode<NodeData> {
-  id: string;
-  label: string;
-  group: number;
 }
 
 export interface SkillTreeProps {
@@ -189,10 +176,6 @@ export interface ChatHistoryResponse {
   history: ChatMessage[];
 }
 
-export interface SlideResponse {
-  slide: string;
-  history?: ChatMessage[];
-}
 export interface SlidePanelProps {
   imgSrc?: string;
   currentSlidePage: number;
@@ -213,11 +196,4 @@ export interface HotkeyConfig {
   metaKey?: boolean;
   shiftKey?: boolean;
   altKey?: boolean;
-}
-
-export interface ImageContainerProps {
-  imageUrl: string;
-  fallbackImage: string;
-  alt: string;
-  className?: string;
 }
