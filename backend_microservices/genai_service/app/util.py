@@ -1,5 +1,5 @@
 import base64
-from typing import Any
+from typing import Any, Dict, List, Set
 
 def encode_base64(file: bytes) -> str:
     """
@@ -81,6 +81,51 @@ def validate_flashcards_format(data: list) -> bool:
     return True  # Valid success case
 
 
+def has_cycle(edges: List[Dict[str, str]]) -> bool:
+    """
+    Detects if there is a cycle in a directed graph defined by `edges`.
+    Each edge is a dict with "source" and "target" node IDs (strings).
+
+    Returns True if a cycle exists, False otherwise.
+    """
+    # Build adjacency list
+    adj: Dict[str, List[str]] = {}
+    for e in edges:
+        src = e["source"]
+        tgt = e["target"]
+        adj.setdefault(src, []).append(tgt)
+        # ensure target appears in adj, even if no outgoing edges
+        adj.setdefault(tgt, [])
+
+    visited: Set[str] = set()    # permanently visited nodes
+    rec_stack: Set[str] = set()  # nodes in the current DFS path
+
+    def dfs(node: str) -> bool:
+        # If node is in recursion stack ,cycle
+        if node in rec_stack:
+            return True
+        # Already fully visited,no cycle from here
+        if node in visited:
+            return False
+
+        # Mark this node as in-progress
+        rec_stack.add(node)
+        for neighbor in adj[node]:
+            if dfs(neighbor):
+                return True
+        # Done exploring from node
+        rec_stack.remove(node)
+        visited.add(node)
+        return False
+
+    # Run DFS from every node
+    for node in adj:
+        if node not in visited:
+            if dfs(node):
+                return True
+
+    return False
+
 def validate_skill_tree_format(data: Any) -> bool:
     """
     Validates the 'data' payload for the skill‐tree format.
@@ -91,8 +136,6 @@ def validate_skill_tree_format(data: Any) -> bool:
         {
           "id": "n1",
           "name": "Basic OOP",
-          "parents": ["n0", ...],
-          "children": ["n2", ...],
           "quiz": [
             {
               "question": "...",
@@ -111,6 +154,12 @@ def validate_skill_tree_format(data: Any) -> bool:
         },
         ... more nodes ...
       ]
+      "edges": [
+        {
+            "source": "n1",
+            "target": "n2"
+        }
+      ]
     }
 
     Returns True if 'data' conforms, False otherwise.
@@ -124,6 +173,10 @@ def validate_skill_tree_format(data: Any) -> bool:
     if not isinstance(nodes, list) or not nodes:
         return False
 
+    # check cycles
+    if has_cycle(data.get("edges")):
+        return False
+    
     for node in nodes:
         if not isinstance(node, dict):
             return False
@@ -138,18 +191,9 @@ def validate_skill_tree_format(data: Any) -> bool:
         if not isinstance(name, str) or not name.strip():
             return False
 
-        # Validate 'parents' & 'children'
-        for rel in ("parents", "children"):
-            rel_list = node.get(rel)
-            if not isinstance(rel_list, list):
-                return False
-            for rid in rel_list:
-                if not isinstance(rid, str) or not rid.strip():
-                    return False
-
         # Validate 'quiz' revise the quiz length
         quiz = node.get("quiz")
-        if not isinstance(quiz, list) or not (2 <= len(quiz) <= 5): 
+        if not isinstance(quiz, list) or not (2 <= len(quiz) <= 10): 
             return False
 
         for question in quiz:

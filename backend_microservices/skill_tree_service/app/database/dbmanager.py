@@ -13,6 +13,10 @@ class SkillTreeDB:
 
     @staticmethod
     def create(db: Session, course_id: int, root_node_id: int = None):
+        # Prevent duplicate skill trees for a course
+        existing = db.query(SkillTree).filter(SkillTree.course_id == course_id).first()
+        if existing:
+            raise ValueError(f"SkillTree already exists for course_id={course_id}")
         tree = SkillTree(course_id=course_id, root_node_id=root_node_id)
         db.add(tree)
         db.commit()

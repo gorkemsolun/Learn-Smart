@@ -3,6 +3,7 @@ import json
 from skill_tree_service.app.database.session import get_db, Base
 from sqlalchemy import text
 
+
 def annotate_and_prune(tree_json): #not needed I guess
     #  Extract node list and build id→node map
     nodes = tree_json["data"]["nodes"]

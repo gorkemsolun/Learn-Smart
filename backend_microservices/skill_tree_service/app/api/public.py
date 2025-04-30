@@ -37,19 +37,30 @@ async def create_skill_tree(course_id: int,
             all_histories = history
 
         
-    all_histories.add_message(role="edux", content=SKILL_TREE_PROMPT)
+    all_histories.add_message(role="edux", content=SKILL_TREE_PROMPT)#role?
 
     skill_tree = await genai.create_skill_tree(all_histories)
     #convert the object to an adjacency list, make 2 passes, 1: create the nodes and quiz, 2: create the edges 
     tree = SkillTreeDB.create(db, course_id=course_id)
     skill_tree_id = tree["id"]
+    
+    root_set = set()
+    for e in skill_tree["edges"]:
+        root_set.add(e["source"])
+        if e["target"] in root_set:
+            root_set.remove(e["target"])
 
     # PASS 1: nodes and quizzes
     llm2db = {}
-    for n in skill_tree["data"]["nodes"]:
+    for n in skill_tree["nodes"]:
         llm_id   = n["id"]
         llm_name = n["name"]
-        llm_state = NodeState(n.get("state", NodeState.LOCKED_UNCOMPLETED.value))
+        if llm_id in root_set:
+            n["state"] = NodeState.UNLOCKED_UNCOMPLETED.value
+        else:
+            n["state"] = NodeState.LOCKED_UNCOMPLETED.value
+
+        llm_state = NodeState(n["state"])
 
         db_node = SkillTreeNodeDB.create(
             db,
@@ -82,15 +93,14 @@ async def create_skill_tree(course_id: int,
         
 
     # PASS 2: edges
-    for e in skill_tree["data"]["edges"]:
+    for e in skill_tree["edges"]:
         SkillTreeEdgeDB.create(
             db,
             parent_node_id=llm2db[e["source"]],
             child_node_id= llm2db[e["target"]]
         )
 
-    
-    pass
+    return {"success": True, "skill_tree": skill_tree} 
 
 @router.get("/{course_id}") # get the skill tree associated with the given course id
 async def get_skill_tree(course_id: int, 
@@ -140,14 +150,14 @@ async def get_skill_tree(course_id: int,
         quiz_dict = json.loads(quiz_bytes.decode('utf-8'))
 
         title = q.quiz_title if q else f"Quiz {n.id}"
-        nodes_payload.append({
+        nodes_payload.append({ 
             "id":   f"n{n.id}",
             "name": title,
             "quiz": quiz_dict,                          # placeholder for later
             "state": n.state.value,
         })
 
-    # 6) Build edge list payload
+    # Build edge list payload
     edges_payload = [
         {"source": f"n{e.parent_node_id}", "target": f"n{e.child_node_id}"}
         for e in edges
@@ -155,7 +165,7 @@ async def get_skill_tree(course_id: int,
 
     return {
         "success": True,
-        "data": {
+        "skill_tree": {
             "nodes": nodes_payload,
             "edges": edges_payload
         }
