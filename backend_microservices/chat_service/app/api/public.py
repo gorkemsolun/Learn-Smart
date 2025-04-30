@@ -650,10 +650,8 @@ async def get_quiz(quiz_id: int,
     """
 
     quiz = QuizDB.fetch(db, quiz_id=quiz_id)
-    '''
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
-    '''
     
     await get_authorized_chat_and_course(db, quiz["chat_id"], current_user["user_id"])
     
@@ -684,11 +682,9 @@ async def rename_quiz(quiz_id: int,
     Raises:
         HTTPException: If the quiz is not found or the user is not authorized to rename the quiz.
     """
-    '''
     quiz = QuizDB.fetch(db, quiz_id=quiz_id)
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
-    '''
     
     await get_authorized_chat_and_course(db, quiz["chat_id"], current_user["user_id"])
 
