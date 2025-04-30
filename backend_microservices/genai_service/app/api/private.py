@@ -6,7 +6,7 @@ import google.generativeai as genai
 
 from genai_service.app.client import ChatClient
 
-from genai_service.app.util import validate_quiz_format, validate_flashcards_format, encode_base64
+from genai_service.app.util import validate_quiz_format, validate_flashcards_format, encode_base64, validate_skill_tree_format
 from genai_service.app.security.auth import verify_api_key
 from genai_service.app import (
     WEEKLY_STUDY_PLAN_PROMPT, GOOGLE_MODEL_VERSION
@@ -81,6 +81,7 @@ async def create_quiz(payload: dict = Body(...)):
         generation_config={"response_mime_type": "application/json"}
     )
 
+
     response_dict = json.loads(response)
     if not response_dict["success"]:
         raise HTTPException(status_code=500, detail=f"{response_dict["data"]}")
@@ -118,4 +119,32 @@ async def create_flashcards(payload: dict = Body(...)):
         raise HTTPException(status_code=500, detail="Flashcards format could not be validated.")
     
     return {"success": True, "flashcards": data}
+
+@router.post("/generate/skill-tree")
+async def create_skill_tree(payload: dict = Body(...)):
+    """
+    Create skill tree based on all chat histories.
+
+    Args:
+        history (List[dict]): The chat history.
+        current_user (dict): The current user.
+    """
+    history = json.loads(payload.get("history", "[]"))
+
+    client = ChatClient.create(model="google")
+    response = client.invoke(
+        history=history,
+        generation_config={"response_mime_type": "application/json"}
+    )
+
+    response_dict = json.loads(response)
+    if not response_dict["success"]:
+        raise HTTPException(status_code=500, detail="Failed to generate skill tree.")
+    
+    data = response_dict["data"]
+    if not validate_skill_tree_format(data):
+        raise HTTPException(status_code=500, detail="Skill tree format could not be validated.") #If needed, make more sophisticated error messages
+    
+    return {"success": True, "skill_tree": data}
+
     

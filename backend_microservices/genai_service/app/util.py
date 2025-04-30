@@ -1,4 +1,5 @@
 import base64
+from typing import Any
 
 def encode_base64(file: bytes) -> str:
     """
@@ -79,3 +80,104 @@ def validate_flashcards_format(data: list) -> bool:
 
     return True  # Valid success case
 
+
+def validate_skill_tree_format(data: Any) -> bool:
+    """
+    Validates the 'data' payload for the skill‐tree format.
+
+    Expected 'data' format:
+    {
+      "nodes": [
+        {
+          "id": "n1",
+          "name": "Basic OOP",
+          "parents": ["n0", ...],
+          "children": ["n2", ...],
+          "quiz": [
+            {
+              "question": "...",
+              "type": "multiple-choice",
+              "options": {
+                "A": "...",
+                "B": "...",
+                "C": "...",
+                "D": "...",
+                "E": "..."
+              },
+              "answer": "A"
+            },
+            ... up to 5 questions ...
+          ]
+        },
+        ... more nodes ...
+      ]
+    }
+
+    Returns True if 'data' conforms, False otherwise.
+    """
+    # Top‐level must be a dict
+    if not isinstance(data, dict):
+        return False
+
+    # Must contain a non‐empty list of nodes
+    nodes = data.get("nodes")
+    if not isinstance(nodes, list) or not nodes:
+        return False
+
+    for node in nodes:
+        if not isinstance(node, dict):
+            return False
+
+        # Validate 'id'
+        nid = node.get("id")
+        if not isinstance(nid, str) or not nid.strip():
+            return False
+
+        # Validate 'name'
+        name = node.get("name")
+        if not isinstance(name, str) or not name.strip():
+            return False
+
+        # Validate 'parents' & 'children'
+        for rel in ("parents", "children"):
+            rel_list = node.get(rel)
+            if not isinstance(rel_list, list):
+                return False
+            for rid in rel_list:
+                if not isinstance(rid, str) or not rid.strip():
+                    return False
+
+        # Validate 'quiz' revise the quiz length
+        quiz = node.get("quiz")
+        if not isinstance(quiz, list) or not (2 <= len(quiz) <= 5): 
+            return False
+
+        for question in quiz:
+            if not isinstance(question, dict):
+                return False
+
+            # question text
+            qtext = question.get("question")
+            if not isinstance(qtext, str) or not qtext.strip():
+                return False
+
+            # type must be "multiple-choice"
+            if question.get("type") != "multiple-choice":
+                return False
+
+            # options must be dict with exactly A–E
+            options = question.get("options")
+            if not isinstance(options, dict):
+                return False
+            if set(options.keys()) != {"A", "B", "C", "D", "E"}:
+                return False
+            for opt in options.values():
+                if not isinstance(opt, str) or not opt.strip():
+                    return False
+
+            # answer must be one of the option keys
+            answer = question.get("answer")
+            if answer not in options:
+                return False
+
+    return True
