@@ -36,6 +36,14 @@ async def get_chats_of_course(course_id: int,
             raise HTTPException(status_code=403, detail="Forbidden - not authorized to access the chats.")
         
         chats = ChatDB.fetch(db, course_id=course_id, all=True)
+
+        # Fetch slides for each chat
+        for chat in chats:
+            if chat["slides_mode"]:
+                slides = SlideDB.fetch(db, chat_id=chat["chat_id"], all=True)
+                chat["slides"] = slides
+            else:
+                chat["slides"] = []
         return chats
 
 

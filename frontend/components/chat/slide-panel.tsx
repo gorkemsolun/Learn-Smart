@@ -344,7 +344,11 @@ export default function SlidePanel({
         {/* Header: File selection and controls */}
         <div className="flex items-center justify-between border-b p-1">
           <div className="flex items-center gap-2">
-            <Select onValueChange={onFileChange} className="mt-2">
+            <Select 
+              value={currentSlide?.slide_id} 
+              onValueChange={onFileChange} 
+              className="mt-2"
+            >
               <SelectTrigger className="h-9 w-[220px]">
                 <SelectValue placeholder="Choose File" />
               </SelectTrigger>

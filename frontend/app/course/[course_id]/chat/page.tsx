@@ -56,6 +56,21 @@ export default function ChatPage() {
       }
       return [...prevChats, chat];
     });
+
+    if (chat.slides_mode && token) {
+      chatService.get(`/chat/${chat.chat_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(response => {
+        console.log("RESPONSE", response.data.slides);
+        if (chat.slides) {
+          chat.slides = response.data.slides;
+        }
+      })
+      .catch(error => {
+        console.error("Failed to fetch slide files:", error);
+      });
+    }
   };
 
   // Fetch courses for the user
