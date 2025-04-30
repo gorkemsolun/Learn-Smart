@@ -12,8 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
 import ChatIcon from "@mui/icons-material/Chat";
 import HubIcon from "@mui/icons-material/Hub";
-import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
-import QuizIcon from "@mui/icons-material/Quiz";
+import { Sparkles, Swatches } from "@mynaui/icons-react";
 import dayjs from "dayjs";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
@@ -136,7 +135,7 @@ export default function Home() {
     {
       title: "Quizzes",
       content: "Test your knowledge.",
-      icon: <QuizIcon className="text-3xl md:text-4xl" />,
+      icon: <Sparkles className="text-3xl md:text-4xl" />,
       link:
         courses.length === 0
           ? "error_chat"
@@ -145,7 +144,7 @@ export default function Home() {
     {
       title: "Flashcards",
       content: "Learn with flashcards.",
-      icon: <LibraryBooksIcon className="text-3xl md:text-4xl" />,
+      icon: <Swatches className="text-3xl md:text-4xl" />,
       link:
         courses.length === 0
           ? "error_chat"

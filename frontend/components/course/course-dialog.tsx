@@ -97,7 +97,7 @@ export function CourseDialogModal({
 
       setCourseName(course_name);
       setCourseCode(course_code);
-      setCourseDescription(course_description);
+      setCourseDescription(course_description ?? "");
 
       let syllabusFile: File | undefined = undefined;
       let iconFile: File | undefined = undefined;
@@ -456,7 +456,7 @@ export function CourseDialogModal({
               </Label>
               <Textarea
                 id="description"
-                value={courseDescription}
+                value={courseDescription ?? ""}
                 onChange={(e) => setCourseDescription(e.target.value)}
                 placeholder="Enter course description"
                 className="min-h-[100px]"
