@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import type { Chat } from "@/app/types";
+import { Course } from "@/app/types";
+import { ChatDialog } from "@/components/chat/chat-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   SidebarContent,
   SidebarGroup,
@@ -15,13 +22,18 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { ChevronDown, MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import type { Chat, ChatSidebarProps } from "@/app/types";
 import { chatService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChatDialog } from "@/components/chat/chat-dialog";
+import Cookies from "js-cookie";
+import {
+  ChevronDown,
+  MessageSquare,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import {
   AlertDialog,
@@ -43,7 +55,15 @@ export default function ChatSidebar({
   setActiveChat,
   chats,
   fetchChats,
-}: ChatSidebarProps) {
+}: {
+  course: Course;
+  courses: Course[];
+  isLoading: boolean;
+  activeChat: Chat | null;
+  setActiveChat: React.Dispatch<React.SetStateAction<Chat | null>>;
+  chats: Chat[];
+  fetchChats: (courseId: string) => Promise<void>;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const token = Cookies.get("authToken") as string;
@@ -108,7 +128,8 @@ export default function ChatSidebar({
     } catch (error: any) {
       toast({
         title: "Error",
-        description: "Error deleting chat: " + (error?.message || "Unknown error"),
+        description:
+          "Error deleting chat: " + (error?.message || "Unknown error"),
         variant: "destructive",
         action: (
           <ToastAction altText="Try again" onClick={() => confirmDeleteChat()}>
@@ -124,15 +145,20 @@ export default function ChatSidebar({
 
   return (
     <>
-      <SidebarHeader className="mt-[3.25rem] border-b bg-card px-2 py-3">
+      <SidebarHeader className="bg-card mt-[3.25rem] border-b px-2 py-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-between">
-              <span className="truncate">{course?.course_name || "Select a Course"}</span>
+              <span className="truncate">
+                {course?.course_name || "Select a Course"}
+              </span>
               <ChevronDown className="ml-2 size-4 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+          <DropdownMenuContent
+            align="start"
+            className="w-[var(--radix-dropdown-menu-trigger-width)]"
+          >
             {courses.length > 0 ? (
               courses.map((c) => (
                 <DropdownMenuItem
@@ -146,7 +172,9 @@ export default function ChatSidebar({
               ))
             ) : (
               <DropdownMenuItem disabled={true}>
-                <span className="text-muted-foreground">No courses available</span>
+                <span className="text-muted-foreground">
+                  No courses available
+                </span>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -163,7 +191,9 @@ export default function ChatSidebar({
               <SidebarMenu>
                 {isLoading ? (
                   <div className="flex justify-center py-4">
-                    <p className="text-sm text-muted-foreground">Loading chats...</p>
+                    <p className="text-muted-foreground text-sm">
+                      Loading chats...
+                    </p>
                   </div>
                 ) : chats.length > 0 ? (
                   chats.map((chat) => (
@@ -171,9 +201,7 @@ export default function ChatSidebar({
                       <SidebarMenuButton
                         isActive={activeChat?.chat_id === chat.chat_id}
                         className="w-full text-left"
-                        onClick={() =>
-                          setActiveChat(chat as Chat)
-                        }
+                        onClick={() => setActiveChat(chat as Chat)}
                       >
                         <MessageSquare className="size-4 shrink-0" />
                         <span className="truncate">{chat.chat_title}</span>
@@ -185,7 +213,9 @@ export default function ChatSidebar({
                           </SidebarMenuAction>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" side="right">
-                          <DropdownMenuItem onClick={() => handleEditChat(chat)}>
+                          <DropdownMenuItem
+                            onClick={() => handleEditChat(chat)}
+                          >
                             <Pencil className="mr-2 size-4" />
                             <span>Edit</span>
                           </DropdownMenuItem>
@@ -202,9 +232,11 @@ export default function ChatSidebar({
                   ))
                 ) : (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <MessageSquare className="mb-2 size-8 text-muted-foreground" />
+                    <MessageSquare className="text-muted-foreground mb-2 size-8" />
                     <h3 className="mb-1 text-sm font-medium">No chats yet</h3>
-                    <p className="text-xs text-muted-foreground">Create a new chat to get started</p>
+                    <p className="text-muted-foreground text-xs">
+                      Create a new chat to get started
+                    </p>
                   </div>
                 )}
               </SidebarMenu>
@@ -213,7 +245,6 @@ export default function ChatSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Combined Chat Dialog for Create/Edit */}
       <ChatDialog
         isOpen={chatDialogOpen}
         onClose={() => {
@@ -225,13 +256,13 @@ export default function ChatSidebar({
         mode={dialogMode}
       />
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Deleting Chat</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete chat &#34;{chatToDelete?.chat_title}&#34;? This action cannot be undone.
+              Are you sure you want to delete chat &#34;
+              {chatToDelete?.chat_title}&#34;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -248,4 +279,3 @@ export default function ChatSidebar({
     </>
   );
 }
-
