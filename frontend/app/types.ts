@@ -113,14 +113,6 @@ export interface ChatResizablePanelsProps {
   activeChat: Chat | null;
 }
 
-export interface ChatDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onChatAction: (chat?: Chat) => void;
-  chat?: Chat | null;
-  mode: "create" | "edit";
-}
-
 export interface ChatMessage {
   message_id: number;
   is_user: boolean;
