@@ -1,9 +1,25 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import * as React from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+} from "@/components/ui/chart";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const chartConfig = {
   desktop: {
@@ -22,7 +38,7 @@ const CustomTooltip = ({ active, payload }: never) => {
   if (active && payload && payload.length) {
     const { day, timeSpent } = payload[0].payload;
     return (
-      <div className="rounded bg-background p-2 text-foreground shadow-md">
+      <div className="bg-background text-foreground rounded p-2 shadow-md">
         <p className="text-sm font-medium">{`Day: ${day}`}</p>
         <p className="text-sm">{`Time Spent: ${formatTime(timeSpent)}`}</p>
       </div>
@@ -31,21 +47,31 @@ const CustomTooltip = ({ active, payload }: never) => {
   return null;
 };
 
-export function UserChart({ chartData }: { chartData: { day: string; timeSpent: number }[] }) {
+export function UserChart({
+  chartData,
+}: {
+  chartData: { day: string; timeSpent: number }[];
+}) {
   return (
-    <Card className="h-full bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
+    <Card className="from-primary/5 via-secondary/5 to-background h-full bg-gradient-to-br">
       <CardHeader className="pb-4">
         <CardTitle>User Analytics</CardTitle>
         <CardDescription></CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[47vh] w-full bg-transparent">
+        <ChartContainer
+          config={chartConfig}
+          className="h-[47vh] w-full bg-transparent"
+        >
           <ResponsiveContainer height="100%" width="100%">
             <BarChart data={chartData}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="day" tickLine={true} axisLine={false} />
               <YAxis tickFormatter={(value) => formatTime(value)} width={70} />
-              <ChartTooltip cursor={{ fill: "rgba(0,0,0,0.1)" }} content={<CustomTooltip />} />
+              <ChartTooltip
+                cursor={{ fill: "rgba(0,0,0,0.1)" }}
+                content={<CustomTooltip />}
+              />
               <Bar dataKey="timeSpent" fill="var(--color-desktop)" radius={8} />
             </BarChart>
           </ResponsiveContainer>

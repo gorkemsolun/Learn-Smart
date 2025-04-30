@@ -1,5 +1,6 @@
 "use client";
 
+import { Course } from "@/app/types";
 import {
   CommandDialog,
   CommandEmpty,
@@ -8,25 +9,30 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {DialogTitle} from "@/components/ui/dialog";
-import HubIcon from '@mui/icons-material/Hub';
-import ChatIcon from '@mui/icons-material/Chat';
-import PersonIcon from '@mui/icons-material/Person';
-import React, {useCallback, useEffect, useState} from "react";
-import {useRouter} from "next/navigation";
-import {Course} from "@/app/types";
-import {backendAPI} from "@/environment/backend_api";
-import {ToastAction} from "@/components/ui/toast";
+import { DialogTitle } from "@/components/ui/dialog";
+import { ToastAction } from "@/components/ui/toast";
+import { backendAPI } from "@/environment/backend_api";
+import { useToast } from "@/hooks/use-toast";
+import ChatIcon from "@mui/icons-material/Chat";
+import HubIcon from "@mui/icons-material/Hub";
+import PersonIcon from "@mui/icons-material/Person";
 import Cookies from "js-cookie";
-import {useToast} from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
-export function SearchDialogModal({ isOpen, onClose }) {
+export function SearchDialogModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose?: (open: boolean) => void;
+}) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const token = Cookies.get("authToken") as string;
 
-  const handleNavigation = async (path) => {
+  const handleNavigation = async (path: string) => {
     setOpen(false);
     onClose?.(false);
     await router.replace(path);
@@ -74,9 +80,10 @@ export function SearchDialogModal({ isOpen, onClose }) {
     }
   }, [open, isOpen, fetchCourses]);
 
-
   return (
-    <CommandDialog open={open || isOpen} onOpenChange={(isOpen) => {
+    <CommandDialog
+      open={open || isOpen}
+      onOpenChange={(isOpen) => {
         setOpen(isOpen);
         onClose?.(isOpen);
       }}
@@ -89,6 +96,7 @@ export function SearchDialogModal({ isOpen, onClose }) {
           <CommandItem asChild>
             <button
               onClick={() => handleNavigation("/skill-tree")}
+              type="button"
               className="flex w-full cursor-pointer items-center gap-2 text-left"
             >
               <HubIcon />
@@ -106,6 +114,7 @@ export function SearchDialogModal({ isOpen, onClose }) {
           </CommandItem>
           <CommandItem asChild>
             <button
+              type="button"
               onClick={() =>
                 handleNavigation(
                   courses.length === 0
@@ -115,9 +124,9 @@ export function SearchDialogModal({ isOpen, onClose }) {
               }
               className="flex w-full cursor-pointer items-center gap-2 text-left"
             >
-            <ChatIcon />
-            <span>Chat</span>
-          </button>
+              <ChatIcon />
+              <span>Chat</span>
+            </button>
           </CommandItem>
         </CommandGroup>
       </CommandList>
