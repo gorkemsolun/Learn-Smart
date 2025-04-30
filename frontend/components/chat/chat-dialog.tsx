@@ -116,6 +116,7 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
     if (file) {
       formData.append("slides", file);
     }
+    formData.append("chat_title", chatName.trim());
 
     try {
       let response;
@@ -125,12 +126,12 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
         // Edit mode
         response = await chatService.put(
           `/chat/${chat.chat_id}`,
-          file ? formData : { chat_title: chatName.trim() },
+          formData,
           {
             headers: {
               Accept: "application/json",
               Authorization: `Bearer ${authToken}`,
-              ...(file && { "Content-Type": "multipart/form-data" }),
+              "Content-Type": "multipart/form-data"
             },
           }
         );
