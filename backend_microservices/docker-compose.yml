@@ -100,6 +100,24 @@ services:
       - ./user_service/app/.env
     networks:
       - microservices-network
+  
+  skill_tree_service:
+    build:
+      context: ./skill_tree_service
+      dockerfile: Dockerfile
+    ports:
+      - "8008:8008"
+    develop:  
+      watch:
+        - action: sync+restart
+          path: ./skill_tree_service        # host folder to watch
+          target: /skill_tree_service 
+    depends_on:
+      - mysql_skilltree
+    env_file:
+      - ./skill_tree_service/app/.env
+    networks:
+      - microservices-network
 
   # MySQL containers.
   mysql_chat:
@@ -161,6 +179,21 @@ services:
       - db_filemanager:/var/lib/mysql
     networks:
       - microservices-network
+  
+  mysql_skilltree:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: edux_skilltree
+      MYSQL_USER: edux_admin
+      MYSQL_PASSWORD: eduxisawesome123
+      MYSQL_ROOT_PASSWORD: 22003206
+    ports:
+      - "3311:3306"
+    volumes:
+      - db_skilltree:/var/lib/mysql
+    networks:
+      - microservices-network
 
 networks:
   microservices-network:
@@ -171,3 +204,4 @@ volumes:
   db_course:
   db_filemanager:
   db_user:
+  db_skilltree:
