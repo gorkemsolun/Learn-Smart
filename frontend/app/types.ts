@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React from "react";
 
 export interface User {
   user_id: string;
@@ -87,36 +87,10 @@ export interface ChatInterfaceProps {
   activeChat: Chat | null;
 }
 
-export interface CoursesListProps {
-  courses: Course[];
-  onCourseDelete: () => void;
-  setCourseDialog: (value: boolean) => void;
-  onCourseUpdate: () => void;
-  startLoading?: () => void;
-  stopLoading?: () => void;
-}
-
-export interface ConfirmationDialogProps {
-  title: string;
-  description: string;
-  onConfirm: () => void;
-  triggerButtonLabel: ReactNode;
-}
-
-export interface SkillTreeProps {
-  nodes?: NodeData[];
-  edges?: { source: string; target: string }[];
-  title?: string;
-}
-
 export interface SkillTree {
   id: string;
   title: string;
   description: string;
-}
-
-export interface SkillTreeCreateProps {
-  onSkillTreeSubmit: () => void;
 }
 
 export interface CheckPasswordDialogProps {
