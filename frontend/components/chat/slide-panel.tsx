@@ -2,18 +2,37 @@
 
 import type React from "react";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { Slide } from "@/app/types";
 import { Button } from "@/components/ui/button";
-import { ResizablePanel } from "@/components/ui/resizable";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { ZoomIn, ZoomOut, Loader2, Maximize2, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { ResizablePanel } from "@/components/ui/resizable";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useHotkeys } from "@/hooks/use-hotkeys";
-import type { SlidePanelProps } from "@/app/types";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Maximize2,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Magnification constant
 const MAGNIFICATION_CONSTANT = 100 / 38;
@@ -29,7 +48,18 @@ export default function SlidePanel({
   onPreviousSlide,
   onNextSlide,
   fetchSlide,
-}: SlidePanelProps) {
+}: {
+  imgSrc?: string;
+  currentSlidePage: number;
+  totalPages: number;
+  isSlidesLoading: boolean;
+  presentationFiles: { slide_id: string; slides_file_name: string }[];
+  currentSlide: Slide;
+  onFileChange: (slide_id: string) => void;
+  onPreviousSlide: () => void;
+  onNextSlide: () => void;
+  fetchSlide: (slideID: string, pageNumber: number) => Promise<any>;
+}) {
   // Core state
   const [zoomLevel, setZoomLevel] = useState(100);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -37,15 +67,23 @@ export default function SlidePanel({
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // Dimensions
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  const [imageDimensions, setImageDimensions] = useState({
+    width: 0,
+    height: 0,
+  });
+  const [containerDimensions, setContainerDimensions] = useState({
+    width: 0,
+    height: 0,
+  });
 
   // Drag state
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // UI state
-  const [userSlideInput, setUserSlideInput] = useState(currentSlidePage.toString());
+  const [userSlideInput, setUserSlideInput] = useState(
+    currentSlidePage.toString()
+  );
 
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -75,7 +113,8 @@ export default function SlidePanel({
 
     updateContainerDimensions();
     window.addEventListener("resize", updateContainerDimensions);
-    return () => window.removeEventListener("resize", updateContainerDimensions);
+    return () =>
+      window.removeEventListener("resize", updateContainerDimensions);
   }, []);
 
   // Handle fullscreen changes
@@ -85,7 +124,8 @@ export default function SlidePanel({
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   // Handle global mouse up for drag end
@@ -100,8 +140,14 @@ export default function SlidePanel({
 
   // Keyboard shortcuts
   useHotkeys([
-    { key: "ArrowLeft", callback: () => currentSlidePage > 1 && onPreviousSlide() },
-    { key: "ArrowRight", callback: () => currentSlidePage < totalPages && onNextSlide() },
+    {
+      key: "ArrowLeft",
+      callback: () => currentSlidePage > 1 && onPreviousSlide(),
+    },
+    {
+      key: "ArrowRight",
+      callback: () => currentSlidePage < totalPages && onNextSlide(),
+    },
     { key: "y", metaKey: true, callback: () => handleZoom(10) },
     { key: "u", metaKey: true, callback: () => handleZoom(-10) },
     { key: "0", metaKey: true, callback: () => resetZoom() },
@@ -135,7 +181,10 @@ export default function SlidePanel({
 
     // Apply a small margin to ensure it's fully visible (90% of the calculated fit)
     // and apply the magnification constant
-    const safeZoomLevel = Math.min(Math.max(fitZoomLevel * 0.9 * MAGNIFICATION_CONSTANT, 10), 300);
+    const safeZoomLevel = Math.min(
+      Math.max(fitZoomLevel * 0.9 * MAGNIFICATION_CONSTANT, 10),
+      300
+    );
 
     // Set the initial zoom level to fit the image
     setZoomLevel(safeZoomLevel);
@@ -159,7 +208,9 @@ export default function SlidePanel({
 
         const widthRatio = containerWidth / naturalWidth;
         const heightRatio = containerHeight / naturalHeight;
-        const fitZoomLevel = Math.floor(Math.min(widthRatio, heightRatio) * 100 * 0.9 * MAGNIFICATION_CONSTANT);
+        const fitZoomLevel = Math.floor(
+          Math.min(widthRatio, heightRatio) * 100 * 0.9 * MAGNIFICATION_CONSTANT
+        );
 
         // If zooming out to fit level or below, reset position
         if (newZoom <= fitZoomLevel && prev > fitZoomLevel) {
@@ -180,7 +231,7 @@ export default function SlidePanel({
         return newZoom;
       });
     },
-    [position],
+    [position]
   );
 
   const resetZoom = useCallback(() => {
@@ -199,7 +250,10 @@ export default function SlidePanel({
 
     // Apply a small margin to ensure it's fully visible (90% of the calculated fit)
     // and apply the magnification constant
-    const safeZoomLevel = Math.min(Math.max(fitZoomLevel * 0.9 * MAGNIFICATION_CONSTANT, 10), 300);
+    const safeZoomLevel = Math.min(
+      Math.max(fitZoomLevel * 0.9 * MAGNIFICATION_CONSTANT, 10),
+      300
+    );
 
     setZoomLevel(safeZoomLevel);
     setPosition({ x: 0, y: 0 });
@@ -228,7 +282,9 @@ export default function SlidePanel({
 
       const widthRatio = containerWidth / naturalWidth;
       const heightRatio = containerHeight / naturalHeight;
-      const fitZoomLevel = Math.floor(Math.min(widthRatio, heightRatio) * 100 * 0.9 * MAGNIFICATION_CONSTANT);
+      const fitZoomLevel = Math.floor(
+        Math.min(widthRatio, heightRatio) * 100 * 0.9 * MAGNIFICATION_CONSTANT
+      );
 
       // Only allow dragging if zoomed in beyond the fit level
       if (zoomLevel <= fitZoomLevel) return;
@@ -240,7 +296,7 @@ export default function SlidePanel({
         y: e.clientY - position.y,
       });
     },
-    [zoomLevel, position],
+    [zoomLevel, position]
   );
 
   const handleMouseMove = useCallback(
@@ -272,16 +328,21 @@ export default function SlidePanel({
         y: constrainedY,
       });
     },
-    [isDragging, dragStart, zoomLevel, imageDimensions, containerDimensions],
+    [isDragging, dragStart, zoomLevel, imageDimensions, containerDimensions]
   );
 
   // Slide input handlers
-  const handleSlideInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setUserSlideInput(e.target.value);
-  }, []);
+  const handleSlideInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setUserSlideInput(e.target.value);
+    },
+    []
+  );
 
   const handleSlideSubmit = useCallback(() => {
-    if (currentSlidePage.toString() === userSlideInput) {return;}
+    if (currentSlidePage.toString() === userSlideInput) {
+      return;
+    }
     const slideNumber = Number.parseInt(userSlideInput, 10);
     if (isNaN(slideNumber) || slideNumber < 1 || slideNumber > totalPages) {
       toast({
@@ -293,7 +354,14 @@ export default function SlidePanel({
       return;
     }
     fetchSlide(currentSlide.slide_id, slideNumber);
-  }, [userSlideInput, totalPages, currentSlide?.slide_id, fetchSlide, toast, currentSlidePage]);
+  }, [
+    userSlideInput,
+    totalPages,
+    currentSlide?.slide_id,
+    fetchSlide,
+    toast,
+    currentSlidePage,
+  ]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -311,7 +379,12 @@ export default function SlidePanel({
           const { naturalWidth, naturalHeight } = imageRef.current;
           const widthRatio = newWidth / naturalWidth;
           const heightRatio = newHeight / naturalHeight;
-          const fitZoomLevel = Math.floor(Math.min(widthRatio, heightRatio) * 100 * 0.9 * MAGNIFICATION_CONSTANT);
+          const fitZoomLevel = Math.floor(
+            Math.min(widthRatio, heightRatio) *
+              100 *
+              0.9 *
+              MAGNIFICATION_CONSTANT
+          );
 
           // If zoomed in, recalculate position constraints
           if (zoomLevel > fitZoomLevel) {
@@ -345,9 +418,9 @@ export default function SlidePanel({
         {/* Header: File selection and controls */}
         <div className="flex items-center justify-between border-b p-1">
           <div className="flex items-center gap-2">
-            <Select 
-              value={currentSlide?.slide_id} 
-              onValueChange={onFileChange} 
+            <Select
+              value={currentSlide?.slide_id}
+              onValueChange={onFileChange}
               className="mt-2"
             >
               <SelectTrigger className="h-9 w-[220px]">
@@ -421,7 +494,9 @@ export default function SlidePanel({
                     variant="outline"
                     size="icon"
                     onClick={toggleFullscreen}
-                    aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                    aria-label={
+                      isFullscreen ? "Exit fullscreen" : "Enter fullscreen"
+                    }
                     className="size-8"
                   >
                     <Maximize2 className="size-4" />
@@ -436,7 +511,9 @@ export default function SlidePanel({
         {/* Slide Content */}
         <div className="relative flex flex-1 flex-col items-center overflow-hidden p-3">
           <div className="mb-4 flex w-full items-center justify-between">
-            <h2 className="text-base font-semibold">Slide {currentSlidePage}</h2>
+            <h2 className="text-base font-semibold">
+              Slide {currentSlidePage}
+            </h2>
 
             <div className="flex items-center gap-1">
               <TooltipProvider>
@@ -478,7 +555,9 @@ export default function SlidePanel({
                       variant="ghost"
                       size="icon"
                       onClick={onNextSlide}
-                      disabled={isSlidesLoading || currentSlidePage >= totalPages}
+                      disabled={
+                        isSlidesLoading || currentSlidePage >= totalPages
+                      }
                       aria-label="Next slide"
                       className="size-8"
                     >
@@ -506,16 +585,20 @@ export default function SlidePanel({
             {isSlidesLoading ? (
               <div className="flex flex-col items-center justify-center gap-2 p-8">
                 <Loader2 className="size-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Loading slide...</p>
+                <p className="text-sm text-muted-foreground">
+                  Loading slide...
+                </p>
               </div>
             ) : imgSrc ? (
               <>
-                {!imageLoaded && <Skeleton className="absolute inset-4 rounded-md" />}
+                {!imageLoaded && (
+                  <Skeleton className="absolute inset-4 rounded-md" />
+                )}
                 <div
                   className={cn(
                     "relative flex size-full items-center justify-center",
                     zoomLevel > 100 && "cursor-grab",
-                    isDragging && zoomLevel > 100 && "cursor-grabbing",
+                    isDragging && zoomLevel > 100 && "cursor-grabbing"
                   )}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -526,7 +609,9 @@ export default function SlidePanel({
                     style={{
                       transform: `translate(${position.x}px, ${position.y}px) scale(${zoomLevel / 100})`,
                       transformOrigin: "center",
-                      transition: isDragging ? "none" : "transform 0.1s ease-out",
+                      transition: isDragging
+                        ? "none"
+                        : "transform 0.1s ease-out",
                       maxWidth: "100%",
                       maxHeight: "100%",
                       display: "flex",
@@ -541,7 +626,8 @@ export default function SlidePanel({
                       className={cn(
                         "max-h-full max-w-full object-contain",
                         !imageLoaded && "opacity-0",
-                        imageLoaded && "opacity-100 transition-opacity duration-200",
+                        imageLoaded &&
+                          "opacity-100 transition-opacity duration-200"
                       )}
                       onLoad={handleImageLoad}
                       draggable={false}
@@ -554,7 +640,9 @@ export default function SlidePanel({
               <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
                 <p className="text-muted-foreground">No slide available</p>
                 {presentationFiles.length === 0 && (
-                  <p className="text-sm text-muted-foreground">Please select a presentation file to begin</p>
+                  <p className="text-sm text-muted-foreground">
+                    Please select a presentation file to begin
+                  </p>
                 )}
               </div>
             )}
@@ -566,8 +654,10 @@ export default function SlidePanel({
               {!isSlidesLoading && (
                 <div className="flex flex-wrap justify-center gap-2">
                   <div>
-                    <kbd className="rounded border bg-muted px-1.5 py-0.5 text-xs font-semibold">← →</kbd> for
-                    navigation
+                    <kbd className="rounded border bg-muted px-1.5 py-0.5 text-xs font-semibold">
+                      ← →
+                    </kbd>{" "}
+                    for navigation
                   </div>
                 </div>
               )}
