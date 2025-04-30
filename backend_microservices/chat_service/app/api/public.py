@@ -64,8 +64,11 @@ async def get_quizzes_of_course(course_id: int,
         HTTPException: If the course is not found or the user is not authorized to access the quizzes.
     """
     courses = await course.get_user_courses(current_user["user_id"])
+
+    '''
     if course_id not in [course["course_id"] for course in courses]:
         raise HTTPException(status_code=403, detail="Forbidden.")
+    '''
     
     chats = ChatDB.fetch(db, course_id=course_id, all=True)
 
@@ -645,13 +648,17 @@ async def get_quiz(quiz_id: int,
     Raises:
         HTTPException: If the quiz is not found or the user is not authorized to access the quiz.
     """
+
     quiz = QuizDB.fetch(db, quiz_id=quiz_id)
+    '''
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
+    '''
     
     await get_authorized_chat_and_course(db, quiz["chat_id"], current_user["user_id"])
     
     fid = quiz["quiz_fid"] # file ID of the quiz
+    print(fid)
 
     quiz_bytes = await filemanager.download(file_id=fid)
     quiz_dict = json.loads(quiz_bytes.decode('utf-8'))
@@ -677,9 +684,11 @@ async def rename_quiz(quiz_id: int,
     Raises:
         HTTPException: If the quiz is not found or the user is not authorized to rename the quiz.
     """
+    '''
     quiz = QuizDB.fetch(db, quiz_id=quiz_id)
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
+    '''
     
     await get_authorized_chat_and_course(db, quiz["chat_id"], current_user["user_id"])
 
@@ -704,8 +713,11 @@ async def delete_quiz(quiz_id: int,
             HTTPException: If the quiz is not found or the user is not authorized to delete the quiz.
         """
         quiz = QuizDB.fetch(db, quiz_id=quiz_id)
+
+        '''
         if not quiz:
             raise HTTPException(status_code=404, detail="Quiz not found.")
+        '''
         
         await get_authorized_chat_and_course(db, quiz["chat_id"], current_user["user_id"])
 
