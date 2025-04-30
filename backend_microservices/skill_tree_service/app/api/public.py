@@ -11,7 +11,6 @@ import io, tempfile
 #from skill_tree_service.app.database.dbmanager import 
 from skill_tree_service.app.database.session import get_db
 
-from skill_tree_service.app.util import validate_file_extension, resize_image
 #from skill_tree_service.app.schemas import SkillTreeCreationRequest, SkillTreeUpdateRequest
 
 from skill_tree_service.app.clients import user, genai, filemanager, chat
