@@ -10,18 +10,25 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { ConfirmationDialogProps } from "@/app/types";
+import { ReactNode } from "react";
 
 export function ConfirmationDialog({
   title,
   description,
   onConfirm,
   triggerButtonLabel,
-}: ConfirmationDialogProps) {
+}: {
+  title: string;
+  description: string;
+  onConfirm: () => void;
+  triggerButtonLabel: ReactNode;
+}) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="outline" size="icon">{triggerButtonLabel}</Button>
+        <Button variant="outline" size="icon">
+          {triggerButtonLabel}
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

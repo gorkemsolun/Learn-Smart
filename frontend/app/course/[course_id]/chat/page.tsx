@@ -1,19 +1,27 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Cookies from "js-cookie";
-import { chatService, courseService, userService } from "@/environment/backend_api";
-import ChatSidebar from "@/components/chat/chat-sidebar";
+import { Chat, Course } from "@/app/types";
 import { ChatDialog } from "@/components/chat/chat-dialog";
 import ChatResizablePanels from "@/components/chat/chat-resizable-panels";
-import { Chat, Course } from "@/app/types";
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import ChatSidebar from "@/components/chat/chat-sidebar";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/ui/sidebar";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Sidebar,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { ToastAction } from "@/components/ui/toast";
-import {ArrowRight, Loader2, MessageSquareText} from "lucide-react";
+import {
+  chatService,
+  courseService,
+  userService,
+} from "@/environment/backend_api";
+import { useToast } from "@/hooks/use-toast";
+import Cookies from "js-cookie";
+import { ArrowRight, Loader2, MessageSquareText } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 export default function ChatPage() {
   const params = useParams<{ course_id: string }>();
@@ -56,6 +64,23 @@ export default function ChatPage() {
       }
       return [...prevChats, chat];
     });
+
+    setActiveChat(chat);
+
+    if (chat.slides_mode && token) {
+      chatService
+        .get(`/chat/${chat.chat_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          if (chat.slides) {
+            chat.slides = response.data.slides;
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to fetch slide files:", error);
+        });
+    }
   };
 
   // Fetch courses for the user
@@ -93,9 +118,12 @@ export default function ChatPage() {
         });
         setCourse(courseResponse.data);
 
-        const chatResponse = await chatService.get(`/course/${courseId}/chats`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const chatResponse = await chatService.get(
+          `/course/${courseId}/chats`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setChats(chatResponse.data || []);
       } catch (error: unknown) {
         const errMsg = error instanceof Error ? error.message : "Unknown error";
@@ -104,7 +132,10 @@ export default function ChatPage() {
           description: `Failed to fetch sidebar data: ${errMsg}`,
           variant: "destructive",
           action: (
-            <ToastAction altText="Retry" onClick={() => course_id && fetchSidebarData(course_id)}>
+            <ToastAction
+              altText="Retry"
+              onClick={() => course_id && fetchSidebarData(course_id)}
+            >
               Retry
             </ToastAction>
           ),
@@ -126,11 +157,9 @@ export default function ChatPage() {
     fetchCourses();
   }, [fetchCourses]);
 
-
   return (
     <div className="fixed inset-0 mt-16">
       <SidebarProvider open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        {/* Sidebar Component */}
         <Sidebar>
           <ChatSidebar
             course={course as Course}
@@ -147,8 +176,15 @@ export default function ChatPage() {
         <SidebarInset className="flex h-screen flex-col">
           <div className="flex items-center border-b px-4 py-2">
             <SidebarTrigger className="mr-2" />
-            <h1 className="text-xl font-thin">{course?.course_name || "Course Chat"}</h1>
-            <Button variant="outline" size="sm" className="ml-auto" onClick={handleCreateChat}>
+            <h1 className="text-xl font-thin">
+              {course?.course_name || "Course Chat"}
+            </h1>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={handleCreateChat}
+            >
               New Chat
             </Button>
           </div>
@@ -157,79 +193,72 @@ export default function ChatPage() {
             <div className="flex-1 overflow-hidden">
               <ChatResizablePanels activeChat={activeChat} />
             </div>
-          ) :  !chatsLoaded ? (
-              <div className="absolute inset-0 flex size-full items-center justify-center">
-                <Loader2 className="size-12 animate-spin text-foreground/90"/>
-              </div>
+          ) : !chatsLoaded ? (
+            <div className="absolute inset-0 flex size-full items-center justify-center">
+              <Loader2 className="text-foreground/90 size-12 animate-spin" />
+            </div>
           ) : (
-              <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-background font-thin">
-              {/* Elegant background with subtle gradients */}
+            <div className="bg-background relative flex flex-1 items-center justify-center overflow-hidden font-thin">
               <div className="absolute inset-0 overflow-hidden opacity-60">
-                <div className="absolute left-1/4 top-0 size-[500px] rounded-full bg-gradient-to-b from-primary/5 to-transparent blur-[120px]" />
-                <div className="absolute bottom-0 right-1/4 size-[400px] rounded-full bg-gradient-to-t from-primary/5 to-transparent blur-[100px]" />
-                <div className="absolute bottom-1/4 left-0 size-[300px] rounded-full bg-gradient-to-r from-secondary/5 to-transparent blur-[80px]" />
+                <div className="from-primary/5 absolute left-1/4 top-0 size-[500px] rounded-full bg-gradient-to-b to-transparent blur-[120px]" />
+                <div className="from-primary/5 absolute bottom-0 right-1/4 size-[400px] rounded-full bg-gradient-to-t to-transparent blur-[100px]" />
+                <div className="from-secondary/5 absolute bottom-1/4 left-0 size-[300px] rounded-full bg-gradient-to-r to-transparent blur-[80px]" />
               </div>
 
-              {/* Subtle animated lines */}
               <div className="absolute inset-0 overflow-hidden opacity-20">
-                <div className="absolute left-0 top-[10%] h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                <div className="absolute left-0 top-[60%] h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-                <div className="absolute left-[20%] top-0 h-full w-px bg-gradient-to-b from-transparent via-secondary/20 to-transparent" />
-                <div className="absolute left-[80%] top-0 h-full w-px bg-gradient-to-b from-transparent via-secondary/20 to-transparent" />
+                <div className="via-primary/30 absolute left-0 top-[10%] h-px w-full bg-gradient-to-r from-transparent to-transparent" />
+                <div className="via-primary/20 absolute left-0 top-[60%] h-px w-full bg-gradient-to-r from-transparent to-transparent" />
+                <div className="via-secondary/20 absolute left-[20%] top-0 h-full w-px bg-gradient-to-b from-transparent to-transparent" />
+                <div className="via-secondary/20 absolute left-[80%] top-0 h-full w-px bg-gradient-to-b from-transparent to-transparent" />
               </div>
 
-              {/* Content container */}
-               <div className="relative z-10 flex max-w-2xl flex-col items-center px-6 py-16 text-center">
-                 <div className="relative mb-12">
-                   <div
-                       className="absolute -inset-8 rounded-full bg-gradient-to-r from-primary/5 to-secondary/5 opacity-70 blur-2xl"/>
-                   <div
-                       className="absolute -inset-6 rounded-full bg-gradient-to-r from-primary/5 to-secondary/5 opacity-50 blur-xl"/>
-                   <div
-                       className="relative flex size-20 items-center justify-center rounded-full border border-primary/10 bg-background/80 shadow-sm backdrop-blur-sm">
-                     <MessageSquareText className="size-8 text-primary/80"/>
-                   </div>
-                   <div className="absolute -bottom-1 -right-1 size-3 rounded-full bg-primary"/>
-                   <div className="absolute -bottom-1 -right-1 size-3 animate-ping rounded-full bg-primary"/>
-                 </div>
+              <div className="relative z-10 flex max-w-2xl flex-col items-center px-6 py-16 text-center">
+                <div className="relative mb-12">
+                  <div className="from-primary/5 to-secondary/5 absolute -inset-8 rounded-full bg-gradient-to-r opacity-70 blur-2xl" />
+                  <div className="from-primary/5 to-secondary/5 absolute -inset-6 rounded-full bg-gradient-to-r opacity-50 blur-xl" />
+                  <div className="border-primary/10 bg-background/80 relative flex size-20 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm">
+                    <MessageSquareText className="text-primary/80 size-8" />
+                  </div>
+                  <div className="bg-primary absolute -bottom-1 -right-1 size-3 rounded-full" />
+                  <div className="bg-primary absolute -bottom-1 -right-1 size-3 animate-ping rounded-full" />
+                </div>
 
-                 <h1 className="mb-6 text-4xl tracking-tight text-foreground">
-                   Welcome to your Chatbot
-                 </h1>
+                <h1 className="text-foreground mb-6 text-4xl tracking-tight">
+                  Welcome to your Chatbot
+                </h1>
 
-                 <div className="mb-2 h-px w-16 bg-primary/30"/>
+                <div className="bg-primary/30 mb-2 h-px w-16" />
 
-                 <p className="mb-12 max-w-lg text-lg leading-relaxed text-foreground/80">
-                   Discover a new way to explore ideas, find answers to your
-                   questions with our sophisticated AI assistant.
-                 </p>
+                <p className="text-foreground/80 mb-12 max-w-lg text-lg leading-relaxed">
+                  Discover a new way to explore ideas, find answers to your
+                  questions with our sophisticated AI assistant.
+                </p>
 
-                 {chatsLoaded && chats.length === 0 && (
-                    <button
-                      onClick={() => setChatDialogOpen(true)}
-                      className="group relative flex items-center overflow-hidden rounded-md border border-primary/20 bg-background px-6 py-3 text-sm font-medium text-primary shadow-sm transition-all duration-300 hover:border-primary/40 hover:bg-primary/5 hover:shadow-md"
-                    >
-                      Begin Your Experience
-                      <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">
-                        <ArrowRight className="size-4" />
-                      </span>
-                    </button>
-                 )}
-               </div>
-             </div>
+                {chatsLoaded && chats.length === 0 && (
+                  <button
+                    onClick={() => setChatDialogOpen(true)}
+                    className="border-primary/20 bg-background text-primary hover:border-primary/40 hover:bg-primary/5 group relative flex items-center overflow-hidden rounded-md border px-6 py-3 text-sm font-medium shadow-sm transition-all duration-300 hover:shadow-md"
+                  >
+                    Begin Your Experience
+                    <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">
+                      <ArrowRight className="size-4" />
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
           )}
         </SidebarInset>
 
-        {/* Chat Dialog */}
         <ChatDialog
-            isOpen={chatDialogOpen}
-            onClose={() => {
-              setChatDialogOpen(false);
-              setChatToCreate(null);
-            }}
-            onChatAction={handleChatAction}
-            chat={chatToCreate}
-            mode={dialogMode}
+          isOpen={chatDialogOpen}
+          onClose={() => {
+            setChatDialogOpen(false);
+            setChatToCreate(null);
+          }}
+          onChatAction={handleChatAction}
+          chat={chatToCreate}
+          mode={dialogMode}
         />
       </SidebarProvider>
     </div>

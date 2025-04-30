@@ -136,7 +136,7 @@ class GoogleChatClient(ChatClientBase):
             generation_config=generation_config,
         )
 
-        response = model.start_chat(history=history).send_message("Continue.")
+        response = model.start_chat(history=history).send_message("_")
         content = response.text
         return content
 

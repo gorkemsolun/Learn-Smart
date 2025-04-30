@@ -1,6 +1,6 @@
 "use client";
 
-import type { CoursesListProps } from "@/app/types";
+import { Course } from "@/app/types";
 import { CourseCard } from "@/components/course/course-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,14 @@ import Cookies from "js-cookie";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 
-export function CoursesList(modalParameters: CoursesListProps) {
+export function CoursesList(modalParameters: {
+  courses: Course[];
+  onCourseDelete: () => void;
+  setCourseDialog: (value: boolean) => void;
+  onCourseUpdate: () => void;
+  startLoading?: () => void;
+  stopLoading?: () => void;
+}) {
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const { toast } = useToast();
 
@@ -37,17 +44,17 @@ export function CoursesList(modalParameters: CoursesListProps) {
 
   return (
     <>
-      <Card className="from-primary/5 via-secondary/5 to-background border/50 h-full bg-gradient-to-br shadow-md">
+      <Card className="h-full bg-gradient-to-br from-primary/5 via-secondary/5 to-background shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="font-semibold">Your Studies</CardTitle>
           <Button
             onClick={() => modalParameters.setCourseDialog(true)}
             variant="outline"
             size="sm"
-            className="hover:bg-primary/10 gap-1"
+            className="gap-1 hover:bg-primary/10"
           >
             <PlusIcon className="size-4" />
-            <span className="hidden sm:inline">Add Course</span>
+            <span className="hidden sm:inline">New Course</span>
           </Button>
         </CardHeader>
 

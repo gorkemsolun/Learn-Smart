@@ -39,7 +39,6 @@ export function CourseCard(modalParameters: {
 }) {
   const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
-  const courseIconFid = modalParameters.course.course_icon_fid || "";
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState<boolean>(true);
   const [imageError, setImageError] = useState<boolean>(false);
@@ -47,13 +46,18 @@ export function CourseCard(modalParameters: {
 
   useEffect(() => {
     const fetchImageUrl = async () => {
+      if (!modalParameters.course.course_icon_fid) {
+        setImageUrl(null);
+        setIsImageLoading(false);
+        return;
+      }
       setIsImageLoading(true);
       setImageError(false);
 
-      if (courseIconFid) {
+      if (modalParameters.course.course_icon_fid) {
         try {
           // Access the filemanager service endpoint to get the image
-          const response = await filemanagerService.get(`/${courseIconFid}`, {
+          const response = await filemanagerService.get(`/${modalParameters.course.course_icon_fid}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -179,16 +183,12 @@ export function CourseCard(modalParameters: {
                     modalParameters.course.course_id
                   )
                 }
-                triggerButtonProps={{
-                  size: "icon",
-                  variant: "outline",
-                  "aria-label": "Delete course",
-                }}
               />
             </div>
           </CardFooter>
         </Card>
 
+        {/* Edit */}
         <CourseDialogModal
           isCreate={false}
           isOpen={editDialogOpen}

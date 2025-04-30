@@ -130,12 +130,12 @@ class CourseDB:
         Raises:
             ValueError: If the course with the specified ID is not found in the database.
         """
-        course_name: str = kwargs.get("course_name", None)
-        course_code: str = kwargs.get("course_code", None)
-        course_description: str = kwargs.get("course_description", None)
-        course_syllabus_fid: str = kwargs.get("course_syllabus_fid", None)
-        course_icon_fid: str = kwargs.get("course_icon_fid", None)
-        course_study_plan_fid: str = kwargs.get("course_study_plan_fid", None)
+        course_name: str = kwargs.get("course_name")
+        course_code: str = kwargs.get("course_code")
+        course_description: str = kwargs.get("course_description")
+        course_syllabus_fid: str = kwargs.get("course_syllabus_fid")
+        course_icon_fid: str = kwargs.get("course_icon_fid")
+        course_study_plan_fid: str = kwargs.get("course_study_plan_fid")
 
         course: Course = db.query(Course).filter(Course.course_id == course_id).first()
         if not course:
@@ -158,23 +158,13 @@ class CourseDB:
                 raise ValueError(f"Course with code {course_code} already exists")
             course.course_code = course_code
 
-        if course_description is not None:
-            course.course_description = course_description
+        course.course_description = course_description
 
-        if course_syllabus_fid is "-1":
-            course.course_syllabus_fid = None
-        elif course_syllabus_fid is not None:
-            course.course_syllabus_fid = course_syllabus_fid
+        course.course_syllabus_fid = course_syllabus_fid
 
-        if course_icon_fid is "-1":
-            course.course_icon_fid = None
-        elif course_icon_fid is not None:
-            course.course_icon_fid = course_icon_fid
+        course.course_icon_fid = course_icon_fid
 
-        if course_study_plan_fid is "-1":
-            course.course_study_plan_fid = None
-        elif course_study_plan_fid is not None:
-            course.course_study_plan_fid = course_study_plan_fid
+        course.course_study_plan_fid = course_study_plan_fid
 
         db.commit()
         db.refresh(course)

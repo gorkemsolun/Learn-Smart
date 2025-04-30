@@ -1,6 +1,7 @@
 "use client";
 
 import { documentMimeTypes } from "@/app/constants";
+import type { Chat } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,17 +16,24 @@ import { Label } from "@/components/ui/label";
 import { ToastAction } from "@/components/ui/toast";
 import { chatService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
-import { FileIcon, FileTextIcon } from 'lucide-react';
 import Cookies from "js-cookie";
-import { useState, useEffect } from "react";
+import { FileIcon, FileTextIcon } from "lucide-react";
 import { useParams } from "next/navigation";
-import type { ChatDialogProps } from "@/app/types";
+import { useEffect, useState } from "react";
 
-/*
-* TO-DO write the backend for the edit where you may change the current slide with another,
-* users will also be able to add multiple slides this one will change the current slide only.
-* */
-export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDialogProps) {
+export function ChatDialog({
+  isOpen,
+  onClose,
+  onChatAction,
+  chat,
+  mode,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onChatAction: (chat?: Chat) => void;
+  chat?: Chat | null;
+  mode: "create" | "edit";
+}) {
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
   const [chatName, setChatName] = useState<string>("");
@@ -36,8 +44,8 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
   const { toast } = useToast();
 
   const isEditMode = mode === "edit";
+  const MAX_TITLE_LENGTH = 150;
 
-  // Set initial chat name when chat changes or dialog opens
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && chat) {
@@ -65,9 +73,7 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const selectedFile = event.target.files?.[0] || null;
-
     if (!selectedFile) return;
-
     if (documentMimeTypes.includes(selectedFile.type)) {
       setFile(selectedFile);
     } else {
@@ -84,9 +90,7 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     const selectedFile = event.dataTransfer.files[0] || null;
-
     if (!selectedFile) return;
-
     if (documentMimeTypes.includes(selectedFile.type)) {
       setFile(selectedFile);
     } else {
@@ -101,48 +105,47 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (isEditMode && !chat) return;
 
-    if (!chatName.trim()) {
+    const trimmedName = chatName.trim();
+    if (!trimmedName) {
       setErrorMessage("Please fill out this field.");
       return;
     }
+    if (trimmedName.length > MAX_TITLE_LENGTH) {
+      toast({
+        title: "Title Too Long",
+        description: `Maximum length is ${MAX_TITLE_LENGTH} characters.`,
+        variant: "destructive",
+        action: <ToastAction altText="Adjust">Adjust</ToastAction>,
+      });
+      return;
+    }
     setErrorMessage("");
-
     setIsSubmitting(true);
 
     const formData = new FormData();
     if (file) {
       formData.append("slides", file);
     }
+    formData.append("chat_title", trimmedName);
 
     try {
       let response;
       let resultChat;
 
       if (isEditMode && chat) {
-        // Edit mode
-        response = await chatService.put(
-          `/chat/${chat.chat_id}`,
-          file ? formData : { chat_title: chatName.trim() },
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${authToken}`,
-              ...(file && { "Content-Type": "multipart/form-data" }),
-            },
-          }
-        );
-
-        resultChat = {
-          ...chat,
-          chat_title: chatName.trim()
-        };
+        response = await chatService.put(`/chat/${chat.chat_id}`, formData, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        resultChat = { ...chat, chat_title: trimmedName };
       } else {
-        // Create mode
         response = await chatService.post(
-          `/chat/create?course_id=${course_id}&chat_title=${chatName}`,
+          `/chat/create?course_id=${course_id}&chat_title=${encodeURIComponent(trimmedName)}`,
           file ? formData : {},
           {
             headers: {
@@ -152,13 +155,12 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
             },
           }
         );
-
         resultChat = response.data.chat;
       }
 
       toast({
         title: "Success",
-        description: `Chat successfully ${isEditMode ? 'updated' : 'created'}`,
+        description: `Chat successfully ${isEditMode ? "updated" : "created"}`,
         variant: "default",
         className: "bg-green-500 text-background",
       });
@@ -166,10 +168,13 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
       onChatAction(resultChat);
       closeModal();
     } catch (error) {
-      console.error(`Error ${isEditMode ? 'updating' : 'creating'} chat:`, error);
+      console.error(
+        `Error ${isEditMode ? "updating" : "creating"} chat:`,
+        error
+      );
       toast({
         title: "Error",
-        description: `Failed to ${isEditMode ? 'update' : 'create'} chat. Please try again.`,
+        description: `Failed to ${isEditMode ? "update" : "create"} chat. Please try again.`,
         variant: "destructive",
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
@@ -182,11 +187,13 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Edit Chat' : 'Create New Chat'}</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? "Edit Chat" : "Create New Chat"}
+          </DialogTitle>
           <DialogDescription>
             {isEditMode
-              ? 'Update your chat details. You can optionally upload new slides.'
-              : 'Create a new chat for your course. You can optionally upload slides.'}
+              ? "Update your chat details. You can optionally upload new slides."
+              : "Create a new chat for your course. You can optionally upload slides."}
           </DialogDescription>
         </DialogHeader>
 
@@ -199,15 +206,21 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
               id="chatName"
               value={chatName}
               onChange={(e) => {
-                setChatName(e.target.value);
-                if (e.target.value.trim()) {
-                  setErrorMessage("");
+                if (e.target.value.length <= MAX_TITLE_LENGTH) {
+                  setChatName(e.target.value);
+                  if (e.target.value.trim()) {
+                    setErrorMessage("");
+                  }
                 }
               }}
               placeholder="Enter chat title"
+              maxLength={MAX_TITLE_LENGTH}
               className={`w-full ${errorMessage ? "border-red-500" : ""}`}
               required
             />
+            <p className="text-muted-foreground mt-1 text-xs">
+              {chatName.length}/{MAX_TITLE_LENGTH} characters
+            </p>
             {errorMessage && (
               <p className="mt-1 text-xs text-red-500">{errorMessage}</p>
             )}
@@ -215,22 +228,22 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
 
           <div className="space-y-2">
             <Label htmlFor="slide" className="text-sm font-medium">
-              Upload {isEditMode ? 'New ' : ''}Slides (Optional)
+              Upload {isEditMode ? "New " : ""}Slides (Optional)
             </Label>
             <div
-              className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
+              className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
             >
               {file ? (
                 <div className="flex flex-col items-center text-center">
                   {file.name.endsWith(".pdf") ? (
-                    <FileIcon className="mb-2 size-10 text-primary" />
+                    <FileIcon className="text-primary mb-2 size-10" />
                   ) : (
-                    <FileTextIcon className="mb-2 size-10 text-primary" />
+                    <FileTextIcon className="text-primary mb-2 size-10" />
                   )}
                   <p className="text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {(file.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                   <Button
@@ -248,13 +261,14 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
                   htmlFor="slide-upload"
                   className="flex cursor-pointer flex-col items-center text-center"
                 >
-                  <div className="mb-2 rounded-full bg-primary/10 p-2">
-                    <FileIcon className="size-6 text-primary" />
+                  <div className="bg-primary/10 mb-2 rounded-full p-2">
+                    <FileIcon className="text-primary size-6" />
                   </div>
                   <p className="text-sm font-medium">
-                    <span className="text-primary">Click to upload</span> or drag and drop
+                    <span className="text-primary">Click to upload</span> or
+                    drag and drop
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="text-muted-foreground mt-1 text-xs">
                     PDF or DOCX (max 10MB)
                   </p>
                 </label>
@@ -270,13 +284,22 @@ export function ChatDialog({ isOpen, onClose, onChatAction, chat, mode }: ChatDi
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={closeModal} className="mr-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeModal}
+              className="mr-2"
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting
-                ? (isEditMode ? "Updating..." : "Creating...")
-                : (isEditMode ? "Update Chat" : "Create Chat")}
+                ? isEditMode
+                  ? "Updating..."
+                  : "Creating..."
+                : isEditMode
+                  ? "Update Chat"
+                  : "Create Chat"}
             </Button>
           </DialogFooter>
         </form>

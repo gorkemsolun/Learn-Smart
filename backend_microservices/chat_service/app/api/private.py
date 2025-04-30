@@ -1,6 +1,5 @@
 from http.client import HTTPException
 import json
-from chat_service.app.model import ChatHistory
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends
 

@@ -197,7 +197,10 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
     CourseDB.update(
         db,
         course_id=course_id, course_name=course_name, course_code=course_code,
-        course_description=course_description, update_description=update_description
+        course_description=course_description, update_description=update_description,
+        course_icon_fid=course["course_icon_fid"],
+        course_syllabus_fid=course["course_syllabus_fid"],
+        course_study_plan_fid=course["course_study_plan_fid"]
     )
 
     error, error_message = False, None
@@ -211,7 +214,6 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         try:
             if old_icon_id:
                 await filemanager.delete(course["course_icon_fid"])  # delete old image
-                new_icon_fid = "-1"
         except Exception as e:
             error = True
             error_message = str(e)
@@ -235,11 +237,9 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
         try:
             if old_syllabus_id:
                 await filemanager.delete(course["course_syllabus_fid"])  # delete old syllabus
-                new_syllabus_fid = "-1"
             
             if old_study_plan_id:
                 await filemanager.delete(course["course_study_plan_fid"])  # delete old study plan
-                new_study_plan_fid = "-1"
         except Exception as e:
             error = True
             error_message = str(e)
@@ -323,7 +323,6 @@ async def delete_course(course_id: int,
    Raises:
        HTTPException: If there is an error deleting the course.
    """
-    # 1) fetch & auth
     course = CourseDB.fetch(db, course_id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
