@@ -11,18 +11,17 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
-import { authService, userService } from "@/environment/backend_api";
+import { authService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { Envelope, Eye, EyeSlash, LockWaves } from "@mynaui/icons-react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 
 export default function SignIn() {
   const [email, setEmail] = useState<string>(Cookies.get("emailCookie") || "");
   const [password, setPassword] = useState<string>("");
-  const [role, setRole] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const togglePasswordVisibility = () => {
@@ -31,25 +30,6 @@ export default function SignIn() {
 
   const router = useRouter();
   const { toast } = useToast();
-
-  const fetchUserRole = useCallback(async () => {
-    try {
-      const response = await userService.get("/user", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("authToken")}`,
-        },
-      });
-      setRole(response.data.role);
-    } catch (error) {
-      console.error("Error fetching user role:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch user role. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [toast]);
 
   useEffect(() => {
     const fetchAndRedirect = async () => {
@@ -65,7 +45,7 @@ export default function SignIn() {
     };
 
     fetchAndRedirect();
-  }, [router, role, fetchUserRole]);
+  }, [router]);
 
   const handleSignIn = async () => {
     await authService
@@ -93,15 +73,7 @@ export default function SignIn() {
         Cookies.set("authToken", data["access_token"], { expires: 3 });
         Cookies.set("signin_time", new Date().toISOString(), { path: "/" });
 
-        await fetchUserRole();
-
-        if (role == null) {
-          router.push("/role-card");
-        } else if (role === "User") {
-          router.push("/edux-homepage");
-        } else if (role === "Instructor") {
-          router.push("/edux-homepage-instructor");
-        }
+        router.push("/edux-homepage");
       })
       .catch((error) => {
         console.error("Sign in error:", error);

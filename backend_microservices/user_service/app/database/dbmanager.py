@@ -59,7 +59,6 @@ class UserDB:
             - db (Session): The database session.
             **kwargs: Keyword arguments representing the query parameters.
                 Possible query parameters include:
-                - role (str): The role of the user.
                 - nickname (str): The nickname of the user.
                 - email (str): The email of the user.
                 - user_id (int): The ID of the user.
@@ -72,20 +71,17 @@ class UserDB:
         Raises:
             ValueError: If no query parameters are provided.
         """
-        role = kwargs.get("role", None)
         nickname = kwargs.get("nickname", None)
         email = kwargs.get("email", None)
         user_id = kwargs.get("user_id", None)
         all = kwargs.get("all", False)
 
-        if not any([role, nickname, email, user_id]):
+        if not any([nickname, email, user_id]):
             raise ValueError("No query parameters provided")
 
         # Create a list of filters based on the provided query parameters
         filters = []
 
-        if role:
-            filters.append(User.role == role)
         if nickname:
             filters.append(User.nickname == nickname)
         if email:
@@ -116,7 +112,6 @@ class UserDB:
         - db (Session): The database session.
         - user_id (int): The ID of the user to update.
         - **kwargs: Keyword arguments for the fields to update. Possible keyword arguments include:
-            - role (str): The new role for the user.
             - nickname (str): The new nickname for the user.
             - email (str): The new email address for the user.
             - password (str): The new password for the user.
@@ -128,21 +123,18 @@ class UserDB:
         Raises:
         - ValueError: If the user with the specified ID is not found in the database.
         """
-        role = kwargs.get("role", None)
         nickname = kwargs.get("nickname", None)
         email = kwargs.get("email", None)
         password = kwargs.get("password", None)
         fid = kwargs.get("user_icon_fid", None)
         
-        if not any([role, nickname, email, password]):
+        if not any([nickname, email, password]):
             raise ValueError("No fields to update provided")
 
         user = db.query(User).filter(User.user_id == user_id).first()
         if not user:
             raise ValueError(f"User with ID {user_id} not found")
-        
-        if role:
-            user.role = role
+
         if nickname:
             user.nickname = nickname
         if email:
