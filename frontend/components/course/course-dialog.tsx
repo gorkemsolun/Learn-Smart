@@ -27,7 +27,7 @@ export function CourseDialogModal(props: {
   onClose: (value: boolean) => void;
   onCourseUpdate: () => void;
   onCourseCreation?: () => void;
-  course: Course;
+  course?: Course;
 }) {
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
@@ -62,6 +62,7 @@ export function CourseDialogModal(props: {
   };
 
   const fetchCourseDetails = useCallback(async () => {
+    if (!props.course) {return;}
     try {
       const {
         course_name = "",
@@ -367,7 +368,7 @@ export function CourseDialogModal(props: {
                 Syllabus (PDF or DOCX)
               </Label>
               <div
-                className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
+                className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -378,22 +379,22 @@ export function CourseDialogModal(props: {
                 {syllabus ? (
                   <div className="flex flex-col items-center text-center">
                     {syllabus.name.endsWith(".pdf") ? (
-                      <div className="bg-primary/10 mb-2 rounded-full p-2">
+                      <div className="mb-2 rounded-full bg-primary/10 p-2">
                         <FileCheck
-                          className="text-primary size-6"
+                          className="size-6 text-primary"
                           aria-hidden="true"
                         />
                       </div>
                     ) : (
-                      <div className="bg-primary/10 mb-2 rounded-full p-2">
+                      <div className="mb-2 rounded-full bg-primary/10 p-2">
                         <FileText
-                          className="text-primary size-6"
+                          className="size-6 text-primary"
                           aria-hidden="true"
                         />
                       </div>
                     )}
                     <p className="text-sm font-medium">{syllabus.name}</p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       {(syllabus.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                     <Button
@@ -416,14 +417,14 @@ export function CourseDialogModal(props: {
                     htmlFor="syllabus"
                     className="flex cursor-pointer flex-col items-center text-center"
                   >
-                    <div className="bg-primary/10 mb-2 rounded-full p-2">
-                      <FileText className="text-primary size-6" />
+                    <div className="mb-2 rounded-full bg-primary/10 p-2">
+                      <FileText className="size-6 text-primary" />
                     </div>
                     <p className="text-sm font-light">
                       <span className="text-primary">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       PDF or DOCX (max 10MB)
                     </p>
                   </label>
@@ -446,7 +447,7 @@ export function CourseDialogModal(props: {
                 Course Icon (JPG, JPEG or PNG)
               </Label>
               <div
-                className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
+                className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -456,11 +457,11 @@ export function CourseDialogModal(props: {
               >
                 {icon ? (
                   <div className="flex flex-col items-center text-center">
-                    <div className="bg-primary/10 mb-2 rounded-full p-2">
-                      <Image className="text-primary size-6" />
+                    <div className="mb-2 rounded-full bg-primary/10 p-2">
+                      <Image className="size-6 text-primary" />
                     </div>
                     <p className="text-sm font-medium">{icon.name}</p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       {(icon.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                     <Button
@@ -483,14 +484,14 @@ export function CourseDialogModal(props: {
                     htmlFor="image"
                     className="flex cursor-pointer flex-col items-center text-center"
                   >
-                    <div className="bg-primary/10 mb-2 rounded-full p-2">
-                      <Image className="text-primary size-6" />
+                    <div className="mb-2 rounded-full bg-primary/10 p-2">
+                      <Image className="size-6 text-primary" />
                     </div>
                     <p className="text-sm font-light">
                       <span className="text-primary">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       JPG, JPEG or PNG (max 10MB)
                     </p>
                   </label>

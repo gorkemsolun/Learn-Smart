@@ -326,7 +326,6 @@ async def delete_course(course_id: int,
    Raises:
        HTTPException: If there is an error deleting the course.
    """
-    # 1) fetch & auth
     course = CourseDB.fetch(db, course_id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
