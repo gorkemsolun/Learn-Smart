@@ -82,6 +82,6 @@ In summary, Edux provides essential tools and resources through a web applicatio
 ## Docker Setup
 
 1. Put the .env files to the respective service's app folder. Make sure they have "LF" line ending.
-2. docker compose up --build (for the first time and when you make changes to your files, otherwise you don't need --build).
+2. go to backend_microservices run docker compose up --watch. Now when you make changes and save, docker will automatically sync the changes and restart the container.
 3. If you want to delete your database, run docker compose down -v.
-4. If you want to quickly make a change in a service and don't want to put everything down you can do: docker compose stop <service_name (e.g. user_service>, docker compose build <service_name> then docker compose start <service_name> 
+
