@@ -172,7 +172,6 @@ export function CourseDialogModal({
     setter: React.Dispatch<React.SetStateAction<File | null>>,
     fileType: string
   ) {
-    // Check if file is of correct type for document
     if (
       file &&
       fileType === "document" &&
@@ -211,10 +210,34 @@ export function CourseDialogModal({
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    // Prevent default form submission
     event.preventDefault();
 
-    // Create the form data object to send to the backend
+    // Client-side length validation
+    if (courseName.length > 256) {
+      toast({
+        title: "Name too long",
+        description: "Max length is 256 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (courseCode.length > 16) {
+      toast({
+        title: "Code too long",
+        description: "Max length is 16 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (courseDescription.length > 1024) {
+      toast({
+        title: "Description too long",
+        description: "Max length is 1024 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const formData = new FormData();
     formData.append("course_name", courseName);
     formData.append("course_code", courseCode);
@@ -346,6 +369,7 @@ export function CourseDialogModal({
                   type="text"
                   value={courseName}
                   onChange={(event) => setCourseName(event.target.value)}
+                  maxLength={256}
                   required
                 />
               </div>
@@ -357,7 +381,8 @@ export function CourseDialogModal({
                   id="courseCode"
                   type="text"
                   value={courseCode}
-                  onChange={(event) => setCourseCode(event.target.value)}
+                  onChange={(e) => setCourseCode(e.target.value)}
+                  maxLength={16}
                   required
                 />
               </div>
@@ -371,10 +396,11 @@ export function CourseDialogModal({
               </Label>
               <Textarea
                 id="description"
-                value={courseDescription || ""}
-                onChange={(event) => setCourseDescription(event.target.value)}
+                value={courseDescription}
+                onChange={(e) => setCourseDescription(e.target.value)}
                 placeholder="Enter course description"
                 className="min-h-[100px]"
+                maxLength={1024}
               />
             </div>
           )}
