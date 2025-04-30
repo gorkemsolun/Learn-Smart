@@ -127,64 +127,109 @@ async def get_chat_info(chat_id: int,
     return chat
 
 
-@router.put("chat/{chat_id}/update_slides")
-async def update_chat_slides(chat_id: int, slides: UploadFile = File(...),
-                             current_user: dict = Depends(user.get_current_user),
-                             db: Session = Depends(get_db)):
+@router.put("/chat/{chat_id}")
+async def update_chat(
+    chat_id: int,
+    chat_title: Optional[str] = Form(None),
+    slides: Optional[UploadFile] = File(None),
+    current_user: dict = Depends(user.get_current_user),
+    db: Session = Depends(get_db),
+):
     """
-    Update the slides for a chat by its ID.
+    Update a chat's title and/or slides by its ID.
 
     Args:
         chat_id (int): The ID of the chat to update.
-        slides (UploadFile): The new slides file to upload.
+        chat_title (Optional[str]): The new title for the chat.
+        slides (Optional[UploadFile]): The new slides file to upload.
+        current_user (dict, optional): The current user's information.
+        db (Session, optional): The database session.
 
     Returns:
-        dict: A dictionary containing the updated chat details.
+        dict: A dictionary containing the updated chat details and a message.
 
     Raises:
-        HTTPException: If the chat is not found or the user is not authorized to update the chat.
+        HTTPException: If the chat is not found, the user is not authorized,
+                       slides mode is disabled, or file type is invalid.
     """
+    # first, check authorization (raises 404 or 403 if bad)
+    print(f"Updating chat {chat_id} for user {current_user['user_id']}")
+    print(f"Chat title: {chat_title}")
     chat, crs = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
-    if not chat["slides_mode"]:
-        raise HTTPException(status_code=400, detail="Slides mode is not enabled for this chat.")
 
-    # Validate the file type by checking mime type
-    if slides.content_type not in ([
-        'application/pdf', 
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-    ]):
-        raise HTTPException(
-            status_code=400, 
-            detail="Invalid file type. Only .pptx and .pdf files are allowed."
+    updated_fields = {}
+    # If a new title was provided, update it
+    if chat_title is not None:
+        updated_fields["chat_title"] = chat_title
+
+    # If slides were provided, handle upload + conversion + DB
+    if slides is not None:
+        if not chat["slides_mode"]:
+            raise HTTPException(status_code=400, detail="Slides mode is not enabled for this chat.")
+
+        # Validate MIME type
+        if slides.content_type not in (
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file type. Only .pptx and .pdf files are allowed."
+            )
+
+        raw = await slides.read()
+        # Normalize filename to .pdf
+        base, _ = splitext(slides.filename)
+        final_filename = f"{base}.pdf"
+
+        # Convert PPTX to PDF if needed
+        if slides.content_type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+            pdf_bytes = await convert_pptx_to_pdf(raw)
+        else:
+            pdf_bytes = raw
+
+        # Count pages
+        with pymupdf.open(stream=pdf_bytes, filetype="pdf") as doc:
+            page_count = doc.page_count
+
+        # Re-wrap bytes in UploadFile for your filemanager
+        with io.BytesIO(pdf_bytes) as pdf_io:
+            pdf_upload = UploadFile(
+                filename=final_filename,
+                file=pdf_io,
+            )
+            slides_fid = await filemanager.upload(file=pdf_upload, user_id=current_user["user_id"])
+
+        # Create slide record
+        slide = SlideDB.create(
+            db,
+            chat_id=chat_id,
+            course_id=crs["course_id"],
+            slides_file_name=slides.filename,
+            slides_fid=slides_fid,
+            pages_count=page_count,
+            last_opened_page_number=1,
         )
-    
-    content = await slides.read()
-    final_filename = f"{splitext(slides.filename)[0]}.pdf" # convert to PDF if it's a PPTX file
 
-    if slides.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-        pdf_content = await convert_pptx_to_pdf(content)
-    else:
-        pdf_content = content
+        # Update chat to link new slide
+        updated_fields["last_opened_slide_id"] = slide["slide_id"]
 
-    with pymupdf.open(stream=pdf_content, filetype="pdf") as doc:
-        page_count = doc.page_count
+    # Apply any updates to the chat
+    if updated_fields:
+        chat = ChatDB.update(db, chat_id=chat_id, **updated_fields)
 
-    with io.BytesIO(pdf_content) as pdf_file_io:
-        converted_file = UploadFile(
-            filename=final_filename, file=pdf_file_io, content_type='application/pdf'
+    # If slides were updated, re-fetch the list
+    if slides is not None:
+        chat["slides"] = SlideDB.fetch(db, chat_id=chat_id, all=True)
+
+    return {
+        "chat": chat,
+        "message": (
+            "Chat title updated." if chat_title and not slides else
+            "Slides updated successfully." if slides and not chat_title else
+            "Chat title and slides updated successfully."
         )
-        slides_fid = await filemanager.upload(file=converted_file, user_id=current_user["user_id"])
-
-    slide = SlideDB.create(
-        db, chat_id=chat["chat_id"], course_id=crs["course_id"], slides_file_name=slides.filename, 
-        slides_fid=slides_fid, pages_count=page_count, last_opened_page_number=1
-    )
-    chat = ChatDB.update(db, chat_id=chat["chat_id"], last_opened_slide_id=slide["slide_id"])
-
-    slides_of_chat = SlideDB.fetch(db, chat_id=chat_id, all=True)
-    chat["slides"] = slides_of_chat
-
-    return {"chat": chat, "message": "Slides updated successfully."}
+    }
 
 
 @router.get("/chat/{chat_id}/quizzes")
@@ -420,28 +465,6 @@ async def delete_all_flashcards(chat_id: int,
     FlashcardDB.delete(db, chat_id=chat_id, all=True)
 
     return {"status": "success", "message": "All flashcards have been successfully deleted."}
-
-
-@router.put("/chat/{chat_id}")
-async def update_chat_title(chat_id: int, chat_title: str, 
-                      current_user: dict = Depends(user.get_current_user),
-                      db: Session = Depends(get_db)):
-    """
-    Update a chat's title by its ID.
-
-    Args:
-        chat_id (int): The ID of the chat to update.
-        chat_title (str): The new title for the chat.
-        current_user (dict, optional): The current user's information. Defaults to Depends(auth.get_current_user).
-
-    Returns:
-        dict: A dictionary containing the updated chat details.
-
-    Raises:
-        HTTPException: If the chat is not found or the user is not authorized to update the chat.
-    """
-    await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
-    return ChatDB.update(db, chat_id=chat_id, chat_title=chat_title)   
 
 
 @router.get("/chat/slide/{slide_id}/page/{page_number}")
