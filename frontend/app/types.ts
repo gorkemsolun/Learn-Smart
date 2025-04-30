@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React from "react";
 
 export interface User {
   user_id: string;
@@ -87,55 +87,10 @@ export interface ChatInterfaceProps {
   activeChat: Chat | null;
 }
 
-export interface CoursesListProps {
-  courses: Course[];
-  onCourseDelete: () => void;
-  setCourseDialog: (value: boolean) => void;
-  onCourseUpdate: () => void;
-  startLoading?: () => void;
-  stopLoading?: () => void;
-}
-
-export interface ConfirmationDialogProps {
-  title: string;
-  description: string;
-  onConfirm: () => void;
-  triggerButtonLabel: ReactNode;
-}
-
-export interface SkillTreeProps {
-  nodes?: NodeData[];
-  edges?: { source: string; target: string }[];
-  title?: string;
-}
-
-export interface SkillTreeCard {
+export interface SkillTree {
   id: string;
   title: string;
   description: string;
-}
-
-export interface SkillTreeListProps {
-  skillTrees: SkillTreeCard[];
-}
-
-export interface SkillTreeCreateProps {
-  onSkillTreeSubmit: () => void;
-}
-
-export interface SkillTreeCardProps {
-  id: string;
-  title: string;
-  description: string;
-  onSkillTreeDelete: (id: string) => void;
-}
-
-export interface SkillTreeEditCreateDialogProps {
-  isOpen: boolean;
-  onClose: (value: boolean) => void;
-  onSkillTreeSubmit: () => void;
-  skillTree?: SkillTreeCard;
-  isEdit?: boolean;
 }
 
 export interface CheckPasswordDialogProps {
@@ -158,14 +113,6 @@ export interface ChatResizablePanelsProps {
   activeChat: Chat | null;
 }
 
-export interface ChatDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onChatAction: (chat?: Chat) => void;
-  chat?: Chat | null;
-  mode: "create" | "edit";
-}
-
 export interface ChatMessage {
   message_id: number;
   is_user: boolean;
@@ -186,7 +133,7 @@ export interface SlidePanelProps {
   onFileChange: (slide_id: string) => void;
   onPreviousSlide: () => void;
   onNextSlide: () => void;
-  fetchSlide: (slideID: string, pageNumber: number) => Promise<any>;
+  fetchSlide: (slideID: string, pageNumber: number) => Promise<SlideResponse>;
 }
 
 export interface HotkeyConfig {

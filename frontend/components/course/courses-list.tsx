@@ -1,6 +1,6 @@
 "use client";
 
-import type { CoursesListProps } from "@/app/types";
+import { Course } from "@/app/types";
 import { CourseCard } from "@/components/course/course-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,14 @@ import Cookies from "js-cookie";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 
-export function CoursesList(modalParameters: CoursesListProps) {
+export function CoursesList(modalParameters: {
+  courses: Course[];
+  onCourseDelete: () => void;
+  setCourseDialog: (value: boolean) => void;
+  onCourseUpdate: () => void;
+  startLoading?: () => void;
+  stopLoading?: () => void;
+}) {
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const { toast } = useToast();
 

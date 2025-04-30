@@ -1,10 +1,15 @@
 "use client";
 
+import type { NodeData } from "@/app/types";
 import NodeDetailsModal from "@/components/skill-tree/node-details-modal";
-import type { NodeData, SkillTreeProps } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import cytoscape from "cytoscape";
 import dagre from "cytoscape-dagre";
 import { Home, Info, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
@@ -13,43 +18,69 @@ import { useEffect, useRef, useState } from "react";
 
 cytoscape.use(dagre);
 
-
-
 const defaultNodes: NodeData[] = [
   {
     id: "basics",
     label: "Programming Fundamentals",
-    description: "Master the fundamental concepts that form the foundation of all programming languages.",
+    description:
+      "Master the fundamental concepts that form the foundation of all programming languages.",
     progress: 100,
     completed: true,
-    skills: ["Variables", "Data Types", "Control Flow", "Functions", "Basic Algorithms"],
+    skills: [
+      "Variables",
+      "Data Types",
+      "Control Flow",
+      "Functions",
+      "Basic Algorithms",
+    ],
     prerequisites: [],
   },
   {
     id: "oop",
     label: "Object-Oriented Programming & Design",
-    description: "Learn to structure code using objects, classes, and inheritance patterns.",
+    description:
+      "Learn to structure code using objects, classes, and inheritance patterns.",
     progress: 75,
     completed: false,
-    skills: ["Classes", "Inheritance", "Polymorphism", "Encapsulation", "Abstraction"],
+    skills: [
+      "Classes",
+      "Inheritance",
+      "Polymorphism",
+      "Encapsulation",
+      "Abstraction",
+    ],
     prerequisites: ["Programming Fundamentals"],
   },
   {
     id: "algorithms",
     label: "Algorithms & Data Structures",
-    description: "Understand how to efficiently store and manipulate data with optimized algorithms.",
+    description:
+      "Understand how to efficiently store and manipulate data with optimized algorithms.",
     progress: 60,
     completed: false,
-    skills: ["Sorting Algorithms", "Search Algorithms", "Trees", "Graphs", "Dynamic Programming"],
+    skills: [
+      "Sorting Algorithms",
+      "Search Algorithms",
+      "Trees",
+      "Graphs",
+      "Dynamic Programming",
+    ],
     prerequisites: ["Programming Fundamentals"],
   },
   {
     id: "dataStructures",
     label: "Advanced Data Structures",
-    description: "Master complex data structures for solving specialized problems.",
+    description:
+      "Master complex data structures for solving specialized problems.",
     progress: 30,
     completed: false,
-    skills: ["Balanced Trees", "Graph Algorithms", "Heaps", "Hash Tables", "Tries"],
+    skills: [
+      "Balanced Trees",
+      "Graph Algorithms",
+      "Heaps",
+      "Hash Tables",
+      "Tries",
+    ],
     prerequisites: ["Algorithms & Data Structures"],
   },
   {
@@ -58,16 +89,28 @@ const defaultNodes: NodeData[] = [
     description: "Learn reusable solutions to common software design problems.",
     progress: 45,
     completed: false,
-    skills: ["Creational Patterns", "Structural Patterns", "Behavioral Patterns", "Architectural Patterns"],
+    skills: [
+      "Creational Patterns",
+      "Structural Patterns",
+      "Behavioral Patterns",
+      "Architectural Patterns",
+    ],
     prerequisites: ["Object-Oriented Programming & Design"],
   },
   {
     id: "architecture",
     label: "System Architecture",
-    description: "Design and implement large-scale software systems with multiple components.",
+    description:
+      "Design and implement large-scale software systems with multiple components.",
     progress: 15,
     completed: false,
-    skills: ["Distributed Systems", "Microservices", "Scalability", "Reliability", "Performance"],
+    skills: [
+      "Distributed Systems",
+      "Microservices",
+      "Scalability",
+      "Reliability",
+      "Performance",
+    ],
     prerequisites: ["Design Patterns", "Advanced Data Structures"],
   },
 ];
@@ -107,7 +150,11 @@ export default function SkillTree({
   nodes = defaultNodes,
   edges = defaultEdges,
   title = "Skill Progression Tree",
-}: SkillTreeProps) {
+}: {
+  nodes?: NodeData[];
+  edges?: { source: string; target: string }[];
+  title?: string;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyReference = useRef<cytoscape.Core | null>(null);
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
@@ -124,7 +171,8 @@ export default function SkillTree({
 
   useEffect(() => {
     if (cyReference.current && isClient) {
-      const colors = theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
+      const colors =
+        theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
 
       cyReference.current
         .style()
@@ -193,8 +241,14 @@ export default function SkillTree({
         .style({
           width: 1, // Ultra-thin lines
           "curve-style": "unbundled-bezier",
-          "line-color": theme === "dark" ? "rgba(240, 240, 240, 0.2)" : "rgba(34, 34, 34, 0.15)",
-          "target-arrow-color": theme === "dark" ? "rgba(240, 240, 240, 0.3)" : "rgba(34, 34, 34, 0.25)",
+          "line-color":
+            theme === "dark"
+              ? "rgba(240, 240, 240, 0.2)"
+              : "rgba(34, 34, 34, 0.15)",
+          "target-arrow-color":
+            theme === "dark"
+              ? "rgba(240, 240, 240, 0.3)"
+              : "rgba(34, 34, 34, 0.25)",
           "target-arrow-fill": "filled",
           "target-arrow-shape": "triangle",
           "arrow-scale": 0.8, // Smaller, more elegant arrows
@@ -212,7 +266,8 @@ export default function SkillTree({
           opacity: 1,
           "line-color": colors.accent,
           "target-arrow-color": colors.accent,
-          "transition-property": "opacity, width, line-color, target-arrow-color",
+          "transition-property":
+            "opacity, width, line-color, target-arrow-color",
           "transition-duration": "0.2s",
           "transition-timing-function": "ease-in-out",
         })
@@ -224,7 +279,8 @@ export default function SkillTree({
     }
   }, [theme, isClient]);
 
-  const colors = theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
+  const colors =
+    theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -309,7 +365,10 @@ export default function SkillTree({
             "shadow-opacity": 0.3,
             "shadow-offset-x": 0,
             "shadow-offset-y": 3,
-            "background-color": theme === "dark" ? "rgba(138, 133, 255, 0.05)" : "rgba(99, 102, 241, 0.03)",
+            "background-color":
+              theme === "dark"
+                ? "rgba(138, 133, 255, 0.05)"
+                : "rgba(99, 102, 241, 0.03)",
           },
         },
         {
@@ -325,8 +384,14 @@ export default function SkillTree({
           style: {
             width: 1, // Ultra-thin lines
             "curve-style": "bezier", // Less pronounced curves
-            "line-color": theme === "dark" ? "rgba(240, 240, 240, 0.2)" : "rgba(34, 34, 34, 0.15)",
-            "target-arrow-color": theme === "dark" ? "rgba(240, 240, 240, 0.3)" : "rgba(34, 34, 34, 0.25)",
+            "line-color":
+              theme === "dark"
+                ? "rgba(240, 240, 240, 0.2)"
+                : "rgba(34, 34, 34, 0.15)",
+            "target-arrow-color":
+              theme === "dark"
+                ? "rgba(240, 240, 240, 0.3)"
+                : "rgba(34, 34, 34, 0.25)",
             "target-arrow-fill": "filled",
             "target-arrow-shape": "triangle",
             "arrow-scale": 0.8, // Smaller, more elegant arrows
@@ -346,7 +411,8 @@ export default function SkillTree({
             opacity: 1,
             "line-color": colors.accent,
             "target-arrow-color": colors.accent,
-            "transition-property": "opacity, width, line-color, target-arrow-color",
+            "transition-property":
+              "opacity, width, line-color, target-arrow-color",
             "transition-duration": "0.2s",
             "transition-timing-function": "ease-in-out",
           },
@@ -452,10 +518,10 @@ export default function SkillTree({
   };
 
   return (
-    <Card className="flex size-full flex-col border border-border bg-background text-foreground shadow-md">
-      <div className="border-b border-border bg-gradient-to-br from-primary/5 via-secondary/5 to-background p-4">
+    <Card className="border-border bg-background text-foreground flex size-full flex-col border shadow-md">
+      <div className="border-border from-primary/5 via-secondary/5 to-background border-b bg-gradient-to-br p-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-thin text-foreground/90">{title}</h3>
+          <h3 className="text-foreground/90 text-lg font-thin">{title}</h3>
           <div className="flex space-x-2">
             <TooltipProvider>
               <Tooltip>
@@ -464,7 +530,7 @@ export default function SkillTree({
                     variant="outline"
                     size="icon"
                     onClick={handleZoomIn}
-                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
+                    className="border-border/50 bg-background/40 text-foreground/80 hover:bg-background/60 hover:text-foreground backdrop-blur-sm transition-all duration-300"
                   >
                     <ZoomIn className="size-4" />
                   </Button>
@@ -482,7 +548,7 @@ export default function SkillTree({
                     variant="outline"
                     size="icon"
                     onClick={handleZoomOut}
-                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
+                    className="border-border/50 bg-background/40 text-foreground/80 hover:bg-background/60 hover:text-foreground backdrop-blur-sm transition-all duration-300"
                   >
                     <ZoomOut className="size-4" />
                   </Button>
@@ -500,7 +566,7 @@ export default function SkillTree({
                     variant="outline"
                     size="icon"
                     onClick={handleReset}
-                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
+                    className="border-border/50 bg-background/40 text-foreground/80 hover:bg-background/60 hover:text-foreground backdrop-blur-sm transition-all duration-300"
                   >
                     <Home className="size-4" />
                   </Button>
@@ -518,7 +584,7 @@ export default function SkillTree({
                     variant="outline"
                     size="icon"
                     onClick={handleFullscreen}
-                    className="border-border/50 bg-background/40 text-foreground/80 backdrop-blur-sm transition-all duration-300 hover:bg-background/60 hover:text-foreground"
+                    className="border-border/50 bg-background/40 text-foreground/80 hover:bg-background/60 hover:text-foreground backdrop-blur-sm transition-all duration-300"
                   >
                     <Maximize2 className="size-4" />
                   </Button>
@@ -535,7 +601,7 @@ export default function SkillTree({
       <div className="relative">
         <div
           ref={containerRef}
-          className="h-[calc(94vh-4rem)] w-full bg-gradient-to-br from-background via-background to-background/95"
+          className="from-background via-background to-background/95 h-[calc(94vh-4rem)] w-full bg-gradient-to-br"
           aria-label="Skill tree visualization"
         />
         <div className="absolute right-4 top-4">
@@ -545,7 +611,7 @@ export default function SkillTree({
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="bg-background/80 text-foreground shadow-md hover:bg-muted"
+                  className="bg-background/80 text-foreground hover:bg-muted shadow-md"
                 >
                   <Info className="size-4" />
                 </Button>
@@ -557,7 +623,11 @@ export default function SkillTree({
       </div>
 
       {isClient && selectedNode && (
-        <NodeDetailsModal node={selectedNode} open={!!selectedNode} onClose={() => setSelectedNode(null)} />
+        <NodeDetailsModal
+          node={selectedNode}
+          open={!!selectedNode}
+          onClose={() => setSelectedNode(null)}
+        />
       )}
     </Card>
   );

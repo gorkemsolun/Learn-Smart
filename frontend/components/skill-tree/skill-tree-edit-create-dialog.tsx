@@ -1,7 +1,7 @@
 "use client";
 
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
-import { Chat, SkillTreeEditCreateDialogProps } from "@/app/types";
+import { Chat, SkillTree } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,9 +18,13 @@ import * as React from "react";
 import { useState } from "react";
 import { LuUpload } from "react-icons/lu";
 
-export function SkillTreeEditCreateDialogModal(
-  dialogParameters: SkillTreeEditCreateDialogProps
-) {
+export function SkillTreeEditCreateDialogModal(dialogParameters: {
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onSkillTreeSubmit: () => void;
+  skillTree?: SkillTree;
+  isEdit?: boolean;
+}) {
   const [skillTreeTitle, setSkillTreeTitle] = useState<string>("");
   const [chat, setChat] = useState<Chat>();
   const [skillTreeDescription, setSkillTreeDescription] = useState<string>("");
