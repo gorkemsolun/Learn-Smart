@@ -20,9 +20,15 @@ async def create_skill_tree(history: ChatHistory) -> Dict[str, Any]:
         HTTPException: on HTTP errors or invalid response format.
     """
     try:
-        async with httpx.AsyncClient() as client:
+        timeout = httpx.Timeout(
+            connect=10.0,
+            read=60.0,
+            write=60.0,
+            pool=60.0
+        )
+        async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.post(
-                f"{GENAI_SERVICE_URL}/generate/skill-tree",
+                f"{GENAI_SERVICE_URL}/private/generate/skill-tree",
                 headers={"X-API-Key": GENAI_CLIENT_KEY},
                 json={"history": json.dumps(history.google())}  
             )

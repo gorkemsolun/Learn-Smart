@@ -26,16 +26,14 @@ async def create_skill_tree(course_id: int,
     all_history_fids = await chat.get_all_chat_histories_of_course(course_id)
 
     #download the histories, append the skill tree prompt, call the genai service get the response, create the skill tree and the quizzes in the database
-    all_histories = None
+    all_histories = []
     for history_fid in all_history_fids:
+        print(history_fid)
         history_bytes = await filemanager.download(file_id=history_fid) 
         history = ChatHistory.from_bytes(history_bytes)
-        if all_histories:
-            all_histories.merge(history)
-        else:
-            all_histories = history
-
-        
+        all_histories.append(history)
+    
+    all_histories = ChatHistory.merge(all_histories)    
     all_histories.add_message(role="edux", content=SKILL_TREE_PROMPT)#role?
 
     skill_tree = await genai.create_skill_tree(all_histories)

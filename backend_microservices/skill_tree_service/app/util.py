@@ -1,3 +1,4 @@
+import base64
 from collections import deque
 import json
 from skill_tree_service.app.database.session import get_db, Base
@@ -52,3 +53,11 @@ def init(restart: bool = False):
         
     finally:
         gen.close() # closes the session
+
+def encode_base64(file: bytes) -> str:
+    """
+    Encode an image file as a base64 string.
+    Args:
+        - file (BinaryIO): The file object to encode.
+    """
+    return base64.b64encode(file).decode("utf-8")
