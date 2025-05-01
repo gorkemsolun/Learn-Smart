@@ -239,7 +239,6 @@ export default function NodeDetailsModal({
                         <Progress
                           value={lastQuizResult.score}
                           className="h-2"
-                          indicatorClassName={lastQuizResult.passed ? "bg-emerald-500" : "bg-amber-500"}
                         />
                       </div>
                       {lastQuizResult.date && (

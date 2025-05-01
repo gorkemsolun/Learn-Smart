@@ -112,6 +112,7 @@ export default function SkillTree({
         //data = await updateTree();
       }
 
+      data = await fetchTree();
       if (data.success && data.skill_tree) {
         const { nodes, edges } = data.skill_tree;
         setSkillTree({ nodes, edges });

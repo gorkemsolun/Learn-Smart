@@ -194,7 +194,7 @@ export default function QuizModal({
                 <span>Progress</span>
                 <span>{Math.round(progress)}%</span>
               </div>
-              <Progress value={progress} className="h-2 bg-muted" indicatorClassName="bg-primary" />
+              <Progress value={progress} className="h-2 bg-muted" />
             </div>
 
             <div className="space-y-6 py-2">
