@@ -29,20 +29,19 @@ class SkillTree(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     course_id = Column(Integer, nullable=False, unique=True)
-    root_node_id = Column(Integer, ForeignKey('skill_tree_nodes.id'), nullable=True)
 
     # all nodes in this tree
     nodes = relationship(
         "SkillTreeNode",
         back_populates="skill_tree",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+       foreign_keys="[SkillTreeNode.skill_tree_id]",
     )
 
     def to_dict(self):
         return {
             "id": self.id,
             "course_id": self.course_id,
-            "root_node_id": self.root_node_id,
         }
 
 
@@ -51,16 +50,12 @@ class SkillTreeNode(Base):
     A node in a skill tree, corresponding to one quiz.
     """
     __tablename__ = 'skill_tree_nodes'
-    __table_args__ = (
-        UniqueConstraint('skill_tree_id', 'quiz_id', name='_tree_quiz_uc'),
-    )
 
     id = Column(Integer, primary_key=True, index=True)
     skill_tree_id = Column(Integer, ForeignKey('skill_trees.id'), nullable=False)
-    quiz_id = Column(Integer, nullable=False)
     state = Column(Enum(NodeState), nullable=False, default=NodeState.LOCKED_UNCOMPLETED)
 
-    skill_tree = relationship("SkillTree", back_populates="nodes")
+    skill_tree = relationship("SkillTree", back_populates="nodes",foreign_keys=[skill_tree_id])
 
     # edges where this node is the parent
     children_edges = relationship(
@@ -77,11 +72,16 @@ class SkillTreeNode(Base):
         cascade="all, delete-orphan"
     )
 
+    quiz = relationship(
+        "Quiz",
+        back_populates="node",
+        uselist=False
+    )
+
     def to_dict(self):
         return {
             "id": self.id,
             "skill_tree_id": self.skill_tree_id,
-            "quiz_id": self.quiz_id,
         }
 
 
@@ -138,7 +138,9 @@ class Quiz(Base):
 
     node = relationship(
         "SkillTreeNode",
-        back_populates="quiz"
+        back_populates="quiz",
+        foreign_keys=[node_id],
+        uselist=False
     )
 
     def to_dict(self):

@@ -62,7 +62,6 @@ async def create_skill_tree(course_id: int,
         db_node = SkillTreeNodeDB.create(
             db,
             skill_tree_id=skill_tree_id,
-            quiz_id=None,
             state=llm_state
         )
         db_node_id = db_node["id"]
@@ -79,15 +78,7 @@ async def create_skill_tree(course_id: int,
             quiz_title=llm_name,
             quiz_fid=quiz_fid,
             num_questions=len(quiz_payload)
-        )
-
-        #  back-patch the node to reference its quiz_id
-        SkillTreeNodeDB.update(
-            db,
-            db_node_id,
-            quiz_id=quiz["quiz_id"]
-        )
-        
+        )        
 
     # PASS 2: edges
     for e in skill_tree["edges"]:
@@ -99,7 +90,7 @@ async def create_skill_tree(course_id: int,
 
     return {"success": True, "skill_tree": skill_tree} 
 
-@router.get("/{course_id}") # get the skill tree associated with the given course id
+@router.get("/skill-tree") # get the skill tree associated with the given course id
 async def get_skill_tree(course_id: int, 
                      current_user: dict = Depends(user.get_current_user),
                      db: Session = Depends(get_db)): 

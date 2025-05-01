@@ -12,12 +12,12 @@ class SkillTreeDB:
     """
 
     @staticmethod
-    def create(db: Session, course_id: int, root_node_id: int = None):
+    def create(db: Session, course_id: int):
         # Prevent duplicate skill trees for a course
         existing = db.query(SkillTree).filter(SkillTree.course_id == course_id).first()
         if existing:
             raise ValueError(f"SkillTree already exists for course_id={course_id}")
-        tree = SkillTree(course_id=course_id, root_node_id=root_node_id)
+        tree = SkillTree(course_id=course_id)
         db.add(tree)
         db.commit()
         db.refresh(tree)
@@ -62,10 +62,9 @@ class SkillTreeNodeDB:
     """
 
     @staticmethod
-    def create(db: Session, skill_tree_id: int, quiz_id: int, state=None):
+    def create(db: Session, skill_tree_id: int, state=None):
         node = SkillTreeNode(
             skill_tree_id=skill_tree_id,
-            quiz_id=quiz_id,
             state=state
         )
         db.add(node)
@@ -90,7 +89,7 @@ class SkillTreeNodeDB:
         node = db.query(SkillTreeNode).filter(SkillTreeNode.id == node_id).first()
         if not node:
             raise ValueError(f"Node {node_id} not found")
-        for field in ['quiz_id', 'state']:
+        for field in ['state']:
             if field in kwargs:
                 setattr(node, field, kwargs[field])
         db.commit()
