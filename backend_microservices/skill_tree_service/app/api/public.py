@@ -91,7 +91,7 @@ async def get_skill_tree(course_id: int,
           .first()
     )
     if not tree:
-        return {"success": False, "data": f"No skill tree for course_id={course_id}"}
+        raise HTTPException(status_code=404, detail="Skill tree not found")
 
     tree_id = tree.id
 
