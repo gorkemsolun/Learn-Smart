@@ -94,7 +94,7 @@ export default function AllFlashcards() {
                     variant="ghost" 
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    View Quizzes
+                    View Flascards
                   </Button>
                 </CardHeader>
                 {course.course_description && (
