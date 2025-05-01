@@ -65,10 +65,10 @@ export default function AllFlashcards() {
   return (
     <div className="container mx-auto py-8">
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold">Your Courses</h2>
-          <div className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-lg">
-            <Info className="w-4 h-4" />
+          <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 text-blue-600">
+            <Info className="size-4" />
             <p className="text-sm">
               Click on any course to view all its skill tree
             </p>
@@ -80,19 +80,19 @@ export default function AllFlashcards() {
             {courses.map((course) => (
               <Card
                 key={course.course_id}
-                className="hover:bg-accent/50 transition-colors cursor-pointer group"
+                className="group cursor-pointer transition-colors hover:bg-accent/50"
                 onClick={() => handleCourseClick(course.course_id)}
               >
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="group-hover:text-primary transition-colors">
+                    <CardTitle className="transition-colors group-hover:text-primary">
                       {course.course_name}
                     </CardTitle>
                     <CardDescription>{course.course_code}</CardDescription>
                   </div>
                   <Button
                     variant="ghost"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     View Skill Tree
                   </Button>
@@ -112,7 +112,7 @@ export default function AllFlashcards() {
             <CardHeader>
               <CardTitle>No courses found</CardTitle>
               <CardDescription>
-                You haven't created any courses yet
+                You haven&#39;t created any courses yet
               </CardDescription>
             </CardHeader>
           </Card>

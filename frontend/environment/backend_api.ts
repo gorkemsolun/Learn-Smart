@@ -30,3 +30,7 @@ export const filemanagerService = axios.create({
 export const userService = axios.create({
   baseURL: "http://127.0.0.1:8007/api/public"
 });
+
+export const skillTreeService = axios.create({
+  baseURL: "http://127.0.0.1:8008/api/public"
+});

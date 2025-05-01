@@ -90,7 +90,7 @@ export function CourseCard(modalParameters: {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Card className="h-100 w-[17rem] overflow-hidden rounded-xl border bg-gradient-to-br from-card/50 to-background shadow-sm transition-all duration-300 hover:shadow-md">
+        <Card className="h-[20rem] w-[17rem] overflow-hidden rounded-xl border bg-gradient-to-br from-card/50 to-background shadow-sm transition-all duration-300 hover:shadow-md">
           <CardHeader className="relative bg-muted/80 p-0">
             <div className="absolute left-3 top-3 z-10">
               <Badge

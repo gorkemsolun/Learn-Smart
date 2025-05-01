@@ -46,7 +46,7 @@ export function CoursesList(modalParameters: {
     <>
       <Card className="h-full bg-gradient-to-br from-primary/5 via-secondary/5 to-background shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-semibold">Your Studies</CardTitle>
+          <CardTitle className="font-semibold">Your Courses</CardTitle>
           <Button
             onClick={() => modalParameters.setCourseDialog(true)}
             variant="outline"

@@ -196,13 +196,13 @@ export default function CourseQuizList() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Quizzes</h1>
+      <h1 className="mb-4 text-2xl font-bold">Quizzes</h1>
       <ul>
         {quizList.map((quiz) => (
           <li key={quiz.quiz_id} className="mb-4">
-            <div className="border rounded-lg overflow-hidden transition-shadow duration-300 hover:shadow-lg">
+            <div className="overflow-hidden rounded-lg border transition-shadow duration-300 hover:shadow-lg">
               <div
-                className="cursor-pointer p-4 flex justify-between items-center"
+                className="flex cursor-pointer items-center justify-between p-4"
                 onClick={() => handleQuizClick(quiz.quiz_id.toString())}
               >
                 <div className="flex-1">
@@ -242,30 +242,30 @@ export default function CourseQuizList() {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="ml-4 flex gap-2">
                   {editingQuizId !== quiz.quiz_id && (
                     <>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="size-8"
                         onClick={(e) => {
                           e.stopPropagation();
                           startEditing(quiz);
                         }}
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="size-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-red-500 hover:text-red-700"
+                        className="size-8 text-red-500 hover:text-red-700"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteQuiz(quiz.quiz_id);
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </>
                   )}
@@ -279,7 +279,7 @@ export default function CourseQuizList() {
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="p-6 border-t">
+                    <div className="border-t p-6">
                       {quiz.questions.map((question, qIndex) => (
                         <QuizComponent
                           key={qIndex}

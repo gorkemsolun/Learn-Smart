@@ -21,14 +21,24 @@ export interface Course {
 }
 
 export interface NodeData {
-  id: string;
-  label?: string;
-  description?: string;
-  level?: number;
-  progress?: number;
-  prerequisites?: string[];
-  skills?: string[];
-  completed?: boolean;
+  id: number;
+  name: string;
+  quiz?: Array<{
+    question: string;
+    type: string;
+    options: Record<string, string>;
+    answer: string;
+  }>;
+  state: string;
+}
+
+export interface EdgeData {
+  source: number;
+  target: number;
+}
+export interface SkillTree {
+  nodes: NodeData[];
+  edges: EdgeData[];
 }
 
 export interface Tier {
@@ -74,12 +84,6 @@ export interface Notification {
   notification_is_new: boolean;
   notification_receiver_id: string;
   notification_sender_id: string;
-}
-
-export interface SkillTree {
-  id: string;
-  title: string;
-  description: string;
 }
 
 export interface CheckPasswordDialogProps {
