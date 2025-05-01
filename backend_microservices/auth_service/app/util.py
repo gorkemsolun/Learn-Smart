@@ -1,8 +1,9 @@
-import jwt
 from datetime import datetime, timedelta
 
-from auth_service.app import SECRET_KEY, ALGORITHM, pwd_context
 import auth_service.app.clients.user as user
+import jwt
+from auth_service.app import ALGORITHM, SECRET_KEY, pwd_context
+
 
 async def authenticate_user(password, **kwargs):
     """
@@ -27,11 +28,11 @@ async def authenticate_user(password, **kwargs):
 
     # get the user from the user service
     user_dict = await user.get_user(nickname=nickname, email=email, user_id=user_id)
-    
+
     # user not found or password does not match
     if not user_dict or not _verify_password(password, user_dict["hashed_password"]):
         return None
-    
+
     return user_dict
 
 
@@ -53,12 +54,14 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
         expire = datetime.now() + expires_delta
     else:
         expire = datetime.now() + timedelta(minutes=30)
-        
-    to_encode.update({"exp": expire}) # add expiration time to the token
 
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM) # encode the token with the secret key
+    to_encode.update({"exp": expire})  # add expiration time to the token
 
-    return encoded_jwt # return the encoded token
+    encoded_jwt = jwt.encode(
+        to_encode, SECRET_KEY, algorithm=ALGORITHM
+    )  # encode the token with the secret key
+
+    return encoded_jwt  # return the encoded token
 
 
 def _verify_password(plain_password, hashed_password):
