@@ -2,10 +2,15 @@
 
 import { useEffect, useRef } from "react";
 import Cookies from "js-cookie";
-import { backendAPI, userService } from "@/environment/backend_api";
+import { userService } from "@/environment/backend_api";
+import {usePathname} from "next/navigation";
+
 
 export default function useExitTracker() {
   const hasExited = useRef(false);
+
+  const currentPath = usePathname(); // Track the current route path
+  const previousPath = useRef(currentPath);
 
   useEffect(() => {
     // Check for and send any pending analytics data
@@ -128,6 +133,14 @@ export default function useExitTracker() {
       handleExit();
     };
 
+    if (previousPath.current !== currentPath) {
+      handleExit();
+      // Reset for the new path
+      hasExited.current = false;
+      Cookies.set("signin_time", new Date().toISOString(), { path: "/" });
+      previousPath.current = currentPath;
+    }
+
     document.addEventListener("visibilitychange", visibilityChangeHandler);
     window.addEventListener("beforeunload", beforeUnloadHandler);
 
@@ -136,5 +149,5 @@ export default function useExitTracker() {
       window.removeEventListener("beforeunload", beforeUnloadHandler);
       window.removeEventListener("online", handleOnline);
     };
-  }, []);
+  }, [currentPath]);
 }
