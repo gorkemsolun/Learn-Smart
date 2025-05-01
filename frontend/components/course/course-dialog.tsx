@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
-import { courseService, filemanagerService } from "@/environment/backend_api";
+import { courseService, filemanagerService, userService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import type * as React from "react";
@@ -273,6 +273,20 @@ export function CourseDialogModal({
 
     try {
       if (!isCreate) {
+        console.log(formData.get("course_code"));
+        const exists = await checkCourseCodeExists(formData.get("course_code") as string)
+
+        // Add this check for existing course code
+        if (exists) {
+          toast({
+            title: "Error",
+            description: "Course code already exists",
+            variant: "destructive",
+            duration: 3000,
+          });
+          return; // Exit the function early
+        }
+
         await courseService.put(`/${course?.course_id}`, formData, {
           headers: {
             Accept: "application/json",
@@ -303,6 +317,19 @@ export function CourseDialogModal({
           className: "bg-green-500 text-background",
         });
       } else {
+        console.log(formData.get("course_code"));
+        const exists = await checkCourseCodeExists(formData.get("course_code") as string)
+
+        // Add this check for existing course code
+        if (exists) {
+          toast({
+            title: "Error",
+            description: "Course code already exists",
+            variant: "destructive",
+            duration: 3000,
+          });
+          return; // Exit the function early
+        }
         // Send the form data to the backend
         await courseService.post(`/create`, formData, {
           headers: {
@@ -379,6 +406,25 @@ export function CourseDialogModal({
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0], setter, fileType);
+    }
+  };
+
+  const checkCourseCodeExists = async (code: string) => {
+    try {
+      const response = await userService.get(`/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const listOfAllCourses = response.data.courses.map((course: Course) => course.course_code);
+
+      if (listOfAllCourses.includes(code)) {
+        console.log("Course code already exists");
+        return true;
+      }
+      return false;
+
+    } catch (error) {
+      console.error("Error checking course code:", error);
+      return false;
     }
   };
 
