@@ -24,7 +24,6 @@ type WeekData = {
 };
 
 function parseStudyPlan(md: string): WeekData[] {
-  // Fix: Ensure we only match headings like "## Week 2:"
   const weekRegex = /^##\s*Week\s+(\d+):/gim;
   const matches = [...md.matchAll(weekRegex)];
   const weeks: WeekData[] = [];
@@ -34,8 +33,6 @@ function parseStudyPlan(md: string): WeekData[] {
     const end = i + 1 < matches.length ? matches[i + 1].index! : md.length;
     const weekNumber = matches[i][1];
     const content = md.slice(start, end);
-
-    // Extract each field separately with clear boundaries
     const topic = extractField(content, "Topic");
     const reading = extractField(content, "Reading");
     const deliverable = extractField(content, "Deliverable");
@@ -53,7 +50,6 @@ function parseStudyPlan(md: string): WeekData[] {
 }
 
 function extractField(content: string, fieldName: string): string {
-  // Updated regex to better handle field boundaries
   const regex = new RegExp(
     `${fieldName}:\\s*([\\s\\S]*?)(?=\\n(?:\\*\\*?)?(?:Topic|Reading|Deliverable):|\\n##|$)`,
     "i"
@@ -85,9 +81,12 @@ export default function WeeklyStudyPlan() {
     if (token) fetchStudyPlanData(course_id as string);
   }, [token, course_id]);
 
+  // Updated: clear weeksData when studyPlan is empty
   useEffect(() => {
     if (studyPlan) {
       setWeeksData(parseStudyPlan(studyPlan));
+    } else {
+      setWeeksData([]);
     }
   }, [studyPlan]);
 
@@ -95,7 +94,6 @@ export default function WeeklyStudyPlan() {
     try {
       startLoading();
 
-      // Fetch course details to get the study plan URL
       const courseResponse = await courseService.get(`/${course_id}`, {
         headers: {
           "Content-Type": "application/json",
@@ -105,7 +103,8 @@ export default function WeeklyStudyPlan() {
 
       setCourse(courseResponse.data);
 
-      if (courseResponse.data.course_syllabus_fid) {
+      // Fix: check correct field for study plan
+      if (courseResponse.data.course_study_plan_fid) {
         const response = await filemanagerService.get(
           `/${courseResponse.data.course_study_plan_fid}`,
           {
@@ -115,10 +114,8 @@ export default function WeeklyStudyPlan() {
           }
         );
 
-        // Fetch the actual study plan content
         const studyPlanResponse = await fetch(response.data.file_url);
         const data = await studyPlanResponse.text();
-        console.log(data);
         setStudyPlan(data);
       } else {
         setStudyPlan("");
@@ -151,11 +148,9 @@ export default function WeeklyStudyPlan() {
   };
 
   if (loading) {
-    return (
-      <LoadingSpinner />
-    );
+    return <LoadingSpinner />;
   } else {
-   return (
+    return (
       <div className="h-[92vh] bg-gradient-to-b from-muted/50 to-background p-6">
         <div className="mx-auto max-w-7xl">
           <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

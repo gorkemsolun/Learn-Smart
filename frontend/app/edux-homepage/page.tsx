@@ -10,13 +10,12 @@ import { ToastAction } from "@/components/ui/toast";
 import { userService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
-import ChatIcon from "@mui/icons-material/Chat";
-import HubIcon from "@mui/icons-material/Hub";
-import { Sparkles, Swatches } from "@mynaui/icons-react";
+import { Sparkles, Swatches, ChatDots } from "@mynaui/icons-react";
 import dayjs from "dayjs";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import {HubOutlined} from "@mui/icons-material";
 
 // Helper function to map dates to weekdays
 const mapDateToDay = (dateString: string): string => {
@@ -120,13 +119,13 @@ export default function Home() {
     {
       title: "Skill Tree",
       content: "Conquer each skill.",
-      icon: <HubIcon className="text-3xl md:text-4xl" />,
+      icon: <HubOutlined className="text-3xl md:text-4xl" />,
       link: "/skill-tree",
     },
     {
       title: "Chat",
       content: "Ask, learn using chatbot.",
-      icon: <ChatIcon className="text-3xl md:text-4xl" />,
+      icon: <ChatDots className="text-3xl md:text-4xl" />,
       link:
         courses.length === 0
           ? "error_chat"
@@ -139,7 +138,7 @@ export default function Home() {
       link:
         courses.length === 0
           ? "error_chat"
-          : `/course/${courses[0].course_id}/quizzes`,
+          : `/all-quizzes`,
     },
     {
       title: "Flashcards",
@@ -148,7 +147,7 @@ export default function Home() {
       link:
         courses.length === 0
           ? "error_chat"
-          : `/course/${courses[0].course_id}/flashcards`,
+          : `/all-flashcards`,
     },
   ];
 

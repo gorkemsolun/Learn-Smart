@@ -3,26 +3,18 @@
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
 import type { Course } from "@/app/types";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
 import { courseService, filemanagerService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
-import { FileCheck, FileText, Image } from "@mynaui/icons-react";
 import Cookies from "js-cookie";
 import type * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Upload, X, AlertCircle, Eye } from 'lucide-react';
+import { FileCheck, Image, FileText, Upload, X, Eye } from '@mynaui/icons-react';
 import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription} from "@/components/ui/alert";
 
 export function CourseDialogModal({
   isCreate,
@@ -33,13 +25,13 @@ export function CourseDialogModal({
   course,
   isFromSyllabusPage,
 }: {
-  isCreate: boolean;
-  isOpen: boolean;
-  onClose: (value: boolean) => void;
-  onCourseUpdate: () => void;
-  onCourseCreation?: () => void;
-  course?: Course;
-  isFromSyllabusPage?: boolean;
+  isCreate: boolean
+  isOpen: boolean
+  onClose: (value: boolean) => void
+  onCourseUpdate: () => void
+  onCourseCreation?: () => void
+  course?: Course
+  isFromSyllabusPage?: boolean
 }) {
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
@@ -104,12 +96,9 @@ export function CourseDialogModal({
 
       if (course_syllabus_fid) {
         try {
-          const response = await filemanagerService.get(
-            `/${course_syllabus_fid}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+          const response = await filemanagerService.get(`/${course_syllabus_fid}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
           const syllabus_url = response.data.file_url;
           const syllabus_filename = response.data.file_name;
 
@@ -121,13 +110,9 @@ export function CourseDialogModal({
 
           const syllabusBlob = await (await fetch(syllabus_url)).blob();
           const syllabusExtension = syllabus_filename.split(".").pop();
-          syllabusFile = new File(
-            [syllabusBlob],
-            `syllabus.${syllabusExtension}`,
-            {
-              type: syllabusBlob.type,
-            }
-          );
+          syllabusFile = new File([syllabusBlob], `syllabus.${syllabusExtension}`, {
+            type: syllabusBlob.type,
+          });
           setSyllabus(syllabusFile);
         } catch (syllabusError) {
           console.error("Error fetching syllabus file:", syllabusError);
@@ -180,28 +165,16 @@ export function CourseDialogModal({
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
     setter: React.Dispatch<React.SetStateAction<File | null>>,
-    fileType: string
+    fileType: string,
   ) {
     const file = event.target.files && event.target.files[0];
     handleFile(file, setter, fileType);
   }
 
-  function handleFile(
-    file: File | null,
-    setter: React.Dispatch<React.SetStateAction<File | null>>,
-    fileType: string
-  ) {
-    if (
-      file &&
-      fileType === "document" &&
-      documentMimeTypes.includes(file.type)
-    ) {
+  function handleFile(file: File | null, setter: React.Dispatch<React.SetStateAction<File | null>>, fileType: string) {
+    if (file && fileType === "document" && documentMimeTypes.includes(file.type)) {
       setter(file);
-    } else if (
-      file &&
-      fileType === "image" &&
-      imageMimeTypes.includes(file.type)
-    ) {
+    } else if (file && fileType === "image" && imageMimeTypes.includes(file.type)) {
       setter(file);
     } else {
       setter(null);
@@ -381,6 +354,34 @@ export function CourseDialogModal({
     }
   }
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, fileType: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (fileType === "document" || fileType === "image") {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (
+    e: React.DragEvent<HTMLDivElement>,
+    setter: React.Dispatch<React.SetStateAction<File | null>>,
+    fileType: string,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0], setter, fileType);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className={"sm:max-w-[650px]"}>
@@ -467,38 +468,20 @@ export function CourseDialogModal({
 
           <div className={`${!isFromSyllabusPage ? "grid grid-cols-2 gap-4" : ""}`}>
             <div className="space-y-2">
-              <Label htmlFor="syllabus" className="text-sm font-medium">
+              <Label className="text-sm font-medium">
                 Syllabus (PDF or DOCX)
               </Label>
               <div
-                className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors ${
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-muted-foreground/50"
-                }`}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDragging(false);
-                  const file = e.dataTransfer.files[0];
-                  handleFile(file, setSyllabus, "document");
-                }}
+                className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed ${isDragging ? "border-primary" : "border-muted-foreground/25"} p-6 transition-colors hover:border-muted-foreground/50`}
+                onDragOver={(e) => handleDragOver(e, "document")}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, setSyllabus, "document")}
               >
                 {syllabus ? (
                   <div className="flex flex-col items-center text-center">
-                    {syllabus.name.endsWith(".pdf") ? (
-                      <div className="mb-2 rounded-full bg-primary/10 p-2">
-                        <FileCheck className="size-6 text-primary" aria-hidden="true" />
-                      </div>
-                    ) : (
-                      <div className="mb-2 rounded-full bg-primary/10 p-2">
-                        <FileText className="size-6 text-primary" aria-hidden="true" />
-                      </div>
-                    )}
+                    <div className="mb-2 rounded-full bg-primary/10 p-2">
+                      <FileCheck className="size-6 text-primary" aria-hidden="true" />
+                    </div>
                     <p className="text-sm font-medium">{syllabus.name}</p>
                     <p className="text-xs text-muted-foreground">{(syllabus.size / 1024 / 1024).toFixed(2)} MB</p>
                     <Button
@@ -518,19 +501,18 @@ export function CourseDialogModal({
                     </Button>
                   </div>
                 ) : (
-                  <label
-                    htmlFor="syllabus"
+                  <div
                     className="flex cursor-pointer flex-col items-center text-center"
+                    onClick={() => syllabusInputRef.current?.click()}
                   >
-                    <div className="bg-primary/10 mb-2 rounded-full p-2">
-                      <FileText className="text-primary size-6" />
+                    <div className="mb-2 rounded-full bg-primary/10 p-2">
+                      <FileText className="size-6 text-primary" />
                     </div>
                     <p className="text-sm font-medium">
-                      <span className="text-primary">Click to upload</span> or
-                      drag and drop
+                      <span className="text-primary">Click to upload</span> or drag and drop
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">PDF or DOCX (max 10MB)</p>
-                  </label>
+                  </div>
                 )}
                 <input
                   id="syllabus"
@@ -545,21 +527,18 @@ export function CourseDialogModal({
 
             {!isFromSyllabusPage && (
               <div className="space-y-2">
-                <Label htmlFor="image" className="text-sm font-medium">
+                <Label className="text-sm font-medium">
                   Course Icon (JPG, JPEG or PNG)
                 </Label>
                 <div
-                  className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const file = e.dataTransfer.files[0];
-                    handleFile(file, setIcon, "image");
-                  }}
+                  className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed ${isDragging ? "border-primary" : "border-muted-foreground/25"} p-6 transition-colors hover:border-muted-foreground/50`}
+                  onDragOver={(e) => handleDragOver(e, "image")}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, setIcon, "image")}
                 >
                   {icon ? (
                     <div className="flex flex-col items-center text-center">
-                      <div className="bg-primary/10 mb-2 rounded-full p-2">
+                      <div className="mb-2 rounded-full bg-primary/10 p-2">
                         <Image className="size-6 text-primary" />
                       </div>
                       <p className="text-sm font-medium">{icon.name}</p>
@@ -568,7 +547,7 @@ export function CourseDialogModal({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="mt-2"
+                        className="mt-2 flex items-center gap-1"
                         onClick={() => {
                           setIcon(null);
                           if (iconInputRef.current) {
@@ -576,27 +555,31 @@ export function CourseDialogModal({
                           }
                         }}
                       >
+                        <X className="size-3" />
                         Remove
                       </Button>
                     </div>
                   ) : (
-                    <label htmlFor="image" className="flex cursor-pointer flex-col items-center text-center">
-                      <div className="bg-primary/10 mb-2 rounded-full p-2">
+                    <div
+                      className="flex cursor-pointer flex-col items-center text-center"
+                      onClick={() => iconInputRef.current?.click()}
+                    >
+                      <div className="mb-2 rounded-full bg-primary/10 p-2">
                         <Upload className="size-6 text-primary" />
                       </div>
                       <p className="text-sm font-medium">
                         <span className="text-primary">Click to upload</span> or drag and drop
                       </p>
                       <p className="mt-1 text-xs font-light text-muted-foreground">JPG, JPEG or PNG (max 10MB)</p>
-                    </label>
+                    </div>
                   )}
                   <input
                     id="image"
                     type="file"
                     accept=".jpg,.jpeg,.png"
-                    onChange={(event) => handleFileChange(event, setIcon, "image")}
                     className="hidden"
                     ref={iconInputRef}
+                    onChange={(e) => handleFileChange(e, setIcon, "image")}
                   />
                 </div>
               </div>

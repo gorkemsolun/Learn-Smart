@@ -90,12 +90,12 @@ export function CourseCard(modalParameters: {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Card className="from-card/50 to-background h-80 w-[17rem] overflow-hidden rounded-xl border bg-gradient-to-br shadow-sm transition-all duration-300 hover:shadow-md">
-          <CardHeader className="bg-muted/80 relative p-0">
+        <Card className="h-100 w-[17rem] overflow-hidden rounded-xl border bg-gradient-to-br from-card/50 to-background shadow-sm transition-all duration-300 hover:shadow-md">
+          <CardHeader className="relative bg-muted/80 p-0">
             <div className="absolute left-3 top-3 z-10">
               <Badge
                 variant="secondary"
-                className="bg-primary/90 text-primary-foreground pointer-events-none line-clamp-1 cursor-default select-none text-xs font-thin"
+                className="pointer-events-none line-clamp-1 cursor-default select-none bg-primary/90 text-xs font-thin text-primary-foreground"
               >
                 {modalParameters.course.course_code}
               </Badge>
@@ -127,11 +127,11 @@ export function CourseCard(modalParameters: {
           </CardHeader>
 
           <CardContent className="flex flex-col p-4 pt-3">
-            <CardTitle className="text-foreground line-clamp-1 text-lg font-thin">
+            <CardTitle className="line-clamp-1 text-lg font-thin text-foreground">
               {modalParameters.course.course_name}
             </CardTitle>
             <CardDescription
-              className="text-muted-foreground mt-1.5 line-clamp-2 h-10 text-sm"
+              className="mt-1.5 line-clamp-2 h-10 text-sm text-muted-foreground"
               title={modalParameters.course.course_description}
             >
               {modalParameters.course.course_description ||

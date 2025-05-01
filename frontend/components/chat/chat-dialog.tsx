@@ -143,6 +143,7 @@ export function ChatDialog({
           },
         });
         resultChat = { ...chat, chat_title: trimmedName };
+        window.dispatchEvent(new Event('slide-upload-complete'));
       } else {
         response = await chatService.post(
           `/chat/create?course_id=${course_id}&chat_title=${encodeURIComponent(trimmedName)}`,
@@ -174,7 +175,9 @@ export function ChatDialog({
       );
       toast({
         title: "Error",
-        description: `Failed to ${isEditMode ? "update" : "create"} chat. Please try again.`,
+        description: `Failed to ${isEditMode ? "update" : "create"} chat. 
+        ${isEditMode ? "You entered the same name with an existing slide in this chat.": ""} 
+        Please try again.`,
         variant: "destructive",
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
@@ -218,7 +221,7 @@ export function ChatDialog({
               className={`w-full ${errorMessage ? "border-red-500" : ""}`}
               required
             />
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="mt-1 text-xs text-muted-foreground">
               {chatName.length}/{MAX_TITLE_LENGTH} characters
             </p>
             {errorMessage && (
@@ -226,62 +229,65 @@ export function ChatDialog({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="slide" className="text-sm font-medium">
-              Upload {isEditMode ? "New " : ""}Slides (Optional)
-            </Label>
-            <div
-              className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-            >
-              {file ? (
-                <div className="flex flex-col items-center text-center">
-                  {file.name.endsWith(".pdf") ? (
-                    <FileIcon className="text-primary mb-2 size-10" />
-                  ) : (
-                    <FileTextIcon className="text-primary mb-2 size-10" />
-                  )}
-                  <p className="text-sm font-medium">{file.name}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => setFile(null)}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ) : (
-                <label
-                  htmlFor="slide-upload"
-                  className="flex cursor-pointer flex-col items-center text-center"
-                >
-                  <div className="bg-primary/10 mb-2 rounded-full p-2">
-                    <FileIcon className="text-primary size-6" />
+          {/* Show upload in create mode always, or in edit mode only when slides exist */}
+          {(!isEditMode || (isEditMode && chat?.slides_mode && chat.slides && chat.slides.length > 0)) && (
+            <div className="space-y-2">
+              <Label htmlFor="slide" className="text-sm font-medium">
+                Upload {isEditMode ? "New " : ""}Slides (Optional)
+              </Label>
+              <div
+                className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+              >
+                {file ? (
+                  <div className="flex flex-col items-center text-center">
+                    {file.name.endsWith(".pdf") ? (
+                      <FileIcon className="mb-2 size-10 text-primary" />
+                    ) : (
+                      <FileTextIcon className="mb-2 size-10 text-primary" />
+                    )}
+                    <p className="text-sm font-medium">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => setFile(null)}
+                    >
+                      Remove
+                    </Button>
                   </div>
-                  <p className="text-sm font-medium">
-                    <span className="text-primary">Click to upload</span> or
-                    drag and drop
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    PDF or DOCX (max 10MB)
-                  </p>
-                </label>
-              )}
-              <input
-                id="slide-upload"
-                type="file"
-                accept=".pdf,.docx"
-                onChange={handleFileChange}
-                className="hidden"
-              />
+                ) : (
+                  <label
+                    htmlFor="slide-upload"
+                    className="flex cursor-pointer flex-col items-center text-center"
+                  >
+                    <div className="mb-2 rounded-full bg-primary/10 p-2">
+                      <FileIcon className="size-6 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium">
+                      <span className="text-primary">Click to upload</span> or
+                      drag and drop
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      PDF or DOCX (max 10MB)
+                    </p>
+                  </label>
+                )}
+                <input
+                  id="slide-upload"
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <DialogFooter>
             <Button

@@ -76,17 +76,6 @@ export interface Notification {
   notification_sender_id: string;
 }
 
-export interface ChatInterfaceProps {
-  messages: Message[];
-  input: string;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleInputFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  isChatLoading: boolean;
-  chatContainerRef: React.RefObject<HTMLDivElement>;
-  activeChat: Chat | null;
-}
-
 export interface SkillTree {
   id: string;
   title: string;
@@ -99,20 +88,6 @@ export interface CheckPasswordDialogProps {
   onCheckSuccess?: () => void;
 }
 
-export interface ChatSidebarProps {
-  course: Course;
-  courses: Course[];
-  isLoading: boolean;
-  activeChat: Chat | null;
-  setActiveChat: React.Dispatch<React.SetStateAction<Chat | null>>;
-  chats: Chat[];
-  fetchChats: (courseId: string) => Promise<void>;
-}
-
-export interface ChatResizablePanelsProps {
-  activeChat: Chat | null;
-}
-
 export interface ChatMessage {
   message_id: number;
   is_user: boolean;
@@ -122,20 +97,6 @@ export interface ChatMessage {
 export interface ChatHistoryResponse {
   history: ChatMessage[];
 }
-
-export interface SlidePanelProps {
-  imgSrc?: string;
-  currentSlidePage: number;
-  totalPages: number;
-  isSlidesLoading: boolean;
-  presentationFiles: { slide_id: string; slides_file_name: string }[];
-  currentSlide: Slide;
-  onFileChange: (slide_id: string) => void;
-  onPreviousSlide: () => void;
-  onNextSlide: () => void;
-  fetchSlide: (slideID: string, pageNumber: number) => Promise<SlideResponse>;
-}
-
 export interface HotkeyConfig {
   key: string;
   callback: () => void;
