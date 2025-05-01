@@ -1,7 +1,7 @@
 import httpx
+from auth_service.app.clients import USER_CLIENT_KEY, USER_SERVICE_URL
 from fastapi import HTTPException
 
-from auth_service.app.clients import USER_SERVICE_URL, USER_CLIENT_KEY
 
 async def get_user(nickname=None, email=None, user_id=None):
     """
@@ -27,19 +27,22 @@ async def get_user(nickname=None, email=None, user_id=None):
 
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{USER_SERVICE_URL}/private/", 
+                f"{USER_SERVICE_URL}/private/",
                 params=params,
-                headers={"X-API-Key": USER_CLIENT_KEY}
+                headers={"X-API-Key": USER_CLIENT_KEY},
             )
             response.raise_for_status()
 
         user = response.json()
         return user
-    
+
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:
             return None
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error occurred while authenticating user: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error occurred while authenticating user: {str(e)}",
+        )

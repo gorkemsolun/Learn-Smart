@@ -120,7 +120,7 @@ export default function Home() {
       title: "Skill Tree",
       content: "Conquer each skill.",
       icon: <HubOutlined className="text-3xl md:text-4xl" />,
-      link: "/skill-tree",
+      link: "/all-skill-tree",
     },
     {
       title: "Chat",

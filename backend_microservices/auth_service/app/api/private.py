@@ -1,19 +1,16 @@
-from fastapi import Depends, HTTPException, APIRouter
 import jwt
-from jwt.exceptions import InvalidTokenError
-from fastapi import HTTPException, status, APIRouter, Depends
-
-from auth_service.app import (
-    SECRET_KEY, ALGORITHM, oauth2_scheme, pwd_context
-)
-from auth_service.app.security.auth import verify_api_key
+from auth_service.app import ALGORITHM, SECRET_KEY, oauth2_scheme, pwd_context
 from auth_service.app.schemas import *
+from auth_service.app.security.auth import verify_api_key
+from fastapi import APIRouter, Depends, HTTPException, status
+from jwt.exceptions import InvalidTokenError
 
 router = APIRouter(
-    prefix="/private", 
+    prefix="/private",
     tags=["Authentication - Private API"],
-    dependencies=[Depends(verify_api_key)]
+    dependencies=[Depends(verify_api_key)],
 )
+
 
 @router.post("/hash")
 def hash_password(password):
@@ -43,21 +40,23 @@ async def verify_email(token: str = Depends(oauth2_scheme)):
     Raises:
     - HTTPException: If the token is invalid or the user is not found.
     """
-    
+
     credentials_exception = HTTPException(
         detail="Could not validate credentials",
         status_code=status.HTTP_401_UNAUTHORIZED,
         headers={"WWW-Authenticate": "Bearer"},
-    ) # create an exception for invalid credentials
+    )  # create an exception for invalid credentials
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]) # decode the JWT token
-        
-        email = payload.get("sub") # get the email from the decoded token
+        payload = jwt.decode(
+            token, SECRET_KEY, algorithms=[ALGORITHM]
+        )  # decode the JWT token
+
+        email = payload.get("sub")  # get the email from the decoded token
         if email is None:
-            raise credentials_exception # raise an exception if the email is not found in the payload
-        
+            raise credentials_exception  # raise an exception if the email is not found in the payload
+
     except InvalidTokenError:
-        raise credentials_exception # raise an exception if the token is not genuine
-    
-    return {"email": email} # return the email of the user
+        raise credentials_exception  # raise an exception if the token is not genuine
+
+    return {"email": email}  # return the email of the user

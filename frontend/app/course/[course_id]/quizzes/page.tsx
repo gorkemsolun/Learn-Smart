@@ -200,9 +200,9 @@ export default function CourseQuizList() {
       <ul>
         {quizList.map((quiz) => (
           <li key={quiz.quiz_id} className="mb-4">
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-hidden transition-shadow duration-300 hover:shadow-lg">
               <div
-                className="cursor-pointer p-4 hover:bg-gray-100 flex justify-between items-center"
+                className="cursor-pointer p-4 flex justify-between items-center"
                 onClick={() => handleQuizClick(quiz.quiz_id.toString())}
               >
                 <div className="flex-1">

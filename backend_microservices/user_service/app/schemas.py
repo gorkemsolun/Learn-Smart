@@ -1,6 +1,8 @@
+from datetime import date, datetime
+from typing import Optional
+
 from pydantic import BaseModel, EmailStr
-from typing import Literal, Optional
-from datetime import datetime, date
+
 
 class UserCreationRequest(BaseModel):
     """
@@ -11,9 +13,11 @@ class UserCreationRequest(BaseModel):
         email (EmailStr): The email address of the user.
         password (str): The password of the user.
     """
+
     nickname: str
     email: EmailStr  # EmailStr is a Pydantic email validator
     password: str
+
 
 class UserResponse(BaseModel):
     """
@@ -25,10 +29,11 @@ class UserResponse(BaseModel):
         nickname (Optional[str]): The user's nickname.
         email (Optional[EmailStr]): The user's email.
     """
+
     user_id: Optional[int] = None
-    role: Optional[str] = None
     nickname: Optional[str] = None
     email: Optional[EmailStr] = None  # EmailStr is a Pydantic email validator
+
 
 class UserUpdateRequest(BaseModel):
     """
@@ -40,10 +45,11 @@ class UserUpdateRequest(BaseModel):
         email (Optional[EmailStr]): The email address of the user.
         password (Optional[str]): The password of the user.
     """
-    role: Optional[Literal["Instructor", "User"]] = None
+
     nickname: Optional[str] = None
     email: Optional[EmailStr] = None  # EmailStr is a Pydantic email validator
     password: Optional[str] = None
+
 
 class AnalyticsRequest(BaseModel):
     """
@@ -53,9 +59,11 @@ class AnalyticsRequest(BaseModel):
         date (date): The date of the usage in 'YYYY-MM-DD' format.
         time_spent (int): The time spent in seconds.
     """
+
     date: date
     time_spent: int
     timestamp: datetime
+
 
 class AnalyticsResponse(BaseModel):
     """
@@ -65,6 +73,7 @@ class AnalyticsResponse(BaseModel):
         date (Optional[date]): The date of the usage in 'YYYY-MM-DD' format.
         time_spent (Optional[int]): The total time spent in seconds.
     """
+
     date: Optional[date]
     time_spent: Optional[int]
     timestamp: Optional[datetime]

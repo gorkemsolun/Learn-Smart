@@ -3,6 +3,6 @@ WORKDIR /auth_service
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .
-ENV PYTHONPATH=/
+ENV PYTHONPATH=/:/auth_service/app
 EXPOSE 8001
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]

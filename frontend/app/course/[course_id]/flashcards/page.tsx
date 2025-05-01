@@ -198,9 +198,9 @@ export default function CourseFlashCardList() {
       <ul className="space-y-4">
         {flashcardList.map((flashcard) => (
           <li key={flashcard.flashcard_id}>
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-hidden transition-shadow duration-300 hover:shadow-lg">
               <div
-                className="cursor-pointer p-4 hover:bg-gray-100 flex justify-between items-center"
+                className="cursor-pointer p-4 flex justify-between items-center"
                 onClick={() => handleFlashcardClick(flashcard.flashcard_id)}
               >
                 <div className="flex-1">
