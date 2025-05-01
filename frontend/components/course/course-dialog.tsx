@@ -3,18 +3,32 @@
 import { documentMimeTypes, imageMimeTypes } from "@/app/constants";
 import type { Course } from "@/app/types";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
-import { courseService, filemanagerService, userService } from "@/environment/backend_api";
+import { courseService, filemanagerService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
+import { useCheckCourseCode } from "@/hooks/useCheckCourseCode";
+import {
+  Eye,
+  FileCheck,
+  FileText,
+  Image,
+  Upload,
+  X,
+} from "@mynaui/icons-react";
 import Cookies from "js-cookie";
 import type * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FileCheck, Image, FileText, Upload, X, Eye } from '@mynaui/icons-react';
-import { Progress } from "@/components/ui/progress";
 
 export function CourseDialogModal({
   isCreate,
@@ -25,20 +39,21 @@ export function CourseDialogModal({
   course,
   isFromSyllabusPage,
 }: {
-  isCreate: boolean
-  isOpen: boolean
-  onClose: (value: boolean) => void
-  onCourseUpdate: () => void
-  onCourseCreation?: () => void
-  course?: Course
-  isFromSyllabusPage?: boolean
+  isCreate: boolean;
+  isOpen: boolean;
+  onClose: (value: boolean) => void;
+  onCourseUpdate: () => void;
+  onCourseCreation?: () => void;
+  course?: Course;
+  isFromSyllabusPage?: boolean;
 }) {
   const [courseName, setCourseName] = useState<string>("");
   const [courseCode, setCourseCode] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [syllabus, setSyllabus] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
-  const [disableSubmitButton, setDisableSubmitButton] = useState<boolean>(false);
+  const [disableSubmitButton, setDisableSubmitButton] =
+    useState<boolean>(false);
   const [token] = useState<string>(Cookies.get("authToken") as string);
   const [originalCourseData, setOriginalCourseData] = useState<Course>();
 
@@ -47,13 +62,18 @@ export function CourseDialogModal({
 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [hasExistingSyllabus, setHasExistingSyllabus] = useState<boolean>(false);
-  const [existingSyllabus, setExistingSyllabus] = useState<{ name: string; url: string | null }>({
+  const [hasExistingSyllabus, setHasExistingSyllabus] =
+    useState<boolean>(false);
+  const [existingSyllabus, setExistingSyllabus] = useState<{
+    name: string;
+    url: string | null;
+  }>({
     name: "",
     url: null,
   });
 
   const { toast } = useToast();
+  const { checkCourseCode } = useCheckCourseCode();
 
   const resetFields = () => {
     if (!isCreate && originalCourseData) {
@@ -96,9 +116,12 @@ export function CourseDialogModal({
 
       if (course_syllabus_fid) {
         try {
-          const response = await filemanagerService.get(`/${course_syllabus_fid}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const response = await filemanagerService.get(
+            `/${course_syllabus_fid}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           const syllabus_url = response.data.file_url;
           const syllabus_filename = response.data.file_name;
 
@@ -110,9 +133,13 @@ export function CourseDialogModal({
 
           const syllabusBlob = await (await fetch(syllabus_url)).blob();
           const syllabusExtension = syllabus_filename.split(".").pop();
-          syllabusFile = new File([syllabusBlob], `syllabus.${syllabusExtension}`, {
-            type: syllabusBlob.type,
-          });
+          syllabusFile = new File(
+            [syllabusBlob],
+            `syllabus.${syllabusExtension}`,
+            {
+              type: syllabusBlob.type,
+            }
+          );
           setSyllabus(syllabusFile);
         } catch (syllabusError) {
           console.error("Error fetching syllabus file:", syllabusError);
@@ -165,16 +192,28 @@ export function CourseDialogModal({
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
     setter: React.Dispatch<React.SetStateAction<File | null>>,
-    fileType: string,
+    fileType: string
   ) {
     const file = event.target.files && event.target.files[0];
     handleFile(file, setter, fileType);
   }
 
-  function handleFile(file: File | null, setter: React.Dispatch<React.SetStateAction<File | null>>, fileType: string) {
-    if (file && fileType === "document" && documentMimeTypes.includes(file.type)) {
+  function handleFile(
+    file: File | null,
+    setter: React.Dispatch<React.SetStateAction<File | null>>,
+    fileType: string
+  ) {
+    if (
+      file &&
+      fileType === "document" &&
+      documentMimeTypes.includes(file.type)
+    ) {
       setter(file);
-    } else if (file && fileType === "image" && imageMimeTypes.includes(file.type)) {
+    } else if (
+      file &&
+      fileType === "image" &&
+      imageMimeTypes.includes(file.type)
+    ) {
       setter(file);
     } else {
       setter(null);
@@ -273,6 +312,16 @@ export function CourseDialogModal({
 
     try {
       if (!isCreate) {
+        if (!isFromSyllabusPage) {
+          // Prevent course code duplication
+          const isValid = await checkCourseCode(
+            formData.get("course_code") as string
+          );
+          if (!isValid) {
+            return;
+          }
+        }
+
         await courseService.put(`/${course?.course_id}`, formData, {
           headers: {
             Accept: "application/json",
@@ -281,7 +330,9 @@ export function CourseDialogModal({
           },
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
-              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
               setUploadProgress(percentCompleted);
             }
           },
@@ -303,6 +354,12 @@ export function CourseDialogModal({
           className: "bg-green-500 text-background",
         });
       } else {
+        // Prevent course code duplication
+        const isValid = await checkCourseCode(
+          formData.get("course_code") as string
+        );
+        if (!isValid) return;
+
         // Send the form data to the backend
         await courseService.post(`/create`, formData, {
           headers: {
@@ -312,7 +369,9 @@ export function CourseDialogModal({
           },
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
-              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
               setUploadProgress(percentCompleted);
             }
           },
@@ -354,7 +413,10 @@ export function CourseDialogModal({
     }
   }
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, fileType: string) => {
+  const handleDragOver = (
+    e: React.DragEvent<HTMLDivElement>,
+    fileType: string
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     if (fileType === "document" || fileType === "image") {
@@ -371,7 +433,7 @@ export function CourseDialogModal({
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
     setter: React.Dispatch<React.SetStateAction<File | null>>,
-    fileType: string,
+    fileType: string
   ) => {
     e.preventDefault();
     e.stopPropagation();
@@ -387,20 +449,26 @@ export function CourseDialogModal({
       <DialogContent className={"sm:max-w-[650px]"}>
         <DialogHeader>
           <DialogTitle>
-            {!isFromSyllabusPage ? (isCreate ? "Create Course" : "Edit Course") : "Edit Syllabus"}
+            {!isFromSyllabusPage
+              ? isCreate
+                ? "Create Course"
+                : "Edit Course"
+              : "Edit Syllabus"}
           </DialogTitle>
         </DialogHeader>
 
         <form className="space-y-2 py-2" onSubmit={handleSubmit}>
           {hasExistingSyllabus && isFromSyllabusPage && (
-            <div className="rounded-md border border-border bg-muted/30 p-4">
+            <div className="border-border bg-muted/30 rounded-md border p-4">
               <h3 className="mb-2 text-sm font-medium">Current Syllabus</h3>
               <div className="flex items-start space-x-3">
-                <div className="rounded-full bg-primary/10 p-2">
-                  <FileText className="size-5 text-primary" />
+                <div className="bg-primary/10 rounded-full p-2">
+                  <FileText className="text-primary size-5" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{existingSyllabus.name || "Course Syllabus"}</p>
+                  <p className="text-sm font-medium">
+                    {existingSyllabus.name || "Course Syllabus"}
+                  </p>
                   <div className="mt-1 flex items-center space-x-2">
                     {existingSyllabus.url && (
                       <Button
@@ -408,7 +476,9 @@ export function CourseDialogModal({
                         variant="link"
                         size="sm"
                         className="h-auto p-0 text-xs font-light"
-                        onClick={() => window.open(existingSyllabus?.url, "_blank")}
+                        onClick={() =>
+                          window.open(existingSyllabus?.url, "_blank")
+                        }
                       >
                         <Eye className="mr-1 size-3" />
                         View syllabus
@@ -466,24 +536,31 @@ export function CourseDialogModal({
             </div>
           )}
 
-          <div className={`${!isFromSyllabusPage ? "grid grid-cols-2 gap-4" : ""}`}>
+          <div
+            className={`${!isFromSyllabusPage ? "grid grid-cols-2 gap-4" : ""}`}
+          >
             <div className="space-y-2">
               <Label className="text-sm font-medium">
                 Syllabus (PDF or DOCX)
               </Label>
               <div
-                className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed ${isDragging ? "border-primary" : "border-muted-foreground/25"} p-6 transition-colors hover:border-muted-foreground/50`}
+                className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed ${isDragging ? "border-primary" : "border-muted-foreground/25"} hover:border-muted-foreground/50 p-6 transition-colors`}
                 onDragOver={(e) => handleDragOver(e, "document")}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, setSyllabus, "document")}
               >
                 {syllabus ? (
                   <div className="flex flex-col items-center text-center">
-                    <div className="mb-2 rounded-full bg-primary/10 p-2">
-                      <FileCheck className="size-6 text-primary" aria-hidden="true" />
+                    <div className="bg-primary/10 mb-2 rounded-full p-2">
+                      <FileCheck
+                        className="text-primary size-6"
+                        aria-hidden="true"
+                      />
                     </div>
                     <p className="text-sm font-medium">{syllabus.name}</p>
-                    <p className="text-xs text-muted-foreground">{(syllabus.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p className="text-muted-foreground text-xs">
+                      {(syllabus.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
                     <Button
                       type="button"
                       variant="outline"
@@ -505,20 +582,25 @@ export function CourseDialogModal({
                     className="flex cursor-pointer flex-col items-center text-center"
                     onClick={() => syllabusInputRef.current?.click()}
                   >
-                    <div className="mb-2 rounded-full bg-primary/10 p-2">
-                      <FileText className="size-6 text-primary" />
+                    <div className="bg-primary/10 mb-2 rounded-full p-2">
+                      <FileText className="text-primary size-6" />
                     </div>
                     <p className="text-sm font-medium">
-                      <span className="text-primary">Click to upload</span> or drag and drop
+                      <span className="text-primary">Click to upload</span> or
+                      drag and drop
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">PDF or DOCX (max 10MB)</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      PDF or DOCX (max 10MB)
+                    </p>
                   </div>
                 )}
                 <input
                   id="syllabus"
                   type="file"
                   accept=".pdf,.docx"
-                  onChange={(event) => handleFileChange(event, setSyllabus, "document")}
+                  onChange={(event) =>
+                    handleFileChange(event, setSyllabus, "document")
+                  }
                   className="hidden"
                   ref={syllabusInputRef}
                 />
@@ -531,18 +613,20 @@ export function CourseDialogModal({
                   Course Icon (JPG, JPEG or PNG)
                 </Label>
                 <div
-                  className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed ${isDragging ? "border-primary" : "border-muted-foreground/25"} p-6 transition-colors hover:border-muted-foreground/50`}
+                  className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed ${isDragging ? "border-primary" : "border-muted-foreground/25"} hover:border-muted-foreground/50 p-6 transition-colors`}
                   onDragOver={(e) => handleDragOver(e, "image")}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, setIcon, "image")}
                 >
                   {icon ? (
                     <div className="flex flex-col items-center text-center">
-                      <div className="mb-2 rounded-full bg-primary/10 p-2">
-                        <Image className="size-6 text-primary" />
+                      <div className="bg-primary/10 mb-2 rounded-full p-2">
+                        <Image className="text-primary size-6" />
                       </div>
                       <p className="text-sm font-medium">{icon.name}</p>
-                      <p className="text-xs text-muted-foreground">{(icon.size / 1024 / 1024).toFixed(2)} MB</p>
+                      <p className="text-muted-foreground text-xs">
+                        {(icon.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
                       <Button
                         type="button"
                         variant="outline"
@@ -564,13 +648,16 @@ export function CourseDialogModal({
                       className="flex cursor-pointer flex-col items-center text-center"
                       onClick={() => iconInputRef.current?.click()}
                     >
-                      <div className="mb-2 rounded-full bg-primary/10 p-2">
-                        <Upload className="size-6 text-primary" />
+                      <div className="bg-primary/10 mb-2 rounded-full p-2">
+                        <Upload className="text-primary size-6" />
                       </div>
                       <p className="text-sm font-medium">
-                        <span className="text-primary">Click to upload</span> or drag and drop
+                        <span className="text-primary">Click to upload</span> or
+                        drag and drop
                       </p>
-                      <p className="mt-1 text-xs font-light text-muted-foreground">JPG, JPEG or PNG (max 10MB)</p>
+                      <p className="text-muted-foreground mt-1 text-xs font-light">
+                        JPG, JPEG or PNG (max 10MB)
+                      </p>
                     </div>
                   )}
                   <input
@@ -589,17 +676,34 @@ export function CourseDialogModal({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium">Uploading...</span>
-                <span className="text-xs font-light text-muted-foreground">{uploadProgress}%</span>
+                <span className="text-muted-foreground text-xs font-light">
+                  {uploadProgress}%
+                </span>
               </div>
               <Progress value={uploadProgress} className="h-2" />
             </div>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleOpenChange} className="mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleOpenChange}
+              className="mt-2"
+            >
               Cancel
             </Button>
-            <Button className="mt-2" type="submit" disabled={!courseName || !courseCode || disableSubmitButton}>
-              {disableSubmitButton ? (isCreate ? "Creating..." : "Updating...") : isCreate ? "Create" : "Update"}
+            <Button
+              className="mt-2"
+              type="submit"
+              disabled={!courseName || !courseCode || disableSubmitButton}
+            >
+              {disableSubmitButton
+                ? isCreate
+                  ? "Creating..."
+                  : "Updating..."
+                : isCreate
+                  ? "Create"
+                  : "Update"}
             </Button>
           </DialogFooter>
         </form>
