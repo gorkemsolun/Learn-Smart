@@ -223,5 +223,9 @@ async def update_node(node_id: int,
 async def delete_skill_tree(course_id: int,
                             current_user: dict = Depends(user.get_current_user),
                             db: Session = Depends(get_db)): 
-    pass
+    quiz_fids = SkillTreeDB.delete_by_course(db, course_id)
+    if not quiz_fids:
+        raise HTTPException(404, "No skill tree found")
+    await filemanager.batch_delete(quiz_fids)
+    return {"success": True}
 

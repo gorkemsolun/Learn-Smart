@@ -54,6 +54,22 @@ class SkillTreeDB:
         db.delete(tree)
         db.commit()
         return True
+    
+    @staticmethod
+    def delete_by_course(db: Session, course_id: int) -> list[int]:
+        tree = db.query(SkillTree).filter(SkillTree.course_id == course_id).first()
+        if not tree:
+            return []
+        quiz_fids = [
+            fid for (fid,) in
+            db.query(Quiz.quiz_fid)
+              .join(SkillTreeNode, Quiz.node_id == SkillTreeNode.id)
+              .filter(SkillTreeNode.skill_tree_id == tree.id)
+              .all()
+        ]
+        db.delete(tree)
+        db.commit()
+        return quiz_fids
 
 
 class SkillTreeNodeDB:
