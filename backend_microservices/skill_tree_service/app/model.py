@@ -1,5 +1,13 @@
+import io
 from typing import Literal, List
 import json, pymupdf, pickle
+
+class RenamingUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        # Redirect any reference to chat_service.app.model -> skill tree service
+        if module == "chat_service.app.model":
+            module = "skill_tree_service.app.model"
+        return super().find_class(module, name)
 
 class ChatFile:
     def __init__(self, mimetype: str, raw_data: bytes, fid: int = None):
@@ -58,7 +66,7 @@ class ChatHistory:
 
 
     def openai(self):
-        from chat_service.app.util import encode_base64
+        from skill_tree_service.app.util import encode_base64
         """
         Convert the generic chat history into OpenAI API format.
         """
@@ -104,7 +112,7 @@ class ChatHistory:
 
 
     def anthropic(self):
-        from chat_service.app.util import encode_base64
+        from skill_tree_service.app.util import encode_base64
         """
         Convert the generic chat history into Anthropic API format.
         """
@@ -148,7 +156,7 @@ class ChatHistory:
 
 
     def google(self):
-        from chat_service.app.util import encode_base64
+        from skill_tree_service.app.util import encode_base64
         """
         Convert the generic chat history into Google API format.
         """
@@ -204,7 +212,8 @@ class ChatHistory:
             ChatHistory: The loaded ChatHistory object.
         """
         try:
-            return pickle.loads(file)
+            file_like = io.BytesIO(file)
+            return RenamingUnpickler(file_like).load()
         except (UnicodeDecodeError, json.JSONDecodeError) as e:
             raise ValueError(f"Failed to parse chat history: {str(e)}")
 

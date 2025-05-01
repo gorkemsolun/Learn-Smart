@@ -19,8 +19,9 @@ async def get_all_chat_histories_of_course(course_id: int) -> list:
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                f"{CHAT_SERVICE_URL}/chat-histories/{course_id}",
-                headers={"X-API-Key": CHAT_CLIENT_KEY}
+                f"{CHAT_SERVICE_URL}/private/chat-histories",
+                headers={"X-API-Key": CHAT_CLIENT_KEY},
+                params={"course_id": course_id},
             )
             resp.raise_for_status()
             payload = resp.json()
