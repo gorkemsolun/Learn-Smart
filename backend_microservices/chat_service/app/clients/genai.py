@@ -30,7 +30,6 @@ async def send_message(history: ChatHistory, model: str,
             "system_prompt": system_prompt,
             "model": model
         }
-        
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{GENAI_SERVICE_URL}/private/generate/message",

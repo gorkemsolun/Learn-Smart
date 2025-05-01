@@ -75,6 +75,7 @@ class SkillTreeNode(Base):
     quiz = relationship(
         "Quiz",
         back_populates="node",
+        cascade="all, delete-orphan",
         uselist=False
     )
 
