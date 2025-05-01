@@ -75,7 +75,7 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
   };
 
   const handleHomePageClick = async () => {
-    router.replace("/edux-homepage");
+    router.push("/edux-homepage");
   };
 
   const mock: Notification[] = [
