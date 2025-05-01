@@ -15,7 +15,6 @@ import type * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileCheck, Image, FileText, Upload, X, Eye } from '@mynaui/icons-react';
 import { Progress } from "@/components/ui/progress";
-import { useCheckCourseCode } from "@/hooks/useCheckCourseCode";
 
 export function CourseDialogModal({
   isCreate,
@@ -55,7 +54,6 @@ export function CourseDialogModal({
   });
 
   const { toast } = useToast();
-  const { checkCourseCode } = useCheckCourseCode();
 
   const resetFields = () => {
     if (!isCreate && originalCourseData) {
@@ -275,10 +273,6 @@ export function CourseDialogModal({
 
     try {
       if (!isCreate) {
-        // Prevent course code duplication
-        const isValid = await checkCourseCode(formData.get("course_code") as string);
-        if (!isValid) return;
-
         await courseService.put(`/${course?.course_id}`, formData, {
           headers: {
             Accept: "application/json",
@@ -309,10 +303,6 @@ export function CourseDialogModal({
           className: "bg-green-500 text-background",
         });
       } else {
-        // Prevent course code duplication
-        const isValid = await checkCourseCode(formData.get("course_code") as string);
-        if (!isValid) return;
-        
         // Send the form data to the backend
         await courseService.post(`/create`, formData, {
           headers: {

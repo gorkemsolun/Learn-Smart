@@ -187,21 +187,27 @@ async def update_course(course_id: int, course_name: Optional[str] = Form(None),
     CourseUpdateRequest(
         course_name=course_name, course_code=course_code, course_description=course_description
     ) # pydantic input validation
-
+    
     course = CourseDB.fetch(db, course_id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
     if course["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Forbidden - Not authorized to update this course.")
     
-    CourseDB.update(
-        db,
-        course_id=course_id, course_name=course_name, course_code=course_code,
-        course_description=course_description, update_description=update_description,
-        course_icon_fid=course["course_icon_fid"],
-        course_syllabus_fid=course["course_syllabus_fid"],
-        course_study_plan_fid=course["course_study_plan_fid"]
-    )
+    try:
+        CourseDB.update(
+            db,
+            course_id=course_id, course_name=course_name, course_code=course_code,
+            course_description=course_description, update_description=update_description,
+            course_icon_fid=course["course_icon_fid"],
+            course_syllabus_fid=course["course_syllabus_fid"],
+            course_study_plan_fid=course["course_study_plan_fid"]
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e).split(":")[1].strip() if ":" in str(e) else str(e)
+        )
 
     error, error_message = False, None
     new_icon_fid, new_syllabus_fid, new_study_plan_fid = None, None, None
