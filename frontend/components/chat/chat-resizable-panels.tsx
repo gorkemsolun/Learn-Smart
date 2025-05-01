@@ -463,7 +463,6 @@ export default function ChatResizablePanels({
         },
       })
       .then((response) => {
-        console.log("Message: ", response.data);
         const modelResponse = {
           text: response.data.text,
           role: response.data.role,

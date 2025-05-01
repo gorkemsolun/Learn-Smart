@@ -66,9 +66,6 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
           Authorization: `Bearer ${token}`,
         },
       })
-      .then((response) => {
-        console.log(response.data);
-      })
       .catch((error) => {
         console.error(error.response);
       });

@@ -55,7 +55,6 @@ export function useCheckCourseCode() {
       );
 
       if (listOfAllCourses.includes(code)) {
-        console.log("Course code already exists");
         return true;
       }
       return false;

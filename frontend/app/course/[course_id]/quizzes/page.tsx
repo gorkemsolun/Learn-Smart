@@ -85,7 +85,6 @@ export default function CourseQuizList() {
       }
     }
     setQuizList(newQuizList);
-    console.log("Quiz List:", newQuizList);
   }
 
   useEffect(() => {

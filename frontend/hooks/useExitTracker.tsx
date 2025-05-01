@@ -86,9 +86,9 @@ export default function useExitTracker() {
       if (window.navigator.onLine) {
         try {
           // Log the exit time and duration for debugging
-          console.log(
+          /* console.log(
             `Exit detected - Duration: ${timeDifferenceInSeconds}s, Sign-in: ${signInTime}, Exit: ${exitTimeISO}`,
-          );
+          ); */
 
           // Use fetch with keepalive flag which is designed for this scenario
           fetch(`${userService.defaults.baseURL}/analytics`, {

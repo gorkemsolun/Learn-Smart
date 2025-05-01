@@ -114,7 +114,6 @@ export default function SkillTree({
       let data = await fetchTree();
 
       if (!data.success) {
-        console.log("No skill tree found. Creating one...");
         data = await createTree();
       } else {
         //data = await updateTree();
