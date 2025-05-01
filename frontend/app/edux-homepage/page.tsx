@@ -128,7 +128,7 @@ export default function Home() {
       icon: <ChatDots className="text-3xl md:text-4xl" />,
       link:
         courses.length === 0
-          ? "error_chat"
+          ? "chat"
           : `/course/${courses[0].course_id}/chat`,
     },
     {
@@ -137,7 +137,7 @@ export default function Home() {
       icon: <Sparkles className="text-3xl md:text-4xl" />,
       link:
         courses.length === 0
-          ? "error_chat"
+          ? "quizzes"
           : `/all-quizzes`,
     },
     {
@@ -146,16 +146,16 @@ export default function Home() {
       icon: <Swatches className="text-3xl md:text-4xl" />,
       link:
         courses.length === 0
-          ? "error_chat"
+          ? "flashcards"
           : `/all-flashcards`,
     },
   ];
 
   const handleCardClick = (link: string) => {
-    if (link === "error_chat") {
+    if (link === "chat" || link === "flashcards" || link === "quizzes") {
       toast({
         title: "No Course Found",
-        description: "Please create a course before accessing the chat.",
+        description: `Please create a course before accessing the ${link}.`,
         variant: "destructive",
         action: (
           <ToastAction altText="Create" onClick={() => setCourseDialog(true)}>
