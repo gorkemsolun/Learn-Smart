@@ -10,7 +10,6 @@ from user_service.app.util import get_authenticated_user
 
 router = APIRouter(prefix="/public", tags=["User - Public API"])
 
-
 # User
 @router.post("/user", response_model=UserResponse)
 async def create_user(user: UserCreationRequest, db: Session = Depends(get_db)):

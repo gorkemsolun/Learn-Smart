@@ -130,12 +130,12 @@ class CourseDB:
         Raises:
             ValueError: If the course with the specified ID is not found in the database.
         """
-        course_name: str = kwargs.get("course_name")
-        course_code: str = kwargs.get("course_code")
-        course_description: str = kwargs.get("course_description")
-        course_syllabus_fid: str = kwargs.get("course_syllabus_fid")
-        course_icon_fid: str = kwargs.get("course_icon_fid")
-        course_study_plan_fid: str = kwargs.get("course_study_plan_fid")
+        course_name = kwargs.get("course_name")
+        course_code = kwargs.get("course_code")
+        course_description = kwargs.get("course_description")
+        course_syllabus_fid = kwargs.get("course_syllabus_fid")
+        course_icon_fid = kwargs.get("course_icon_fid")
+        course_study_plan_fid = kwargs.get("course_study_plan_fid")
 
         course: Course = db.query(Course).filter(Course.course_id == course_id).first()
         if not course:
@@ -144,7 +144,8 @@ class CourseDB:
         if course_name:
             course.course_name = course_name
 
-        if course_code:  # must be unique per user, i.e. a user can't have CS 101 twice, for example
+        # must be unique per user, i.e. a user can't have CS 101 twice, for example
+        if course_code is not None and course.course_code != course_code:
             query_result = (
                 db.query(Course)
                 .filter(
@@ -158,13 +159,18 @@ class CourseDB:
                 raise ValueError(f"Course with code {course_code} already exists")
             course.course_code = course_code
 
-        course.course_description = course_description
-
-        course.course_syllabus_fid = course_syllabus_fid
-
-        course.course_icon_fid = course_icon_fid
-
-        course.course_study_plan_fid = course_study_plan_fid
+        # Only update these fields if they're explicitly provided in kwargs
+        if "course_description" in kwargs:
+            course.course_description = course_description
+            
+        if "course_syllabus_fid" in kwargs:
+            course.course_syllabus_fid = course_syllabus_fid
+            
+        if "course_icon_fid" in kwargs:
+            course.course_icon_fid = course_icon_fid
+            
+        if "course_study_plan_fid" in kwargs:
+            course.course_study_plan_fid = course_study_plan_fid
 
         db.commit()
         db.refresh(course)
