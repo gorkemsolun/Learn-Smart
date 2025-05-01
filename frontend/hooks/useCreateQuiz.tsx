@@ -38,7 +38,7 @@ export const useGenerateQuiz = () => {
       setError(error);
       toast({
         title: "Error",
-        description: error?.response?.data?.detail || "Error generating quiz",
+        description: "Error generating quiz because of lack of meaningful discussion.",
         variant: "destructive",
       });
     } finally {
