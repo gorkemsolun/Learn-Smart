@@ -139,7 +139,7 @@ async def get_skill_tree(course_id: int,
 
         title = q.quiz_title if q else f"Quiz {n.id}"
         nodes_payload.append({ 
-            "id":   f"n{n.id}",
+            "id":   n.id,
             "name": title,
             "quiz": quiz_dict,                          # placeholder for later
             "state": n.state.value,
@@ -147,7 +147,7 @@ async def get_skill_tree(course_id: int,
 
     # Build edge list payload
     edges_payload = [
-        {"source": f"n{e.parent_node_id}", "target": f"n{e.child_node_id}"}
+        {"source": e.parent_node_id, "target": e.child_node_id}
         for e in edges
     ]
 
@@ -163,7 +163,69 @@ async def get_skill_tree(course_id: int,
 async def update_skill_tree(): #delete the existing thing and create again
     pass
 
-@router.delete("/{skilltree_id}")
-async def delete_skill_tree(): 
-    pass
+@router.post("/update-node")
+async def update_node(node_id: int,
+                    current_user: dict = Depends(user.get_current_user),
+                    db: Session = Depends(get_db)):
+    """
+    Mark a node completed, then unlock any children whose
+    parents are all completed.
+    """
+    # Load the target node
+    node = db.query(SkillTreeNode).filter(SkillTreeNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail=f"Node {node_id} not found")
+
+    # If it's unlocked_uncompleted, mark it unlocked_completed
+    if node.state == NodeState.UNLOCKED_UNCOMPLETED:
+        node.state = NodeState.UNLOCKED_COMPLETED
+        db.commit()
+        db.refresh(node)
+    else:
+        # nothing to do if already completed or still locked
+        return {"success": True}
+
+    # Find children of this node
+    child_edges = (
+        db.query(SkillTreeEdge)
+          .filter(SkillTreeEdge.parent_node_id == node_id)
+          .all()
+    )
+    child_ids = [e.child_node_id for e in child_edges]
+
+    # For each child, check if all its parents are completed
+    for child_id in child_ids:
+        parent_edges = (
+            db.query(SkillTreeEdge)
+              .filter(SkillTreeEdge.child_node_id == child_id)
+              .all()
+        )
+        parent_ids = [e.parent_node_id for e in parent_edges]
+
+        # load parent nodes
+        parents = (
+            db.query(SkillTreeNode)
+              .filter(SkillTreeNode.id.in_(parent_ids))
+              .all()
+        )
+
+        # if every parent is UNLOCKED_COMPLETED, unlock the child
+        if parents and all(p.state == NodeState.UNLOCKED_COMPLETED for p in parents):
+            child = db.query(SkillTreeNode).filter(SkillTreeNode.id == child_id).first()
+            if child.state == NodeState.LOCKED_UNCOMPLETED:
+                child.state = NodeState.UNLOCKED_UNCOMPLETED
+                db.commit()
+                db.refresh(child)
+
+    return {"success": True}
+
+@router.delete("/delete")
+async def delete_skill_tree(course_id: int,
+                            current_user: dict = Depends(user.get_current_user),
+                            db: Session = Depends(get_db)): 
+    quiz_fids = SkillTreeDB.delete_by_course(db, course_id)
+    if not quiz_fids:
+        raise HTTPException(404, "No skill tree found")
+    await filemanager.batch_delete(quiz_fids)
+    return {"success": True}
 

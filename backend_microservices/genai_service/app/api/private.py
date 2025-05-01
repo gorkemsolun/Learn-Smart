@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, Form, Body, UploadFile, HTTPException
-from typing import List
 import json
 
 import google.generativeai as genai
 
 from genai_service.app.client import ChatClient
 
-from genai_service.app.util import validate_quiz_format, validate_flashcards_format, encode_base64, validate_skill_tree_format
+from genai_service.app.util import (
+    validate_quiz_format, validate_flashcards_format, encode_base64, 
+    validate_skill_tree_format
+)
 from genai_service.app.security.auth import verify_api_key
 from genai_service.app import (
     WEEKLY_STUDY_PLAN_PROMPT, GOOGLE_MODEL_VERSION
@@ -83,7 +85,6 @@ async def create_quiz(payload: dict = Body(...)):
         generation_config={"response_mime_type": "application/json"}
     )
 
-
     response_dict = json.loads(response)
     if not response_dict["success"]:
         raise HTTPException(status_code=500, detail=f"{response_dict["data"]}")
@@ -122,6 +123,7 @@ async def create_flashcards(payload: dict = Body(...)):
     
     return {"success": True, "flashcards": data}
 
+
 @router.post("/generate/skill-tree")
 async def create_skill_tree(payload: dict = Body(...)):
     """
@@ -148,5 +150,4 @@ async def create_skill_tree(payload: dict = Body(...)):
         raise HTTPException(status_code=500, detail="Skill tree format could not be validated.") #If needed, make more sophisticated error messages
     print(data)
     return {"success": True, "skill_tree": data}
-
-    
+  
