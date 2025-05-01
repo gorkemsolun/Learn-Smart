@@ -227,62 +227,64 @@ export function ChatDialog({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="slide" className="text-sm font-medium">
-              Upload {isEditMode ? "New " : ""}Slides (Optional)
-            </Label>
-            <div
-              className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-            >
-              {file ? (
-                <div className="flex flex-col items-center text-center">
-                  {file.name.endsWith(".pdf") ? (
-                    <FileIcon className="text-primary mb-2 size-10" />
-                  ) : (
-                    <FileTextIcon className="text-primary mb-2 size-10" />
-                  )}
-                  <p className="text-sm font-medium">{file.name}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => setFile(null)}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ) : (
-                <label
-                  htmlFor="slide-upload"
-                  className="flex cursor-pointer flex-col items-center text-center"
-                >
-                  <div className="bg-primary/10 mb-2 rounded-full p-2">
-                    <FileIcon className="text-primary size-6" />
+          {chat?.slides_mode && chat.slides && chat.slides.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="slide" className="text-sm font-medium">
+                Upload {isEditMode ? "New " : ""}Slides (Optional)
+              </Label>
+              <div
+                className="border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+              >
+                {file ? (
+                  <div className="flex flex-col items-center text-center">
+                    {file.name.endsWith(".pdf") ? (
+                      <FileIcon className="text-primary mb-2 size-10" />
+                    ) : (
+                      <FileTextIcon className="text-primary mb-2 size-10" />
+                    )}
+                    <p className="text-sm font-medium">{file.name}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => setFile(null)}
+                    >
+                      Remove
+                    </Button>
                   </div>
-                  <p className="text-sm font-medium">
-                    <span className="text-primary">Click to upload</span> or
-                    drag and drop
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    PDF or DOCX (max 10MB)
-                  </p>
-                </label>
-              )}
-              <input
-                id="slide-upload"
-                type="file"
-                accept=".pdf,.docx"
-                onChange={handleFileChange}
-                className="hidden"
-              />
+                ) : (
+                  <label
+                    htmlFor="slide-upload"
+                    className="flex cursor-pointer flex-col items-center text-center"
+                  >
+                    <div className="bg-primary/10 mb-2 rounded-full p-2">
+                      <FileIcon className="text-primary size-6" />
+                    </div>
+                    <p className="text-sm font-medium">
+                      <span className="text-primary">Click to upload</span> or
+                      drag and drop
+                    </p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      PDF or DOCX (max 10MB)
+                    </p>
+                  </label>
+                )}
+                <input
+                  id="slide-upload"
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <DialogFooter>
             <Button

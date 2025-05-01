@@ -6,6 +6,13 @@ import ChatResizablePanels from "@/components/chat/chat-resizable-panels";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Sidebar,
   SidebarInset,
   SidebarProvider,
@@ -23,6 +30,14 @@ import { ArrowRight, Loader2, MessageSquareText } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+const genaiServices: {
+  [key: string]: string;
+} = {
+  google: "Gemini",
+  openai: "ChatGPT",
+  anthropic: "Claude",
+};
+
 export default function ChatPage() {
   const params = useParams<{ course_id: string }>();
   const course_id = params?.course_id;
@@ -37,6 +52,7 @@ export default function ChatPage() {
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [chatsLoaded, setChatsLoaded] = useState(false);
+  const [genaiService, setGenaiService] = useState<string>("google");
 
   const { toast } = useToast();
 
@@ -171,19 +187,41 @@ export default function ChatPage() {
 
         {/* Main Content */}
         <SidebarInset className="flex h-screen flex-col">
-          <div className="flex items-center border-b px-4 py-2">
-            <SidebarTrigger className="mr-2" />
-            <h1 className="text-xl font-thin">
-              {course?.course_name || "Course Chat"}
-            </h1>
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-auto"
-              onClick={handleCreateChat}
-            >
-              New Chat
-            </Button>
+          <div className="flex items-center justify-between border-b px-4 py-2">
+            <div className="flex flex-row items-center justify-center">
+              <SidebarTrigger className="mr-2" />
+              <h1 className="text-xl font-thin">
+                {course?.course_name || "Course Chat"}
+              </h1>
+            </div>
+            <div className="flex flex-row items-center justify-center">
+              <div className="mx-2">
+                <Select
+                  value={genaiServices[`${genaiService}`]}
+                  onValueChange={setGenaiService}
+                >
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Select AI Service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(genaiServices).map((modelName) => (
+                      <SelectItem key={modelName} value={modelName}>
+                        {modelName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={handleCreateChat}
+              >
+                New Chat
+              </Button>
+            </div>
           </div>
 
           {activeChat ? (
