@@ -1,9 +1,10 @@
 import json
 from typing import Optional
 from skill_tree_service.app.database.dbmanager import SkillTreeDB, SkillTreeEdgeDB, SkillTreeNodeDB, QuizDB
-from skill_tree_service.app import SKILL_TREE_PROMPT
+from skill_tree_service.app import SKILL_TREE_PROMPT, SKILL_TREE_UPDATE_PROMPT
 from skill_tree_service.app.model import ChatHistory
 from skill_tree_service.app.database.model import NodeState, Quiz, SkillTree, SkillTreeEdge, SkillTreeNode
+from skill_tree_service.app.util import fetch_and_merge_all_chat_histories
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, File
 import io, tempfile
@@ -22,18 +23,8 @@ async def create_skill_tree(course_id: int,
                      current_user: dict = Depends(user.get_current_user),
                      db: Session = Depends(get_db)):
     
-
-    all_history_fids = await chat.get_all_chat_histories_of_course(course_id)
-
-    #download the histories, append the skill tree prompt, call the genai service get the response, create the skill tree and the quizzes in the database
-    all_histories = []
-    for history_fid in all_history_fids:
-        print(history_fid)
-        history_bytes = await filemanager.download(file_id=history_fid) 
-        history = ChatHistory.from_bytes(history_bytes)
-        all_histories.append(history)
     
-    all_histories = ChatHistory.merge(all_histories)    
+    all_histories = await fetch_and_merge_all_chat_histories(course_id) 
     all_histories.add_message(role="edux", content=SKILL_TREE_PROMPT)#role?
 
     skill_tree = await genai.create_skill_tree(all_histories)
@@ -160,8 +151,115 @@ async def get_skill_tree(course_id: int,
     }
 
 @router.post("/update")
-async def update_skill_tree(): #delete the existing thing and create again
-    pass
+async def update_skill_tree(course_id: int,
+                            current_user: dict = Depends(user.get_current_user),
+                            db: Session = Depends(get_db),): 
+    
+    result = await get_skill_tree(course_id, current_user, db)
+    if not result.get("success"):
+        # get_skill_tree returns {success:False, data:...}
+        raise HTTPException(status_code=404, detail=result.get("data"))
+
+    # extract the skill_tree dict
+    skill_tree = result["skill_tree"]
+
+    all_histories = await fetch_and_merge_all_chat_histories(course_id)
+    all_histories.add_message(
+        role="edux",
+        content=json.dumps(skill_tree)
+    )
+    all_histories.add_message(role="edux", content=SKILL_TREE_UPDATE_PROMPT)#role?
+    skill_tree = await genai.create_skill_tree(all_histories)
+    skill_tree_id = None
+    #find the skill tree id
+    for e in skill_tree["edges"]:
+        source = e["source"]
+        target = e["target"]
+        if isinstance(source, int):
+            node = db.query(SkillTreeNode).filter(SkillTreeNode.id == source).first()
+            if node:
+                skill_tree_id = node.skill_tree_id
+                break
+        elif isinstance(target, int):
+            node = db.query(SkillTreeNode).filter(SkillTreeNode.id == target).first()
+            if node:
+                skill_tree_id = node.skill_tree_id
+                break
+    
+    if not skill_tree_id:
+        raise HTTPException(status_code=500, detail="Updated skill tree has corrupted old nodes")
+    
+    # nodes consist of only the new nodes
+    # edges have all of the node_id's 
+    llm2db = {}
+    for n in skill_tree["nodes"]:
+        llm_id   = n["id"]
+        llm_name = n["name"]
+
+        db_node = SkillTreeNodeDB.create(
+            db,
+            skill_tree_id=skill_tree_id,
+        )
+        db_node_id = db_node["id"]
+        llm2db[llm_id] = db_node_id
+
+        quiz_payload = n["quiz"]  # expect a list of question‐dicts
+        quiz_bytes = json.dumps(quiz_payload).encode('utf-8')
+        quiz_fid = await filemanager.upload(UploadFile(file=io.BytesIO(quiz_bytes), filename="node_quiz.json"), user_id=current_user["user_id"])
+
+        #  create the Quiz row
+        quiz = QuizDB.create(
+            db,
+            node_id=db_node_id,
+            quiz_title=llm_name,
+            quiz_fid=quiz_fid,
+            num_questions=len(quiz_payload)
+        )
+    
+    #delete existing edges
+    SkillTreeEdgeDB.delete_edges_for_skill_tree(db, skill_tree_id=skill_tree_id)
+    # add edges
+    for e in skill_tree["edges"]:
+        source = e["source"] if isinstance(e["source"], int) else llm2db[e["source"]]
+        target = e["target"] if isinstance(e["target"], int) else llm2db[e["target"]]
+        SkillTreeEdgeDB.create(
+            db,
+            parent_node_id=source,
+            child_node_id=target
+        )
+    
+    # For each child, check if all its parents are completed
+    for child_id in llm2db.values():
+        parent_edges = (
+            db.query(SkillTreeEdge)
+              .filter(SkillTreeEdge.child_node_id == child_id)
+              .all()
+        )
+        parent_ids = [e.parent_node_id for e in parent_edges]
+        if not parent_ids: #the new node is a root
+            child = db.query(SkillTreeNode).filter(SkillTreeNode.id == child_id).first()
+
+            child.state = NodeState.UNLOCKED_UNCOMPLETED
+            db.commit()
+            db.refresh(child)
+            continue
+        # load parent nodes
+        parents = (
+            db.query(SkillTreeNode)
+              .filter(SkillTreeNode.id.in_(parent_ids))
+              .all()
+        )
+
+        # if every parent is UNLOCKED_COMPLETED, unlock the child
+        if parents and all(p.state == NodeState.UNLOCKED_COMPLETED for p in parents):
+            child = db.query(SkillTreeNode).filter(SkillTreeNode.id == child_id).first()
+            if child.state == NodeState.LOCKED_UNCOMPLETED:
+                child.state = NodeState.UNLOCKED_UNCOMPLETED
+                db.commit()
+                db.refresh(child)
+    
+    
+    return {"success": True}
 
 @router.post("/update-node")
 async def update_node(node_id: int,

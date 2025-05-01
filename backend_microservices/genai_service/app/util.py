@@ -89,7 +89,7 @@ def has_cycle(edges: List[Dict[str, str]]) -> bool:
     Returns True if a cycle exists, False otherwise.
     """
     # Build adjacency list
-    adj: Dict[str, List[str]] = {}
+    adj = {}
     for e in edges:
         src = e["source"]
         tgt = e["target"]
@@ -97,8 +97,8 @@ def has_cycle(edges: List[Dict[str, str]]) -> bool:
         # ensure target appears in adj, even if no outgoing edges
         adj.setdefault(tgt, [])
 
-    visited: Set[str] = set()    # permanently visited nodes
-    rec_stack: Set[str] = set()  # nodes in the current DFS path
+    visited = set()    # permanently visited nodes
+    rec_stack = set()  # nodes in the current DFS path
 
     def dfs(node: str) -> bool:
         # If node is in recursion stack ,cycle
@@ -167,7 +167,7 @@ def validate_skill_tree_format(data: Any) -> bool:
     # Top‐level must be a dict
     if not isinstance(data, dict):
         return False
-
+    print(data)
     # Must contain a non‐empty list of nodes
     nodes = data.get("nodes")
     if not isinstance(nodes, list) or not nodes:
@@ -184,7 +184,9 @@ def validate_skill_tree_format(data: Any) -> bool:
         # Validate 'id'
         nid = node.get("id")
         if not isinstance(nid, str) or not nid.strip():
-            return False
+            if not isinstance(nid, int):
+                print("id is not valid")
+                return False
 
         # Validate 'name'
         name = node.get("name")
