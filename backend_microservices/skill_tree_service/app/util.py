@@ -1,6 +1,9 @@
 import base64
 from collections import deque
 import json
+from skill_tree_service.app.clients.chat import get_all_chat_histories_of_course
+from skill_tree_service.app.clients import filemanager
+from skill_tree_service.app.model import ChatHistory
 from skill_tree_service.app.database.session import get_db, Base
 from sqlalchemy import text
 
@@ -61,3 +64,26 @@ def encode_base64(file: bytes) -> str:
         - file (BinaryIO): The file object to encode.
     """
     return base64.b64encode(file).decode("utf-8")
+
+async def fetch_and_merge_all_chat_histories(course_id: int) -> ChatHistory:
+    """
+    Fetches all chat-history FIDs for a course, downloads each history,
+    converts to ChatHistory, and merges them into a single ChatHistory.
+
+    Args:
+        course_id (int): The ID of the course whose histories to load.
+
+    Returns:
+        ChatHistory: The merged chat history.
+    """
+    # Retrieve the list of history file IDs
+    all_history_fids: list[int] = await get_all_chat_histories_of_course(course_id)
+
+    # Download & parse each history
+    histories: list[ChatHistory] = []
+    for fid in all_history_fids:
+        history_bytes = await filemanager.download(file_id=fid)
+        histories.append(ChatHistory.from_bytes(history_bytes))
+
+    # Merge into one ChatHistory and return
+    return ChatHistory.merge(histories)

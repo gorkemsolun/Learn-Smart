@@ -1,4 +1,5 @@
 "use client";
+import { isValidEmail } from "@/app/constants";
 import { Icons } from "@/components/icons";
 import ImageSlider from "@/components/image-slider";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export default function SignIn() {
   const [email, setEmail] = useState<string>(Cookies.get("emailCookie") || "");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -47,7 +49,21 @@ export default function SignIn() {
     fetchAndRedirect();
   }, [router]);
 
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (value === "" || isValidEmail(value)) {
+      setEmailError(null);
+    } else {
+      setEmailError("Please enter a valid email address");
+    }
+  };
+
   const handleSignIn = async () => {
+    if (!isValidEmail(email)) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+
     await authService
       .post(
         "/login",
@@ -75,11 +91,10 @@ export default function SignIn() {
 
         router.push("/edux-homepage");
       })
-      .catch((error) => {
-        console.error("Sign in error:", error);
+      .catch(() => {
         toast({
-          title: "There is no such user",
-          description: "Details you entered does not match with a record",
+          title: "Details you entered does not match",
+          description: "Details you entered does not match",
           variant: "destructive",
           action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
@@ -94,7 +109,7 @@ export default function SignIn() {
       <Card className="relative w-full overflow-hidden md:max-w-3xl lg:max-w-4xl">
         <div className="flex h-full flex-col md:flex-row">
           {/* Left side with image slider - hidden on small screens */}
-          <div className="hidden border-r bg-foreground/5 md:flex md:w-1/2 md:flex-col md:items-center md:justify-center md:rounded-l-lg md:p-6">
+          <div className="bg-foreground/5 hidden border-r md:flex md:w-1/2 md:flex-col md:items-center md:justify-center md:rounded-l-lg md:p-6">
             <div className="absolute left-4 top-4 flex items-center space-x-2">
               <Icons.logo className="size-5" />
               <p className="text-base font-semibold">edux/ai</p>
@@ -116,7 +131,7 @@ export default function SignIn() {
               onClick={() => {
                 router.push("/sign-up");
               }}
-              className="absolute right-4 top-4 bg-transparent px-3 py-1.5 font-light text-sm text-foreground shadow-none hover:bg-foreground/10"
+              className="text-foreground hover:bg-foreground/10 absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm font-light shadow-none"
             >
               Sign up
             </Button>
@@ -136,11 +151,19 @@ export default function SignIn() {
                       <Input
                         type="text"
                         placeholder="email@example.com"
-                        className="px-10 font-light"
+                        className={`px-10 font-light ${emailError ? "border-destructive" : ""}`}
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => handleEmailChange(e.target.value)}
+                        onBlur={() => {
+                          if (!email) setEmailError("Email is required");
+                        }}
                       />
                     </div>
+                    {emailError && (
+                      <p className="text-destructive mt-1 text-xs">
+                        {emailError}
+                      </p>
+                    )}
                     <div className="relative w-full">
                       <LockWaves className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       <Input
@@ -171,7 +194,7 @@ export default function SignIn() {
                       <Button
                         type="button"
                         variant="link"
-                        className="h-auto p-0 text-xs font-light text-foreground/70 hover:text-foreground"
+                        className="text-foreground/70 hover:text-foreground h-auto p-0 text-xs font-light"
                         onClick={() => router.push("/forgot-password")}
                       >
                         Forgot password?
@@ -183,7 +206,11 @@ export default function SignIn() {
             </CardContent>
 
             <CardFooter className="flex w-full justify-center">
-              <Button className="w-5/6 font-light" onClick={handleSignIn}>
+              <Button
+                className="w-5/6 font-light"
+                onClick={handleSignIn}
+                disabled={!email || !password || !!emailError}
+              >
                 Sign in
               </Button>
             </CardFooter>
@@ -195,13 +222,13 @@ export default function SignIn() {
                     <span className="w-full border-t"></span>
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 font-light text-muted-foreground">
+                    <span className="bg-background text-muted-foreground px-2 font-light">
                       Or continue with
                     </span>
                   </div>
                 </div>
                 <Button
-                  className="inline-flex items-center justify-center space-x-2 whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-light text-accent-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                  className="border-input bg-background text-accent-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring inline-flex items-center justify-center space-x-2 whitespace-nowrap rounded-md border px-4 py-2 text-sm font-light shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50"
                   onClick={handleGoogleSignIn}
                 >
                   <FcGoogle />
@@ -211,17 +238,17 @@ export default function SignIn() {
             </CardContent>
 
             <CardFooter className="flex w-full justify-center">
-              <p className="w-4/5 text-center text-xs font-light text-foreground/60">
+              <p className="text-foreground/60 w-4/5 text-center text-xs font-light">
                 By clicking continue, you agree to our{" "}
                 <a
-                  className="text-foreground/60 underline hover:text-foreground/80"
+                  className="text-foreground/60 hover:text-foreground/80 underline"
                   href=""
                 >
                   Terms of Service
                 </a>{" "}
                 and{" "}
                 <a
-                  className="text-foreground/60 underline hover:text-foreground/80"
+                  className="text-foreground/60 hover:text-foreground/80 underline"
                   href=""
                 >
                   Privacy Policy.

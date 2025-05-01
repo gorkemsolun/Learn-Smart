@@ -18,7 +18,6 @@ export default function NodeDetailsModal({
   node,
   open,
   onClose,
-  disabled,
   onNodeStatusChange,
 }: {
   node: NodeData | null
@@ -144,7 +143,7 @@ export default function NodeDetailsModal({
     }
   };
 
-  if (!node || disabled) {
+  if (!node) {
     return null;
   }
 

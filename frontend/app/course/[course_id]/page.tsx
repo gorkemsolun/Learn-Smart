@@ -70,7 +70,7 @@ export default function CourseHomepage() {
       path: `/course/${course_id}/quizzes`,
     },
     {
-      title: "Course Instructor",
+      title: "Course Chat",
       description: `Chat with the AI ${course?.course_name} Instructor.`,
       icon: <Bot size={iconSize} className="text-primary/70" strokeWidth={1.5} />,
       path: `/course/${course_id}/chat`,

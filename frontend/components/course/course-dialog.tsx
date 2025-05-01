@@ -387,7 +387,7 @@ export function CourseDialogModal({
       <DialogContent className={"sm:max-w-[650px]"}>
         <DialogHeader>
           <DialogTitle>
-            {!isFromSyllabusPage ? (isCreate ? "Create Individual Study" : "Edit Individual Study") : "Edit Syllabus"}
+            {!isFromSyllabusPage ? (isCreate ? "Create Course" : "Edit Course") : "Edit Syllabus"}
           </DialogTitle>
         </DialogHeader>
 

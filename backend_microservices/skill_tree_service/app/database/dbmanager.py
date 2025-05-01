@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, select
+from sqlalchemy import and_, or_ ,select
 
 from skill_tree_service.app.database.model import (
     SkillTree, SkillTreeNode, SkillTreeEdge, Quiz
@@ -150,6 +150,45 @@ class SkillTreeEdgeDB:
         db.delete(edge)
         db.commit()
         return True
+    
+    @staticmethod
+    def delete_edges_for_skill_tree(db: Session, skill_tree_id: int) -> int:
+        """
+        Deletes all edges between nodes belonging to the given skill_tree_id.
+
+        Args:
+            db: SQLAlchemy session.
+            skill_tree_id: The ID of the skill tree whose edges should be removed.
+
+        Returns:
+            The number of edges deleted.
+        """
+        # Fetch all node IDs for this skill tree
+        node_ids = [
+            nid for (nid,) in
+            db.query(SkillTreeNode.id)
+            .filter(SkillTreeNode.skill_tree_id == skill_tree_id)
+            .all()
+        ]
+
+        if not node_ids:
+            return 0  # no nodes, no edges to delete
+
+        # 2) Delete edges where either endpoint is in our node list
+        deleted_count = (
+            db.query(SkillTreeEdge)
+            .filter(
+                or_(
+                    SkillTreeEdge.parent_node_id.in_(node_ids),
+                    SkillTreeEdge.child_node_id.in_(node_ids)
+                )
+            )
+            .delete(synchronize_session=False)
+        )
+
+        # 3) Commit and return how many were removed
+        db.commit()
+        return deleted_count
 
 
 class QuizDB:

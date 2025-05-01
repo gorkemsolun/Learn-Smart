@@ -4,3 +4,6 @@ export const documentMimeTypes = [
 ];
 
 export const imageMimeTypes = ["image/jpeg", "image/png"];
+
+export const isValidEmail = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
