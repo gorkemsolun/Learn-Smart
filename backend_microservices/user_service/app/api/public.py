@@ -1,16 +1,15 @@
-from sqlalchemy.orm import Session
-
-from fastapi import Depends, HTTPException, APIRouter, Header
 from datetime import date, datetime, timedelta
 
+from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy.orm import Session
+from user_service.app.clients import course
+from user_service.app.database.dbmanager import AnalyticsDB, UserDB
+from user_service.app.database.session import get_db
 from user_service.app.schemas import *
 from user_service.app.util import get_authenticated_user
-from user_service.app.database.session import get_db
-from user_service.app.database.dbmanager import UserDB, AnalyticsDB
-
-from user_service.app.clients import course
 
 router = APIRouter(prefix="/public", tags=["User - Public API"])
+
 
 # User
 @router.post("/user", response_model=UserResponse)
@@ -27,20 +26,24 @@ async def create_user(user: UserCreationRequest, db: Session = Depends(get_db)):
     Raises:
         HTTPException: If there is an error creating the user.
     """
-    
+
     try:
-        user_dict = await UserDB.create(db, **user.model_dump()) # create the user given the user data
+        user_dict = await UserDB.create(
+            db, **user.model_dump()
+        )  # create the user given the user data
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e) + " hi btw :)")
-    
+
     return UserResponse(**user_dict)
+
 
 # TODO: Put in private router
 @router.get("/user/authenticate")
-async def authenticate_user(authorization: str = Header(None),
-                            db: Session = Depends(get_db)):
+async def authenticate_user(
+    authorization: str = Header(None), db: Session = Depends(get_db)
+):
     """
     Authenticate the user based on the provided JWT token.
 
@@ -52,9 +55,11 @@ async def authenticate_user(authorization: str = Header(None),
     """
     return await get_authenticated_user(db, authorization)
 
+
 @router.get("/user")
-async def get_user_and_courses(db: Session = Depends(get_db), 
-                               authorization: str = Header(None)):
+async def get_user_and_courses(
+    db: Session = Depends(get_db), authorization: str = Header(None)
+):
     """
     Retrieve the user's data and courses.
 
@@ -65,17 +70,22 @@ async def get_user_and_courses(db: Session = Depends(get_db),
         dict: A dictionary containing the user's data and courses.
     """
     current_user = await get_authenticated_user(db, authorization)
-    courses = await course.get_courses(current_user["user_id"]) # get the user's courses
+    courses = await course.get_courses(
+        current_user["user_id"]
+    )  # get the user's courses
 
-    current_user["courses"] = courses # add the user's courses to response
-    current_user.pop("hashed_password") # remove the hashed password from the response
+    current_user["courses"] = courses  # add the user's courses to response
+    current_user.pop("hashed_password")  # remove the hashed password from the response
 
     return current_user
 
+
 @router.put("/user", response_model=UserResponse)
-async def update_user(user: UserUpdateRequest, 
-                current_user: dict = Depends(get_authenticated_user),
-                db: Session = Depends(get_db)):
+async def update_user(
+    user: UserUpdateRequest,
+    db: Session = Depends(get_db),
+    authorization: str = Header(None),
+):
     """
     Update a user's information.
 
@@ -88,24 +98,26 @@ async def update_user(user: UserUpdateRequest,
     Raises:
         HTTPException: If the user is not found.
     """
-    
+
+    current_user = await get_authenticated_user(db, authorization)
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     user_dict = await UserDB.update(db, current_user["user_id"], **user.model_dump())
-    
+
     return UserResponse(**user_dict)
+
 
 # Analytics
 @router.post("/analytics", response_model=AnalyticsResponse)
 async def log_usage(
-        request: AnalyticsRequest,
-        db: Session = Depends(get_db),
-        authorization: str = Header(None)
+    request: AnalyticsRequest,
+    db: Session = Depends(get_db),
+    authorization: str = Header(None),
 ):
     """
     Log the time spent by the user on the platform.
-    
+
     Args:
         request (AnalyticsRequest): The request containing the time spent by the user.
         current_user (dict): The user information derived from the token.
@@ -125,7 +137,9 @@ async def log_usage(
         def distribute_time(timestamp: datetime, remaining_time: int):
             date = timestamp.date()
 
-            start_of_next_day = datetime.combine(date + timedelta(days=1), datetime.min.time())
+            start_of_next_day = datetime.combine(
+                date + timedelta(days=1), datetime.min.time()
+            )
 
             if timestamp.tzinfo is not None:
                 start_of_next_day = start_of_next_day.replace(tzinfo=timestamp.tzinfo)
@@ -134,20 +148,29 @@ async def log_usage(
             time_for_current_day = min(remaining_time, seconds_until_midnight)
 
             existing_record = AnalyticsDB.get_usage(db, user_id=user_id, date=date)
-            already_logged = existing_record.get("time_spent", 0) if existing_record else 0
+            already_logged = (
+                existing_record.get("time_spent", 0) if existing_record else 0
+            )
 
-            time_for_current_day = min(time_for_current_day, MAX_SECONDS_PER_DAY - already_logged)
+            time_for_current_day = min(
+                time_for_current_day, MAX_SECONDS_PER_DAY - already_logged
+            )
 
             if existing_record:
                 AnalyticsDB.update_usage(
-                    db, user_id=user_id, date=date, 
+                    db,
+                    user_id=user_id,
+                    date=date,
                     time_spent=already_logged + time_for_current_day,
-                    timestamp=timestamp
+                    timestamp=timestamp,
                 )
             else:
                 AnalyticsDB.log_usage(
-                    db, user_id=user_id, date=date, time_spent=time_for_current_day, 
-                    timestamp=timestamp
+                    db,
+                    user_id=user_id,
+                    date=date,
+                    time_spent=time_for_current_day,
+                    timestamp=timestamp,
                 )
 
             remaining_time -= time_for_current_day
@@ -158,17 +181,17 @@ async def log_usage(
 
         distribute_time(timestamp, time_spent)
 
-        latest_data = AnalyticsDB.get_usage(db, user_id=user_id, date=date.today()) or {}
+        latest_data = (
+            AnalyticsDB.get_usage(db, user_id=user_id, date=date.today()) or {}
+        )
         return AnalyticsResponse(**latest_data)
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.get("/analytics", response_model=list[AnalyticsResponse])
-async def get_usage(
-    db: Session = Depends(get_db),
-    authorization: str = Header(None)
-):
+async def get_usage(db: Session = Depends(get_db), authorization: str = Header(None)):
     """
     Fetch all usage analytics for the current user.
 

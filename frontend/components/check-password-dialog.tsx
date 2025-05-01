@@ -9,43 +9,63 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { authService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
+import Cookies from "js-cookie";
 import * as React from "react";
 import { useState } from "react";
 
 export function CheckPasswordDialog(props: CheckPasswordDialogProps) {
   const [password, setPassword] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [token] = useState<string>(Cookies.get("authToken") as string);
 
   function handleClose() {
     setPassword("");
     props.onClose(false);
   }
 
-  function handleSubmit(
+  async function handleSubmit(
     event:
       | React.FormEvent<HTMLFormElement>
       | React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) {
     event.preventDefault();
+    setIsLoading(true);
 
-    // NOTE: IMPLEMENT THIS LATER
-    if (password === "secret123") {
-      toast({
-        title: "Success",
-        description: "Password is correct",
-        variant: "default",
-      });
-      if (props.onCheckSuccess) {
-        props.onCheckSuccess();
+    try {
+      // pull your JWT however you store it
+      const res = await authService.post(
+        "/verify-password",
+        {
+          current_password: password,
+        },
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        toast({
+          title: "Success",
+          description: "Password verified",
+          variant: "default",
+        });
+        props.onCheckSuccess?.();
+        handleClose();
       }
-      handleClose();
-    } else {
+    } catch (err: any) {
       toast({
-        title: "Error",
-        description: "Incorrect password",
+        title: err.response.data.detail,
+        description: err.response.data.detail,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -54,8 +74,7 @@ export function CheckPasswordDialog(props: CheckPasswordDialogProps) {
       <DialogContent>
         <DialogTitle>Check Password</DialogTitle>
         <DialogDescription>
-          Please enter your password below. REMOVE THIS CORRECT PASSWORD IS
-          secret123
+          Please enter your current password to continue.
         </DialogDescription>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -63,14 +82,15 @@ export function CheckPasswordDialog(props: CheckPasswordDialogProps) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            minLength={1}
             required
           />
           <div className="flex justify-end space-x-2">
-            <Button type="button" onClick={handleClose}>
+            <Button type="button" onClick={handleClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!password}>
-              Check
+            <Button type="submit" disabled={!password || isLoading}>
+              {isLoading ? "Checking…" : "Check"}
             </Button>
           </div>
         </form>

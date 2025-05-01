@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UpgradePlanDialog } from "@/components/upgrade-plan-dialog";
-import { backendAPI } from "@/environment/backend_api";
+import { userService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import { Calendar, Camera, Pencil, Save, X } from "lucide-react";
@@ -69,7 +69,7 @@ export default function Profile() {
   async function fetchUserData() {
     setIsLoading(true);
     try {
-      const response = await backendAPI.get("/users/me", {
+      const response = await userService.get("/user", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -117,12 +117,13 @@ export default function Profile() {
         };
       }
 
-      const response = await backendAPI.put("/users/update", payload, {
+      const response = await userService.put("/user", payload, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
+
       setUser(response.data);
       setOriginalUser(response.data);
       toast({ title: "Profile updated successfully" });
@@ -147,7 +148,9 @@ export default function Profile() {
   }
 
   function formatDate(dateString: string) {
-    if (!dateString) return "";
+    if (!dateString) {
+      return "";
+    }
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
@@ -321,16 +324,9 @@ export default function Profile() {
                     id="email"
                     type="email"
                     value={user.email ?? ""}
-                    onChange={(e) =>
-                      setUser({ ...user, email: e.target.value })
-                    }
                     required
-                    disabled={!editMode || isSaving}
-                    className={
-                      editMode
-                        ? "border-border/30 bg-muted/20"
-                        : "bg-muted/5 focus:bg-muted/10 border-transparent transition-colors"
-                    }
+                    disabled
+                    className="bg-muted/5 border-transparent transition-colors"
                   />
                 </div>
 

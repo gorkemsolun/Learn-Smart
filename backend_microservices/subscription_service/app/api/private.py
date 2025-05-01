@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from subscription_service.app.security.auth import verify_api_key
 from subscription_service.app.database.dbmanager import SubscriptionDB
-from chat_service.app.database.session import get_db
+from subscription_service.app.database.session import get_db
 
 router = APIRouter(
     prefix="/private", 

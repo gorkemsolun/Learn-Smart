@@ -41,18 +41,18 @@ async def create_skill_tree(course_id: int,
     tree = SkillTreeDB.create(db, course_id=course_id)
     skill_tree_id = tree["id"]
     
-    root_set = set()
-    for e in skill_tree["edges"]:
-        root_set.add(e["source"])
-        if e["target"] in root_set:
-            root_set.remove(e["target"])
+    all_ids    = { n["id"]       for n in skill_tree["nodes"] }
+    target_ids = { e["target"]   for e in skill_tree["edges"] }
+
+    # roots = everything that never appears as a target
+    root_ids   = all_ids - target_ids
 
     # PASS 1: nodes and quizzes
     llm2db = {}
     for n in skill_tree["nodes"]:
         llm_id   = n["id"]
         llm_name = n["name"]
-        if llm_id in root_set:
+        if llm_id in root_ids:
             n["state"] = NodeState.UNLOCKED_UNCOMPLETED.value
         else:
             n["state"] = NodeState.LOCKED_UNCOMPLETED.value
