@@ -117,9 +117,7 @@ export default function Profile() {
         };
       }
 
-      const response = await userService.put("/user", {
-        user: payload,
-      }, {
+      const response = await userService.put("/user", payload, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

@@ -83,8 +83,8 @@ async def get_user_and_courses(
 @router.put("/user", response_model=UserResponse)
 async def update_user(
     user: UserUpdateRequest,
-    current_user: dict = Depends(get_authenticated_user),
     db: Session = Depends(get_db),
+    authorization: str = Header(None),
 ):
     """
     Update a user's information.
@@ -99,6 +99,7 @@ async def update_user(
         HTTPException: If the user is not found.
     """
 
+    current_user = await get_authenticated_user(db, authorization)
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
 
