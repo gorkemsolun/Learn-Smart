@@ -34,3 +34,7 @@ export const userService = axios.create({
 export const skillTreeService = axios.create({
   baseURL: "http://127.0.0.1:8008/api/public"
 });
+
+export const subscriptionService = axios.create({
+  baseURL: "http://127.0.1:8009/api/public"
+});

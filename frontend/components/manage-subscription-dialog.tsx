@@ -26,14 +26,14 @@ const AVAILABLE_TIERS: Tier[] = [
     price: 19.99,
     billingPeriod: "monthly",
     llm: "GPT-4",
-    features: ["Everything in Basic", "Priority support", "Extra Pro feature"],
+    features: ["Everything in Basic", "Priority support"],
     badge: "Popular",
   },
   {
     name: "Edux+ Elite",
     price: 199.99,
     billingPeriod: "yearly",
-    llm: "GPT-4 Turbo",
+    llm: "All models",
     features: [
       "Everything in Pro",
       "Dedicated account manager",

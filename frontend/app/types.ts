@@ -109,3 +109,13 @@ export interface HotkeyConfig {
   shiftKey?: boolean;
   altKey?: boolean;
 }
+
+export interface StepData {
+  step: string;
+  title: string;
+  status: string;
+}
+
+export interface OnboardingProcessProps {
+  steps: StepData[];
+}

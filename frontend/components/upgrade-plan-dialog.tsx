@@ -56,7 +56,7 @@ export function UpgradePlanDialog({
 
           <div className="flex-1">
             <h4 className="text-muted-foreground mb-2 text-sm font-medium">
-              New Plan
+              Recommended Plan
             </h4>
             <TierCardMini tier={newTier} fontColor="white" />
           </div>
@@ -66,7 +66,7 @@ export function UpgradePlanDialog({
           <Button variant="outline" onClick={() => onClose(false)}>
             Cancel
           </Button>
-          <Button onClick={onConfirm}>Confirm Upgrade</Button>
+          <Button onClick={onConfirm}>Proceed</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

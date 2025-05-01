@@ -90,7 +90,7 @@ export default function TierCardMini({
           </div>
           {tier.llm && (
             <p className={`${subtitleClass} text-xs`}>
-              <span className="font-medium">LLM:</span> {tier.llm}
+              <span className="font-medium">Model:</span> {tier.llm}
             </p>
           )}
           <FeatureList features={tier.features} fontColor={fontColor} />

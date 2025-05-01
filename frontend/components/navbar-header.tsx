@@ -27,7 +27,7 @@ const components: { title: string; href: string; description: string }[] = [
   },
   {
     title: "Subscription Service",
-    href: "",
+    href: "/subscription",
     description: "You can upgrade to the paid plan.",
   },
 ];
@@ -66,9 +66,6 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
           Authorization: `Bearer ${token}`,
         },
       })
-      /* .then((response) => {
-        console.log(response.data);
-      }) */
       .catch((error) => {
         console.error(error.response);
       });

@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckPasswordDialog } from "@/components/check-password-dialog";
-import { ManageSubscriptionDialog } from "@/components/manage-subscription-dialog";
+// import { ManageSubscriptionDialog } from "@/components/manage-subscription-dialog";
 import TierCardMini from "@/components/subscription-tier-card-mini-preview";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,15 +13,17 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UpgradePlanDialog } from "@/components/upgrade-plan-dialog";
-import { userService } from "@/environment/backend_api";
+import { userService, subscriptionService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import { Calendar, Camera, Pencil, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { User } from "../types";
 import { Tier } from "../types";
 
 export default function Profile() {
+  const router = useRouter();
   const [token, setToken] = useState<string>(
     Cookies.get("authToken") as string
   );
@@ -33,7 +35,7 @@ export default function Profile() {
     name: "Edux+ Elite",
     price: 199.99,
     billingPeriod: "yearly",
-    llm: "GPT-4 Turbo",
+    llm: "All models",
     features: [
       "Everything in Pro",
       "Dedicated account manager",
@@ -47,10 +49,9 @@ export default function Profile() {
     price: 19.99,
     billingPeriod: "monthly",
     llm: "GPT-4",
-    features: ["Everything in Basic", "Priority support", "Extra Pro feature"],
+    features: ["Everything in Basic", "Priority support"],
     badge: "Popular",
   });
-  const [showManageSubscriptionDialog, setShowManageSubscriptionDialog] =
     useState<boolean>(false);
   const [user, setUser] = useState<User>({
     user_id: "",
@@ -76,6 +77,54 @@ export default function Profile() {
         },
       });
       setUser(response.data);
+
+      const subscriptionResponse = await subscriptionService.get(
+        "/",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const subscriptionData = subscriptionResponse.data;
+      console.log("Subscription Data:", subscriptionData);
+      if (subscriptionData) {
+        if (subscriptionData.subscription_tier === "elite") {
+          setCurrentTier({
+            name: "Edux+ Elite",
+            price: 199.99,
+            billingPeriod: "yearly",
+            llm: "All models",
+            features: [
+              "Everything in Pro",
+              "Dedicated account manager",
+              "Custom integrations",
+            ],
+            badge: "Best Value",
+          });
+        }
+        if (subscriptionData.subscription_tier === "premium") {
+          setCurrentTier({
+            name: "Edux+ Pro",
+            price: 19.99,
+            billingPeriod: "monthly",
+            llm: "GPT-4",
+            features: ["Everything in Basic", "Priority support"],
+            badge: "Popular",
+          });
+        }
+        if (subscriptionData.subscription_tier === "basic") {
+          setCurrentTier({
+            name: "Edux+ Basic",
+            price: 0,
+            billingPeriod: "monthly",
+            llm: "GPT-3.5",
+            features: ["Basic features"],
+            badge: "Free",
+          });
+        }
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({
@@ -369,13 +418,7 @@ export default function Profile() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <TierCardMini
-                  tier={{
-                    name: "Edux+ Elite",
-                    price: 41.54,
-                    billingPeriod: "monthly",
-                    llm: "GPT-3.5",
-                    features: ["Feature 1", "Feature 2", "Feature 3"],
-                  }}
+                  tier={currentTier}
                   fontColor="white"
                 />
                 <div className="flex flex-col gap-2">
@@ -384,13 +427,6 @@ export default function Profile() {
                     onClick={() => setShowUpgrade(true)}
                   >
                     Upgrade Plan
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-border/30 hover:bg-muted/10 w-full font-light transition-colors"
-                    onClick={() => setShowManageSubscriptionDialog(true)}
-                  >
-                    Manage Subscription
                   </Button>
                 </div>
               </CardContent>
@@ -410,23 +446,6 @@ export default function Profile() {
           }}
         />
       )}
-
-      {showManageSubscriptionDialog && (
-        <ManageSubscriptionDialog
-          isOpen={showManageSubscriptionDialog}
-          onClose={setShowManageSubscriptionDialog}
-          currentPlanName={user.role}
-          onUpgrade={(tier) => {
-            setUser({ ...user, role: tier.name });
-            setShowManageSubscriptionDialog(false);
-            toast({
-              title: "Success",
-              description: `Upgraded to ${tier.name} plan`,
-            });
-          }}
-        />
-      )}
-
       {showUpgradePlanDialog && (
         <UpgradePlanDialog
           isOpen={showUpgradePlanDialog}
@@ -434,12 +453,7 @@ export default function Profile() {
           currentTier={currentTier}
           newTier={targetTier}
           onConfirm={() => {
-            // TODO: Call the upgrade API here
-            /* upgradeApi(targetTier.name).then(() => {
-              toast({ title: `Upgraded to ${targetTier.name}!` });
-              setCurrentTier(targetTier);
-              setShowUpgrade(false);
-            }); */
+            router.push("/subscription");
           }}
         />
       )}

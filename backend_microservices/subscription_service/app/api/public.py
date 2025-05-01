@@ -1,26 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime, timedelta
 
-from subscription_service.app.security.auth import verify_api_key
 from subscription_service.app.database.dbmanager import SubscriptionDB
+from subscription_service.app.clients.user import get_current_user
 from subscription_service.app.database.session import get_db
 
-router = APIRouter(
-    prefix="/private", 
-    tags=["Subscription - Private API"],
-    dependencies=[Depends(verify_api_key)]
-)
+router = APIRouter(prefix="/public", tags=["Subscription - Public API"])
 
-@router.post("/{user_id}")
+class SubscriptionData(BaseModel):
+    subscription_tier: str
+    subscription_duration: str
+    auto_renew: bool
+
+@router.post("/")
 def log_subscription(
-        user_id: int,
-        subscription_tier: str,
-        subscription_duration: str,
-        auto_renew: bool,
+        subscription_data: SubscriptionData,
+        current_user: dict = Depends(get_current_user),
         db: get_db = Depends(get_db),
 ):
+    user_id = current_user["user_id"]
+    subscription_tier = subscription_data.subscription_tier
+    subscription_duration = subscription_data.subscription_duration
+    auto_renew = subscription_data.auto_renew
     try:
         start_date = datetime.now()
         if subscription_duration == "monthly":
@@ -57,9 +59,10 @@ def log_subscription(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{user_id}")
+@router.get("/")
 def get_subscription(
-        user_id: int,
+        current_user: dict = Depends(get_current_user),
+        db: get_db = Depends(get_db),
 ):
     """
     Retrieve the user's active subscription.
@@ -70,19 +73,18 @@ def get_subscription(
     Returns:
         SubscriptionResponse: The user's subscription details or a message indicating no active subscription.
     """
-    try:
-        subscription = SubscriptionDB.get_subscription(user_id=user_id) or None
-        if not subscription:
-            return {"subscription": None, "message": "No active subscription found."}
-        subscription
+    user_id = current_user["user_id"]
+    subscription = SubscriptionDB.get_subscription(db, user_id=user_id) or None
+    if not subscription:
+        raise HTTPException(status_code=404, detail="No active subscription found.")
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return subscription
 
 
-@router.delete("/{user_id}")
+@router.delete("/")
 def delete_subscription(
-        user_id: int,
+        current_user: dict = Depends(get_current_user),
+        db: get_db = Depends(get_db),
 ):
     """
     Delete the user's active subscription.
@@ -93,8 +95,9 @@ def delete_subscription(
     Returns:
         dict: A confirmation message.
     """
+    user_id = current_user["user_id"]
     try:
-        SubscriptionDB.delete_subscription(user_id=user_id)
+        SubscriptionDB.delete_subscription(db, user_id=user_id)
         return {"message": "Subscription deleted successfully."}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

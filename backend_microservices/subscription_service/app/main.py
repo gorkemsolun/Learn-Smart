@@ -4,7 +4,7 @@ from celery.schedules import crontab
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from subscription_service.app.api.private import router as private_router
+from subscription_service.app.api.public import router as public_router
 from subscription_service.app.util import init
 
 # create the FastAPI app
@@ -32,6 +32,6 @@ celery_app.conf.beat_schedule = {
 def startup_event():
     process_subscriptions.delay()
 
-app.include_router(private_router, prefix="/api")
+app.include_router(public_router, prefix="/api")
 
 print("FastAPI Subscription service started successfully")
