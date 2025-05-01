@@ -1,15 +1,8 @@
 "use client";
 
+import { isValidEmail } from "@/app/constants";
 import { Icons } from "@/components/icons";
-import {
-  Eye,
-  EyeSlash,
-  LockWaves,
-  Envelope,
-  User,
-  DangerCircle,
-  CheckCircle,
-} from "@mynaui/icons-react";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,9 +16,17 @@ import { ToastAction } from "@/components/ui/toast";
 import { userService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useLoading } from "@/hooks/useLoading"; // Import useLoading hook
+import {
+  CheckCircle,
+  DangerCircle,
+  Envelope,
+  Eye,
+  EyeSlash,
+  LockWaves,
+  User,
+} from "@mynaui/icons-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LoadingSpinner } from "@/components/loading-spinner";
 
 export default function SignUp() {
   const [username, setUsername] = useState<string>("");
@@ -33,6 +34,7 @@ export default function SignUp() {
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
 
@@ -51,25 +53,21 @@ export default function SignUp() {
   };
 
   const handleSignUp = async () => {
-    const validateEmail = (inputText: string) => {
-      const regex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-      return regex.test(inputText);
-    };
-
-    if (!username || !email || !password || !confirmPassword) {
+    if (!isValidEmail(email)) {
+      setEmailError("Please enter a valid email address");
       toast({
-        title: "Please fill out all fields",
-        description: "You need to fill all fields",
+        title: "Invalid email format",
+        description: "Please enter a valid email",
         variant: "destructive",
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
       return;
     }
 
-    if (!validateEmail(email)) {
+    if (!username || !email || !password || !confirmPassword) {
       toast({
-        title: "Invalid email format",
-        description: "Please enter a valid email",
+        title: "Please fill out all fields",
+        description: "You need to fill all fields",
         variant: "destructive",
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
@@ -109,8 +107,9 @@ export default function SignUp() {
         });
         router.push("/sign-in");
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
     } catch (error) {
-      console.error("Create account error:", error);
+      // This gives error if the email is still not valid
       toast({
         title: "Account creation failed",
         description: "This user is already registered.",
@@ -126,7 +125,7 @@ export default function SignUp() {
     <div className="flex min-h-screen w-full items-center justify-center p-6">
       <Card className="relative w-full overflow-hidden md:max-w-3xl lg:max-w-4xl">
         <div className="flex h-full flex-col md:flex-row">
-          <div className="hidden border-r bg-foreground/5 md:flex md:w-1/2 md:flex-col md:items-center md:justify-center md:rounded-l-lg md:p-6">
+          <div className="bg-foreground/5 hidden border-r md:flex md:w-1/2 md:flex-col md:items-center md:justify-center md:rounded-l-lg md:p-6">
             <div className="absolute left-4 top-4 flex items-center space-x-2">
               <Icons.logo className="size-5" />
               <p className="text-base font-semibold">edux/ai</p>
@@ -144,7 +143,7 @@ export default function SignUp() {
               onClick={() => {
                 router.push("/sign-in");
               }}
-              className="absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm font-light text-foreground shadow-none hover:bg-foreground/10"
+              className="text-foreground hover:bg-foreground/10 absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm font-light shadow-none"
             >
               Sign in
             </Button>
@@ -166,8 +165,24 @@ export default function SignUp() {
                         placeholder="email@example.com"
                         className="pl-10 font-light"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setEmail(val);
+                          setEmailError(
+                            !val || isValidEmail(val)
+                              ? null
+                              : "Please enter a valid email address"
+                          );
+                        }}
+                        onBlur={() => {
+                          if (!email) setEmailError("Email is required");
+                        }}
                       />
+                      {emailError && (
+                        <p className="text-destructive mt-1 text-xs">
+                          {emailError}
+                        </p>
+                      )}
                     </div>
 
                     <div className="relative w-full">
@@ -246,23 +261,33 @@ export default function SignUp() {
             </CardContent>
 
             <CardFooter className="flex w-full justify-center">
-              <Button className="w-5/6 font-light" onClick={handleSignUp}>
+              <Button
+                className="w-5/6 font-light"
+                onClick={handleSignUp}
+                disabled={
+                  !username ||
+                  !email ||
+                  !!emailError ||
+                  !password ||
+                  !confirmPassword
+                }
+              >
                 Sign up
               </Button>
             </CardFooter>
 
             <CardFooter className="mt-[1.85rem] flex w-full justify-center">
-              <p className="w-4/5 text-center text-xs font-light text-foreground/60">
+              <p className="text-foreground/60 w-4/5 text-center text-xs font-light">
                 By clicking continue, you agree to our{" "}
                 <a
-                  className="text-foreground/60 underline hover:text-foreground/80"
+                  className="text-foreground/60 hover:text-foreground/80 underline"
                   href=""
                 >
                   Terms of Service
                 </a>{" "}
                 and{" "}
                 <a
-                  className="text-foreground/60 underline hover:text-foreground/80"
+                  className="text-foreground/60 hover:text-foreground/80 underline"
                   href=""
                 >
                   Privacy Policy.
