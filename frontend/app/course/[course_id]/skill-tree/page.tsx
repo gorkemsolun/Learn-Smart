@@ -1,6 +1,6 @@
 "use client";
 
-import type { NodeData } from "@/app/types";
+import type {NodeData, EdgeData, SkillTree as SkillTreeType} from "@/app/types";
 import NodeDetailsModal from "@/components/skill-tree/node-details-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,117 +14,13 @@ import cytoscape from "cytoscape";
 import dagre from "cytoscape-dagre";
 import { Home, Info, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
+import { skillTreeService } from "@/environment/backend_api";
+import {useAuthRedirect} from "@/hooks/useAuthRedirect";
+import {useParams} from "next/navigation";
 
 cytoscape.use(dagre);
 
-const defaultNodes: NodeData[] = [
-  {
-    id: "basics",
-    label: "Programming Fundamentals",
-    description:
-      "Master the fundamental concepts that form the foundation of all programming languages.",
-    progress: 100,
-    completed: true,
-    skills: [
-      "Variables",
-      "Data Types",
-      "Control Flow",
-      "Functions",
-      "Basic Algorithms",
-    ],
-    prerequisites: [],
-  },
-  {
-    id: "oop",
-    label: "Object-Oriented Programming & Design",
-    description:
-      "Learn to structure code using objects, classes, and inheritance patterns.",
-    progress: 75,
-    completed: false,
-    skills: [
-      "Classes",
-      "Inheritance",
-      "Polymorphism",
-      "Encapsulation",
-      "Abstraction",
-    ],
-    prerequisites: ["Programming Fundamentals"],
-  },
-  {
-    id: "algorithms",
-    label: "Algorithms & Data Structures",
-    description:
-      "Understand how to efficiently store and manipulate data with optimized algorithms.",
-    progress: 60,
-    completed: false,
-    skills: [
-      "Sorting Algorithms",
-      "Search Algorithms",
-      "Trees",
-      "Graphs",
-      "Dynamic Programming",
-    ],
-    prerequisites: ["Programming Fundamentals"],
-  },
-  {
-    id: "dataStructures",
-    label: "Advanced Data Structures",
-    description:
-      "Master complex data structures for solving specialized problems.",
-    progress: 30,
-    completed: false,
-    skills: [
-      "Balanced Trees",
-      "Graph Algorithms",
-      "Heaps",
-      "Hash Tables",
-      "Tries",
-    ],
-    prerequisites: ["Algorithms & Data Structures"],
-  },
-  {
-    id: "design",
-    label: "Design Patterns",
-    description: "Learn reusable solutions to common software design problems.",
-    progress: 45,
-    completed: false,
-    skills: [
-      "Creational Patterns",
-      "Structural Patterns",
-      "Behavioral Patterns",
-      "Architectural Patterns",
-    ],
-    prerequisites: ["Object-Oriented Programming & Design"],
-  },
-  {
-    id: "architecture",
-    label: "System Architecture",
-    description:
-      "Design and implement large-scale software systems with multiple components.",
-    progress: 15,
-    completed: false,
-    skills: [
-      "Distributed Systems",
-      "Microservices",
-      "Scalability",
-      "Reliability",
-      "Performance",
-    ],
-    prerequisites: ["Design Patterns", "Advanced Data Structures"],
-  },
-];
-
-const defaultEdges = [
-  { source: "basics", target: "oop" },
-  { source: "basics", target: "algorithms" },
-  { source: "oop", target: "design" },
-  { source: "algorithms", target: "dataStructures" },
-  { source: "design", target: "architecture" },
-  { source: "dataStructures", target: "architecture" },
-];
-
-// Update the color palette to be more neutral and subtle
 const nodeThemeColors = {
   dark: {
     background: "#0a0a0a",
@@ -147,19 +43,102 @@ const nodeThemeColors = {
 };
 
 export default function SkillTree({
-  nodes = defaultNodes,
-  edges = defaultEdges,
+  nodes: initialNodes = [],
+  edges: initialEdges = [],
   title = "Skill Progression Tree",
 }: {
   nodes?: NodeData[];
-  edges?: { source: string; target: string }[];
+  edges?: EdgeData[];
   title?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyReference = useRef<cytoscape.Core | null>(null);
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { theme = "dark", setTheme } = useTheme();
+  const token = useAuthRedirect();
+  const params = useParams<{ course_id: string }>();
+  const course_id = params?.course_id;
+  const [skillTree, setSkillTree] = useState<SkillTreeType>({
+    nodes: initialNodes,
+    edges: initialEdges
+  });
+
+  const fetchSkillTree = useCallback(async () => {
+    if (!course_id || !token) return;
+
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+
+    const fetchTree = async () => {
+      try {
+        const response = await skillTreeService.get(`/skill-tree?course_id=${course_id}`, { headers });
+        return response.data;
+      } catch (err) {
+        console.error("Failed to fetch skill tree:", err);
+        return { success: false };
+      }
+    };
+
+    const createTree = async () => {
+      try {
+        const response = await skillTreeService.post(`/create?course_id=${course_id}`, null, { headers });
+        return response.data;
+      } catch (err) {
+        console.error("Failed to create skill tree:", err);
+        return { success: false };
+      }
+    };
+
+    const updateTree = async () => {
+      try {
+        const response = await skillTreeService.post(`/update?course_id=${course_id}`, null, { headers });
+        return response.data;
+      } catch (err) {
+        console.warn("Skill tree update failed (possibly doesn't exist yet):", err);
+        return { success: false };
+      }
+    };
+
+    try {
+      let data = await fetchTree();
+
+      if (!data.success) {
+        console.log("No skill tree found. Creating one...");
+        data = await createTree();
+      } else {
+        //data = await updateTree();
+      }
+
+      if (data.success && data.skill_tree) {
+        const { nodes, edges } = data.skill_tree;
+        setSkillTree({ nodes, edges });
+      }
+    } catch (error) {
+      console.error("Failed to fetch or build skill tree:", error);
+    }
+  }, [course_id, token]);
+
+  useEffect(() => {
+    if(course_id && token) {
+      fetchSkillTree();
+    }
+  }, [course_id, token, fetchSkillTree]);
+
+  const handleNodeStatusChange = useCallback(async (nodeId: number, status: string) => {
+    // Update locally
+    setSkillTree(prevTree => {
+      const updatedNodes = prevTree.nodes.map(node =>
+        node.id === nodeId ? { ...node, state: status } : node
+      );
+      return { ...prevTree, nodes: updatedNodes };
+    });
+
+    // Refresh the entire skill tree from backend
+    await fetchSkillTree();
+  }, [fetchSkillTree]);
 
   useEffect(() => {
     setIsClient(true);
@@ -171,8 +150,7 @@ export default function SkillTree({
 
   useEffect(() => {
     if (cyReference.current && isClient) {
-      const colors =
-        theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
+      const colors = theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
 
       cyReference.current
         .style()
@@ -279,11 +257,16 @@ export default function SkillTree({
     }
   }, [theme, isClient]);
 
-  const colors =
-    theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
+  const currentThemeColors = theme === "dark" ? nodeThemeColors.dark : nodeThemeColors.light;
 
   useEffect(() => {
-    if (!containerRef.current) {
+    if (!containerRef.current || !isClient) {
+      return;
+    }
+
+    const { nodes, edges } = skillTree;
+
+    if (!nodes || !edges) {
       return;
     }
 
@@ -291,14 +274,14 @@ export default function SkillTree({
       ...nodes.map((node) => ({
         data: {
           ...node,
-          label: node.label || node.id,
+          label: node.name || `Node ${node.id}`,
         },
       })),
       ...edges.map((edge) => ({
         data: {
           id: `${edge.source}-${edge.target}`,
-          source: edge.source,
-          target: edge.target,
+          source: edge.source.toString(),
+          target: edge.target.toString(),
         },
       })),
     ];
@@ -310,21 +293,21 @@ export default function SkillTree({
         {
           selector: "core",
           style: {
-            "background-color": colors.background,
+            "background-color": currentThemeColors.background,
             "background-opacity": 1,
           },
         },
         {
           selector: "node",
           style: {
-            "background-color": colors.background,
+            "background-color": currentThemeColors.background,
             "background-opacity": 0.7,
             "border-width": 1, // Ultra-thin border
-            "border-color": colors.border,
+            "border-color": currentThemeColors.border,
             "border-style": "solid",
             "text-valign": "center",
             "text-halign": "center",
-            color: colors.primaryForeground,
+            color: currentThemeColors.primaryForeground,
             "font-weight": "200", // Extra light font weight
             "font-size": "13px",
             "font-family": "'Inter', 'Helvetica Neue', sans-serif", // More elegant font
@@ -340,7 +323,7 @@ export default function SkillTree({
             shape: "round-rectangle",
             "border-radius": 12, // More rounded corners
             "shadow-blur": 15,
-            "shadow-color": colors.subtle,
+            "shadow-color": currentThemeColors.subtle,
             "shadow-opacity": 0.8,
             "shadow-offset-x": 0,
             "shadow-offset-y": 2,
@@ -352,16 +335,44 @@ export default function SkillTree({
           },
         },
         {
+          selector: "node[state='completed']",
+          style: {
+            "background-color": "#4ade80", // Green for completed
+            "background-opacity": 0.1,
+            "border-color": "#22c55e",
+            "border-width": 1.5,
+          },
+        },
+        {
+          selector: "node[state='in_progress']",
+          style: {
+            "background-color": "#60a5fa", // Blue for in progress
+            "background-opacity": 0.1,
+            "border-color": "#3b82f6",
+            "border-width": 1.5,
+          },
+        },
+        {
+          selector: "node[state='locked']",
+          style: {
+            "background-color": "#9ca3af", // Gray for locked
+            "background-opacity": 0.1,
+            "border-color": "#6b7280",
+            "border-width": 1,
+            color: theme === "dark" ? "#9ca3af" : "#6b7280",
+          },
+        },
+        {
           selector: "node:selected",
           style: {
-            "border-color": colors.accent,
+            "border-color": currentThemeColors.accent,
             "border-width": 1.5,
             "padding-left": "24px",
             "padding-right": "24px",
             "padding-top": "16px",
             "padding-bottom": "16px",
             "shadow-blur": 25,
-            "shadow-color": colors.accent,
+            "shadow-color": currentThemeColors.accent,
             "shadow-opacity": 0.3,
             "shadow-offset-x": 0,
             "shadow-offset-y": 3,
@@ -374,7 +385,7 @@ export default function SkillTree({
         {
           selector: "node:active",
           style: {
-            "overlay-color": colors.primary,
+            "overlay-color": currentThemeColors.primary,
             "overlay-padding": 10,
             "overlay-opacity": 0.3,
           },
@@ -409,8 +420,8 @@ export default function SkillTree({
           style: {
             width: 1.5,
             opacity: 1,
-            "line-color": colors.accent,
-            "target-arrow-color": colors.accent,
+            "line-color": currentThemeColors.accent,
+            "target-arrow-color": currentThemeColors.accent,
             "transition-property":
               "opacity, width, line-color, target-arrow-color",
             "transition-duration": "0.2s",
@@ -441,9 +452,11 @@ export default function SkillTree({
     cy.nodes().grabify();
 
     cy.on("tap", "node", (event) => {
-      const nodeId = event.target.id();
-      const node = nodes.find((n) => n.id === nodeId) || { id: nodeId };
-      setSelectedNode(node);
+      const nodeId = parseInt(event.target.id());
+      const node = nodes.find((n) => n.id === nodeId);
+      if (node) {
+        setSelectedNode(node);
+      }
     });
 
     cy.on("mouseover", "edge", (event) => {
@@ -465,7 +478,7 @@ export default function SkillTree({
     window.addEventListener("resize", handleResize);
 
     if (containerRef.current) {
-      containerRef.current.style.backgroundColor = colors.background;
+      containerRef.current.style.backgroundColor = currentThemeColors.background;
     }
 
     return () => {
@@ -473,7 +486,7 @@ export default function SkillTree({
       cy.destroy();
       cyReference.current = null;
     };
-  }, [nodes, edges, theme]);
+  }, [skillTree, theme, isClient]);
 
   const handleZoomIn = () => {
     if (cyReference.current) {
@@ -627,6 +640,8 @@ export default function SkillTree({
           node={selectedNode}
           open={!!selectedNode}
           onClose={() => setSelectedNode(null)}
+          disabled={selectedNode.state === "locked_uncompleted"}
+          onNodeStatusChange={handleNodeStatusChange}
         />
       )}
     </Card>

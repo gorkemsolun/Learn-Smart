@@ -194,13 +194,13 @@ export default function CourseFlashCardList() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Flashcards</h1>
+      <h1 className="mb-4 text-2xl font-bold">Flashcards</h1>
       <ul className="space-y-4">
         {flashcardList.map((flashcard) => (
           <li key={flashcard.flashcard_id}>
-            <div className="border rounded-lg overflow-hidden transition-shadow duration-300 hover:shadow-lg">
+            <div className="overflow-hidden rounded-lg border transition-shadow duration-300 hover:shadow-lg">
               <div
-                className="cursor-pointer p-4 flex justify-between items-center"
+                className="flex cursor-pointer items-center justify-between p-4"
                 onClick={() => handleFlashcardClick(flashcard.flashcard_id)}
               >
                 <div className="flex-1">
@@ -240,34 +240,34 @@ export default function CourseFlashCardList() {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="ml-4 flex gap-2">
                   {editingFlashcardId !== flashcard.flashcard_id && (
                     <>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="size-8"
                         onClick={(e) => {
                           e.stopPropagation();
                           startEditing(flashcard);
                         }}
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="size-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-red-500 hover:text-red-700"
+                        className="size-8 text-red-500 hover:text-red-700"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteFlashcard(flashcard.flashcard_id);
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </>
                   )}
-                  <div className="text-sm text-gray-500 ml-4">
+                  <div className="ml-4 text-sm text-gray-500">
                     {flashcard.questions.length} cards
                   </div>
                 </div>
