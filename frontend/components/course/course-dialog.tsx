@@ -15,6 +15,7 @@ import type * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileCheck, Image, FileText, Upload, X, Eye } from '@mynaui/icons-react';
 import { Progress } from "@/components/ui/progress";
+import { useCheckCourseCode } from "@/hooks/useCheckCourseCode";
 
 export function CourseDialogModal({
   isCreate,
@@ -54,6 +55,7 @@ export function CourseDialogModal({
   });
 
   const { toast } = useToast();
+  const { checkCourseCode } = useCheckCourseCode();
 
   const resetFields = () => {
     if (!isCreate && originalCourseData) {
@@ -273,19 +275,9 @@ export function CourseDialogModal({
 
     try {
       if (!isCreate) {
-        console.log(formData.get("course_code"));
-        const exists = await checkCourseCodeExists(formData.get("course_code") as string)
-
-        // Add this check for existing course code
-        if (exists) {
-          toast({
-            title: "Error",
-            description: "Course code already exists",
-            variant: "destructive",
-            duration: 3000,
-          });
-          return; // Exit the function early
-        }
+        // Prevent course code duplication
+        const isValid = await checkCourseCode(formData.get("course_code") as string);
+        if (!isValid) return;
 
         await courseService.put(`/${course?.course_id}`, formData, {
           headers: {
@@ -317,19 +309,10 @@ export function CourseDialogModal({
           className: "bg-green-500 text-background",
         });
       } else {
-        console.log(formData.get("course_code"));
-        const exists = await checkCourseCodeExists(formData.get("course_code") as string)
-
-        // Add this check for existing course code
-        if (exists) {
-          toast({
-            title: "Error",
-            description: "Course code already exists",
-            variant: "destructive",
-            duration: 3000,
-          });
-          return; // Exit the function early
-        }
+        // Prevent course code duplication
+        const isValid = await checkCourseCode(formData.get("course_code") as string);
+        if (!isValid) return;
+        
         // Send the form data to the backend
         await courseService.post(`/create`, formData, {
           headers: {
@@ -406,25 +389,6 @@ export function CourseDialogModal({
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0], setter, fileType);
-    }
-  };
-
-  const checkCourseCodeExists = async (code: string) => {
-    try {
-      const response = await userService.get(`/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const listOfAllCourses = response.data.courses.map((course: Course) => course.course_code);
-
-      if (listOfAllCourses.includes(code)) {
-        console.log("Course code already exists");
-        return true;
-      }
-      return false;
-
-    } catch (error) {
-      console.error("Error checking course code:", error);
-      return false;
     }
   };
 
