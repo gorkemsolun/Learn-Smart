@@ -641,7 +641,6 @@ export default function SkillTree({
           node={selectedNode}
           open={!!selectedNode}
           onClose={() => setSelectedNode(null)}
-          disabled={selectedNode.state === "locked_uncompleted"}
           onNodeStatusChange={handleNodeStatusChange}
         />
       )}
