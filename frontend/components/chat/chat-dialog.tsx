@@ -195,7 +195,8 @@ export function ChatDialog({
           </DialogTitle>
           <DialogDescription>
             {isEditMode
-              ? "Update your chat details. You can optionally upload new slides."
+              ? chat?.slides_mode ? "Update your chat details. You can optionally upload new slides." 
+              : "Update your chat details."
               : "Create a new chat for your course. You can optionally upload slides."}
           </DialogDescription>
         </DialogHeader>
