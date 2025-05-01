@@ -18,6 +18,8 @@ import {useCallback, useEffect, useRef, useState} from "react";
 import { skillTreeService } from "@/environment/backend_api";
 import {useAuthRedirect} from "@/hooks/useAuthRedirect";
 import {useParams} from "next/navigation";
+import { LoadingSpinner } from "@/components/loading-spinner";
+import { useLoading } from "@/hooks/useLoading";
 
 cytoscape.use(dagre);
 
@@ -64,6 +66,8 @@ export default function SkillTree({
     edges: initialEdges
   });
 
+  const { loading, startLoading, stopLoading } = useLoading(); 
+
   const fetchSkillTree = useCallback(async () => {
     if (!course_id || !token) return;
 
@@ -83,8 +87,10 @@ export default function SkillTree({
     };
 
     const createTree = async () => {
+      startLoading();
       try {
         const response = await skillTreeService.post(`/create?course_id=${course_id}`, null, { headers });
+        stopLoading();
         return response.data;
       } catch (err) {
         console.error("Failed to create skill tree:", err);
@@ -93,8 +99,10 @@ export default function SkillTree({
     };
 
     const updateTree = async () => {
+      startLoading();
       try {
         const response = await skillTreeService.post(`/update?course_id=${course_id}`, null, { headers });
+        stopLoading();
         return response.data;
       } catch (err) {
         console.warn("Skill tree update failed (possibly doesn't exist yet):", err);
@@ -530,6 +538,8 @@ export default function SkillTree({
       }
     }
   };
+
+  if (loading) return <LoadingSpinner subMessage="Skill Tree is being created or updated"/>;
 
   return (
     <Card className="border-border bg-background text-foreground flex size-full flex-col border shadow-md">
