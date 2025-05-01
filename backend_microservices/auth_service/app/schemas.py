@@ -15,7 +15,7 @@ class Token(BaseModel):
 
 
 class VerifyPasswordRequest(BaseModel):
-    """Used to verify that the current (plain‐text) password is correct."""
+    """Used to verify that the current (plain-text) password is correct."""
 
     current_password: str = Field(..., min_length=1)
 
