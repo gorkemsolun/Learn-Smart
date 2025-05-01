@@ -71,6 +71,41 @@ export default function ChatResizablePanels({
     });
   };
 
+  const refreshSlidesList = useCallback(async () => {
+    if (!activeChat?.chat_id || !token) return;
+    
+    try {
+      const response = await chatService.get(`/chat/${activeChat.chat_id}`, {
+        headers: { 
+          Accept: "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+      });
+      
+      if (response.data.slides) {
+        setPresentationFiles(
+          response.data.slides.map((slide: any) => ({
+            slide_id: slide.slide_id,
+            slides_file_name: slide.slides_file_name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error refreshing slides list:", error);
+    }
+  }, [activeChat?.chat_id, token]);
+
+  useEffect(() => {
+    const handleSlideUpload = () => {
+      refreshSlidesList();
+    };
+    
+    window.addEventListener('slide-upload-complete', handleSlideUpload);
+    return () => {
+      window.removeEventListener('slide-upload-complete', handleSlideUpload);
+    };
+  }, [refreshSlidesList]);
+
   useEffect(() => {
     const abortController = new AbortController();
     resetChatState();
@@ -139,7 +174,7 @@ export default function ChatResizablePanels({
     return () => {
       abortController.abort();
     };
-  }, [activeChat, resetChatState]);
+  }, [activeChat, activeChat?.slides, resetChatState]);
 
   // Fetch slide info and messages when activeFile changes (for slide-enabled chats)
   useEffect(() => {
@@ -193,7 +228,11 @@ export default function ChatResizablePanels({
       setIsSlidesLoading(false);
       setIsMessagesLoading(false);
     };
-  }, [activeFile, activeChat]);
+  }, [activeFile.filename,
+      activeFile.slide_id, 
+      activeChat?.chat_id, 
+      activeChat?.slides_mode
+  ]);
 
   // Functions
   const fetchMediaData = (fid: string) => {

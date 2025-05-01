@@ -143,6 +143,7 @@ export function ChatDialog({
           },
         });
         resultChat = { ...chat, chat_title: trimmedName };
+        window.dispatchEvent(new Event('slide-upload-complete'));
       } else {
         response = await chatService.post(
           `/chat/create?course_id=${course_id}&chat_title=${encodeURIComponent(trimmedName)}`,

@@ -49,12 +49,8 @@ export default function ChatPage() {
   // Handler for chat actions (create/edit)
   const handleChatAction = (chat?: Chat) => {
     if (!chat) return;
-    if (dialogMode === "edit" && activeChat?.chat_id === chat.chat_id) {
-      setActiveChat(chat);
-    } else if (dialogMode === "create") {
-      setActiveChat(chat);
-    }
 
+    setActiveChat(chat);
     setChats((prevChats) => {
       const chatIndex = prevChats.findIndex((c) => c.chat_id === chat.chat_id);
       if (chatIndex !== -1) {
@@ -65,21 +61,22 @@ export default function ChatPage() {
       return [...prevChats, chat];
     });
 
-    setActiveChat(chat);
-
     if (chat.slides_mode && token) {
       chatService
         .get(`/chat/${chat.chat_id}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((response) => {
-          if (chat.slides) {
-            chat.slides = response.data.slides;
-          }
+          const updatedChat: Chat = {
+            ...chat,
+            slides: response.data.slides,
+          };
+          setActiveChat(updatedChat);
+          setChats((prev) =>
+            prev.map(c => c.chat_id === updatedChat.chat_id ? updatedChat : c)
+          );
         })
-        .catch((error) => {
-          console.error("Failed to fetch slide files:", error);
-        });
+        .catch((err) => console.error("Failed to fetch slide files:", err));
     }
   };
 
