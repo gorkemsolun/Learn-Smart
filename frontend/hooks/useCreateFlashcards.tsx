@@ -50,7 +50,7 @@ export const useGenerateFlashcard = () => {
 
       toast({
         title: "Error",
-        description: error?.response?.data?.detail || "Error generating flashcards",
+        description: "Error generating flashcard because of lack of meaningful discussion.",
         variant: "destructive",
       });
     } finally {
