@@ -117,7 +117,7 @@ export function SearchDialogModal({
         <CommandGroup heading="Features">
           <CommandItem asChild>
             <button
-              onClick={() => handleNavigation("/skill-tree")}
+              onClick={() => handleNavigation("/all-skill-tree")}
               type="button"
               className="flex w-full cursor-pointer items-center gap-2 text-left"
             >
