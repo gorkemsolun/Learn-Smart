@@ -178,7 +178,7 @@ export default function SkillTree({
         .style({
           "background-color": colors.background,
           "background-opacity": 0.7,
-          "border-width": 1,
+          "border-width": 4,
           "border-color": colors.border,
           "border-style": "solid",
           "text-valign": "center",
@@ -212,7 +212,7 @@ export default function SkillTree({
         .selector("node:selected")
         .style({
           "border-color": colors.accent,
-          "border-width": 1.5,
+          "border-width": 4,
           "padding-left": "24px",
           "padding-right": "24px",
           "padding-top": "16px",
@@ -310,7 +310,7 @@ export default function SkillTree({
           style: {
             "background-color": currentThemeColors.background,
             "background-opacity": 0.7,
-            "border-width": 1, // Ultra-thin border
+            "border-width": 4, // Ultra-thin border
             "border-color": currentThemeColors.border,
             "border-style": "solid",
             "text-valign": "center",
@@ -348,7 +348,7 @@ export default function SkillTree({
             "background-color": "#4ade80", // Green for completed
             "background-opacity": 0.1,
             "border-color": "#22c55e",
-            "border-width": 1.5,
+            "border-width": 4,
           },
         },
         {
@@ -357,7 +357,7 @@ export default function SkillTree({
             "background-color": "#60a5fa", // Blue for in progress
             "background-opacity": 0.1,
             "border-color": "#3b82f6",
-            "border-width": 1.5,
+            "border-width": 4,
           },
         },
         {
@@ -366,7 +366,7 @@ export default function SkillTree({
             "background-color": "#9ca3af", // Gray for locked
             "background-opacity": 0.1,
             "border-color": "#6b7280",
-            "border-width": 1,
+            "border-width": 4,
             color: theme === "dark" ? "#9ca3af" : "#6b7280",
           },
         },
@@ -374,7 +374,7 @@ export default function SkillTree({
           selector: "node:selected",
           style: {
             "border-color": currentThemeColors.accent,
-            "border-width": 1.5,
+            "border-width": 4,
             "padding-left": "24px",
             "padding-right": "24px",
             "padding-top": "16px",
@@ -544,7 +544,7 @@ export default function SkillTree({
     <Card className="border-border bg-background text-foreground flex size-full flex-col border shadow-md">
       <div className="border-border from-primary/5 via-secondary/5 to-background border-b bg-gradient-to-br p-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-foreground/90 text-lg font-thin">{title}</h3>
+          <h3 className="text-foreground/90 text-lg font-semibold">{title}</h3>
           <div className="flex space-x-2">
             <TooltipProvider>
               <Tooltip>

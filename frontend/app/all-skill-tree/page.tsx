@@ -24,7 +24,7 @@ interface Course {
   created_at: string;
 }
 
-export default function AllFlashcards() {
+export default function AllSkillTrees() {
   const router = useRouter();
   const token = useAuthRedirect();
   const { loading, startLoading, stopLoading } = useLoading();
