@@ -45,12 +45,12 @@ export default function Profile() {
   });
   const [showUpgradePlanDialog, setShowUpgrade] = useState<boolean>(false);
   const [currentTier, setCurrentTier] = useState<Tier>({
-    name: "Edux+ Pro",
-    price: 19.99,
+    name: "Free",
+    price: 0,
     billingPeriod: "monthly",
-    llm: "GPT-4",
-    features: ["Everything in Basic", "Priority support"],
-    badge: "Popular",
+    llm: "Gemini 2.0",
+    features: ["Limited Usage"],
+    badge: "Free",
   });
     useState<boolean>(false);
   const [user, setUser] = useState<User>({
@@ -93,11 +93,11 @@ export default function Profile() {
         if (subscriptionData.subscription_tier === "elite") {
           setCurrentTier({
             name: "Edux+ Elite",
-            price: 199.99,
+            price: 59.9,
             billingPeriod: "yearly",
             llm: "All models",
             features: [
-              "Everything in Pro",
+              "Everything in Premium",
               "Dedicated account manager",
               "Custom integrations",
             ],
@@ -106,8 +106,8 @@ export default function Profile() {
         }
         if (subscriptionData.subscription_tier === "premium") {
           setCurrentTier({
-            name: "Edux+ Pro",
-            price: 19.99,
+            name: "Edux+ Premium",
+            price: 19.9,
             billingPeriod: "monthly",
             llm: "GPT-4",
             features: ["Everything in Basic", "Priority support"],
@@ -117,10 +117,20 @@ export default function Profile() {
         if (subscriptionData.subscription_tier === "basic") {
           setCurrentTier({
             name: "Edux+ Basic",
+            price: 7.9,
+            billingPeriod: "monthly",
+            llm: "Gemini 2.0",
+            features: ["Basic features"],
+            badge: "Free",
+          });
+        }
+        else {
+          setCurrentTier({
+            name: "Free",
             price: 0,
             billingPeriod: "monthly",
-            llm: "GPT-3.5",
-            features: ["Basic features"],
+            llm: "Gemini 2.0",
+            features: ["Limited Usage"],
             badge: "Free",
           });
         }
