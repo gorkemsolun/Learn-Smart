@@ -137,6 +137,25 @@ services:
       - ./subscription_service/app/.env
     networks:
       - microservices-network
+    
+  notification_service:
+    build:
+      context: ./notification_service
+      dockerfile: Dockerfile
+    ports:
+      - "8010:8010"
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./notification_service
+          target: /notification_service
+    depends_on:
+      - mysql_notification
+      - redis
+    env_file:
+      - ./notification_service/app/.env
+    networks:
+      - microservices-network
 
   # MySQL containers.
   mysql_chat:
@@ -229,6 +248,21 @@ services:
     networks:
       - microservices-network
   
+  mysql_notification:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: edux_notification
+      MYSQL_USER: edux_admin
+      MYSQL_PASSWORD: eduxisawesome123
+      MYSQL_ROOT_PASSWORD: 22003206
+    ports:
+      - "3313:3306"
+    volumes:
+      - db_notification:/var/lib/mysql
+    networks:
+      - microservices-network
+  
   redis:
     image: redis:latest
     container_name: redis_container
@@ -249,3 +283,4 @@ volumes:
   db_user:
   db_skilltree:
   db_subscription:
+  db_notification:
