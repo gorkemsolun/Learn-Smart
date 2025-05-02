@@ -125,7 +125,7 @@ export default function SignUp() {
     <div className="flex min-h-screen w-full items-center justify-center p-6">
       <Card className="relative w-full overflow-hidden md:max-w-3xl lg:max-w-4xl">
         <div className="flex h-full flex-col md:flex-row">
-          <div className="bg-foreground/5 hidden border-r md:flex md:w-1/2 md:flex-col md:items-center md:justify-center md:rounded-l-lg md:p-6">
+          <div className="hidden border-r bg-foreground/5 md:flex md:w-1/2 md:flex-col md:items-center md:justify-center md:rounded-l-lg md:p-6">
             <div className="absolute left-4 top-4 flex items-center space-x-2">
               <Icons.logo className="size-5" />
               <p className="text-base font-semibold">edux/ai</p>
@@ -143,7 +143,7 @@ export default function SignUp() {
               onClick={() => {
                 router.push("/sign-in");
               }}
-              className="text-foreground hover:bg-foreground/10 absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm font-light shadow-none"
+              className="absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm font-light text-foreground shadow-none hover:bg-foreground/10"
             >
               Sign in
             </Button>
@@ -158,7 +158,7 @@ export default function SignUp() {
               <form className="flex w-full flex-col items-center justify-center">
                 <div className="grid w-5/6 items-center gap-4">
                   <div className="flex w-full flex-col space-y-1.5">
-                    <div className="relative w-full">
+                    <div className="relative w-full justify-center justify-items-center">
                       <Envelope className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       <Input
                         type="text"
@@ -178,13 +178,12 @@ export default function SignUp() {
                           if (!email) setEmailError("Email is required");
                         }}
                       />
-                      {emailError && (
-                        <p className="text-destructive mt-1 text-xs">
+                    </div>
+                    {emailError && (
+                        <p className="mt-1 text-xs text-destructive">
                           {emailError}
                         </p>
-                      )}
-                    </div>
-
+                    )}
                     <div className="relative w-full">
                       <User className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       <Input
@@ -277,17 +276,17 @@ export default function SignUp() {
             </CardFooter>
 
             <CardFooter className="mt-[1.85rem] flex w-full justify-center">
-              <p className="text-foreground/60 w-4/5 text-center text-xs font-light">
+              <p className="w-4/5 text-center text-xs font-light text-foreground/60">
                 By clicking continue, you agree to our{" "}
                 <a
-                  className="text-foreground/60 hover:text-foreground/80 underline"
+                  className="text-foreground/60 underline hover:text-foreground/80"
                   href=""
                 >
                   Terms of Service
                 </a>{" "}
                 and{" "}
                 <a
-                  className="text-foreground/60 hover:text-foreground/80 underline"
+                  className="text-foreground/60 underline hover:text-foreground/80"
                   href=""
                 >
                   Privacy Policy.

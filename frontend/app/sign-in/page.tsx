@@ -109,7 +109,7 @@ export default function SignIn() {
       <Card className="relative w-full overflow-hidden md:max-w-3xl lg:max-w-4xl">
         <div className="flex h-full flex-col md:flex-row">
           {/* Left side with image slider - hidden on small screens */}
-          <div className="bg-foreground/5 hidden border-r md:flex md:w-1/2 md:flex-col md:items-center md:justify-center md:rounded-l-lg md:p-6">
+          <div className="hidden border-r bg-foreground/5 md:flex md:w-1/2 md:flex-col md:items-center md:justify-center md:rounded-l-lg md:p-6">
             <div className="absolute left-4 top-4 flex items-center space-x-2">
               <Icons.logo className="size-5" />
               <p className="text-base font-semibold">edux/ai</p>
@@ -131,7 +131,7 @@ export default function SignIn() {
               onClick={() => {
                 router.push("/sign-up");
               }}
-              className="text-foreground hover:bg-foreground/10 absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm font-light shadow-none"
+              className="absolute right-4 top-4 bg-transparent px-3 py-1.5 text-sm font-light text-foreground shadow-none hover:bg-foreground/10"
             >
               Sign up
             </Button>
@@ -146,7 +146,7 @@ export default function SignIn() {
               <form className="flex w-full flex-col items-center justify-center">
                 <div className="grid w-5/6 items-center gap-4">
                   <div className="flex w-full flex-col space-y-1.5">
-                    <div className="relative w-full">
+                    <div className="relative w-full justify-center justify-items-center">
                       <Envelope className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
                       <Input
                         type="text"
@@ -160,7 +160,7 @@ export default function SignIn() {
                       />
                     </div>
                     {emailError && (
-                      <p className="text-destructive mt-1 text-xs">
+                      <p className="mt-1 text-xs text-destructive">
                         {emailError}
                       </p>
                     )}
@@ -194,7 +194,7 @@ export default function SignIn() {
                       <Button
                         type="button"
                         variant="link"
-                        className="text-foreground/70 hover:text-foreground h-auto p-0 text-xs font-light"
+                        className="h-auto p-0 text-xs font-light text-foreground/70 hover:text-foreground"
                         onClick={() => router.push("/forgot-password")}
                       >
                         Forgot password?
@@ -222,13 +222,13 @@ export default function SignIn() {
                     <span className="w-full border-t"></span>
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background text-muted-foreground px-2 font-light">
+                    <span className="bg-background px-2 font-light text-muted-foreground">
                       Or continue with
                     </span>
                   </div>
                 </div>
                 <Button
-                  className="border-input bg-background text-accent-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring inline-flex items-center justify-center space-x-2 whitespace-nowrap rounded-md border px-4 py-2 text-sm font-light shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50"
+                  className="inline-flex items-center justify-center space-x-2 whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-light text-accent-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                   onClick={handleGoogleSignIn}
                 >
                   <FcGoogle />
@@ -238,17 +238,17 @@ export default function SignIn() {
             </CardContent>
 
             <CardFooter className="flex w-full justify-center">
-              <p className="text-foreground/60 w-4/5 text-center text-xs font-light">
+              <p className="w-4/5 text-center text-xs font-light text-foreground/60">
                 By clicking continue, you agree to our{" "}
                 <a
-                  className="text-foreground/60 hover:text-foreground/80 underline"
+                  className="text-foreground/60 underline hover:text-foreground/80"
                   href=""
                 >
                   Terms of Service
                 </a>{" "}
                 and{" "}
                 <a
-                  className="text-foreground/60 hover:text-foreground/80 underline"
+                  className="text-foreground/60 underline hover:text-foreground/80"
                   href=""
                 >
                   Privacy Policy.
