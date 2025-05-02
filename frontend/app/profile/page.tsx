@@ -2,25 +2,23 @@
 
 import { CheckPasswordDialog } from "@/components/check-password-dialog";
 // import { ManageSubscriptionDialog } from "@/components/manage-subscription-dialog";
-import TierCardMini from "@/components/subscription-tier-card-mini-preview";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UpgradePlanDialog } from "@/components/upgrade-plan-dialog";
-import { userService, subscriptionService } from "@/environment/backend_api";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { userService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import { Calendar, Camera, Pencil, Save, X } from "lucide-react";
+import { CreditCard } from "@mynaui/icons-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "../types";
-import { Tier } from "../types";
 
 export default function Profile() {
   const router = useRouter();
@@ -31,28 +29,6 @@ export default function Profile() {
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [editMode, setEditMode] = useState<boolean>(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState<boolean>(false);
-  const [targetTier, setTargetTier] = useState<Tier>({
-    name: "Edux+ Elite",
-    price: 199.99,
-    billingPeriod: "yearly",
-    llm: "All models",
-    features: [
-      "Everything in Pro",
-      "Dedicated account manager",
-      "Custom integrations",
-    ],
-    badge: "Best Value",
-  });
-  const [showUpgradePlanDialog, setShowUpgrade] = useState<boolean>(false);
-  const [currentTier, setCurrentTier] = useState<Tier>({
-    name: "Free",
-    price: 0,
-    billingPeriod: "monthly",
-    llm: "Gemini 2.0",
-    features: ["Limited Usage"],
-    badge: "Free",
-  });
-    useState<boolean>(false);
   const [user, setUser] = useState<User>({
     user_id: "",
     role: "",
@@ -77,64 +53,6 @@ export default function Profile() {
         },
       });
       setUser(response.data);
-
-      const subscriptionResponse = await subscriptionService.get(
-        "/",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const subscriptionData = subscriptionResponse.data;
-      console.log("Subscription Data:", subscriptionData);
-      if (subscriptionData) {
-        if (subscriptionData.subscription_tier === "elite") {
-          setCurrentTier({
-            name: "Edux+ Elite",
-            price: 59.9,
-            billingPeriod: "yearly",
-            llm: "All models",
-            features: [
-              "Everything in Premium",
-              "Dedicated account manager",
-              "Custom integrations",
-            ],
-            badge: "Best Value",
-          });
-        }
-        if (subscriptionData.subscription_tier === "premium") {
-          setCurrentTier({
-            name: "Edux+ Premium",
-            price: 19.9,
-            billingPeriod: "monthly",
-            llm: "GPT-4",
-            features: ["Everything in Basic", "Priority support"],
-            badge: "Popular",
-          });
-        }
-        if (subscriptionData.subscription_tier === "basic") {
-          setCurrentTier({
-            name: "Edux+ Basic",
-            price: 7.9,
-            billingPeriod: "monthly",
-            llm: "Gemini 2.0",
-            features: ["Basic features"],
-            badge: "Free",
-          });
-        }
-        else {
-          setCurrentTier({
-            name: "Free",
-            price: 0,
-            billingPeriod: "monthly",
-            llm: "Gemini 2.0",
-            features: ["Limited Usage"],
-            badge: "Free",
-          });
-        }
-      }
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({
@@ -223,7 +141,7 @@ export default function Profile() {
   if (isLoading && !user.user_id) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="border-primary size-8 animate-spin rounded-full border-y-2"></div>
+        <div className="size-8 animate-spin rounded-full border-y-2 border-primary"></div>
       </div>
     );
   }
@@ -236,7 +154,7 @@ export default function Profile() {
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="mb-2 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-foreground text-3xl font-thin tracking-tight">
+          <h1 className="text-3xl font-thin tracking-tight text-foreground">
             Profile
           </h1>
         </div>
@@ -247,18 +165,18 @@ export default function Profile() {
                 variant="outline"
                 onClick={cancelEdit}
                 disabled={isSaving}
-                className="border-border/50 hover:border-destructive/20 hover:bg-destructive/5 hover:text-destructive gap-2 font-light transition-colors"
+                className="gap-2 border-border/50 font-light transition-colors hover:border-destructive/20 hover:bg-destructive/5 hover:text-destructive"
               >
                 <X className="size-4" /> Cancel
               </Button>
               <Button
                 onClick={handleSaveProfile}
                 disabled={isSaving}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-light shadow-md transition-all hover:shadow-lg"
+                className="gap-2 bg-primary font-light text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
               >
                 {isSaving ? (
                   <>
-                    <div className="border-primary-foreground/30 border-t-primary-foreground size-4 animate-spin rounded-full border-2"></div>
+                    <div className="size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"></div>
                     Saving...
                   </>
                 ) : (
@@ -269,40 +187,34 @@ export default function Profile() {
               </Button>
             </>
           ) : (
-            <Button
-              onClick={() => setShowPasswordDialog(true)}
-              variant="default"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-light shadow-md transition-all hover:shadow-lg"
-            >
-              <Pencil className="size-4" /> Edit Profile
-            </Button>
+            <>
+              <Button
+                onClick={() => router.push("/subscription")}
+                variant="default"
+                className="gap-2 bg-primary font-light text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
+              >
+                <CreditCard className="size-4" /> Go to Subscription
+              </Button>
+              <Button
+                onClick={() => setShowPasswordDialog(true)}
+                variant="default"
+                className="gap-2 bg-primary font-light text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
+              >
+                <Pencil className="size-4" /> Edit Profile
+              </Button>
+            </>
           )}
         </div>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="border-border/10 from-muted/5 to-muted/10 mb-4 rounded-lg border bg-gradient-to-r p-1 shadow-sm">
-          <TabsTrigger
-            value="profile"
-            className="data-[state=active]:bg-background data-[state=active]:text-primary/90 rounded-md font-light transition-all data-[state=active]:shadow-sm"
-          >
-            Profile
-          </TabsTrigger>
-          <TabsTrigger
-            value="subscription"
-            className="data-[state=active]:bg-background data-[state=active]:text-primary/90 rounded-md font-light transition-all data-[state=active]:shadow-sm"
-          >
-            Subscription
-          </TabsTrigger>
-        </TabsList>
-
         <TabsContent value="profile" className="space-y-6">
-          <Card className="border-border/20 overflow-hidden shadow-sm">
-            <div className="from-primary/5 via-secondary/5 to-background h-28 bg-gradient-to-br shadow-lg"></div>
+          <Card className="overflow-hidden border-border/20 shadow-sm">
+            <div className="h-28 bg-gradient-to-br from-primary/5 via-secondary/5 to-background shadow-lg"></div>
             <div className="relative px-6">
               <div className="-mt-8 flex flex-col items-center gap-6 sm:flex-row sm:items-end">
                 <div className="relative">
-                  <Avatar className="border-background ring-primary/10 size-32 border-4 shadow-lg ring-2">
+                  <Avatar className="size-32 border-4 border-background shadow-lg ring-2 ring-primary/10">
                     <AvatarImage
                       src="https://www.w3schools.com/howto/img_avatar.png"
                       alt={user.nickname}
@@ -315,7 +227,7 @@ export default function Profile() {
                     <Button
                       size="icon"
                       variant="secondary"
-                      className="bg-background hover:bg-primary/10 absolute bottom-0 right-0 size-8 rounded-full shadow-md transition-colors"
+                      className="absolute bottom-0 right-0 size-8 rounded-full bg-background shadow-md transition-colors hover:bg-primary/10"
                     >
                       <Camera className="size-4" />
                       <span className="sr-only">Change profile picture</span>
@@ -324,12 +236,12 @@ export default function Profile() {
                 </div>
                 <div className="flex-1 pb-4 text-center sm:text-left">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <h2 className="text-foreground text-2xl font-light tracking-tight">
+                    <h2 className="text-2xl font-light tracking-tight text-foreground">
                       {user.nickname}
                     </h2>
                     <Badge
                       variant="outline"
-                      className="border-primary/20 bg-primary/5 text-primary/80 self-center font-light sm:self-auto"
+                      className="self-center border-primary/20 bg-primary/5 font-light text-primary/80 sm:self-auto"
                     >
                       {user.role || "Member"}
                     </Badge>
@@ -340,10 +252,10 @@ export default function Profile() {
             </div>
 
             <CardContent className="p-6 pt-0">
-              <Separator className="via-border/30 my-6 bg-gradient-to-r from-transparent to-transparent" />
+              <Separator className="my-6 bg-gradient-to-r from-transparent via-border/30 to-transparent" />
 
-              <div className="bg-muted/5 text-muted-foreground mb-6 flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm">
-                <Calendar className="text-primary/60 size-4" />
+              <div className="mb-6 flex w-fit items-center gap-2 rounded-full bg-muted/5 px-3 py-1.5 text-sm text-muted-foreground">
+                <Calendar className="size-4 text-primary/60" />
                 <span>Member since {formatDate(user.created_at)}</span>
               </div>
 
@@ -351,7 +263,7 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="username"
-                    className="text-foreground/70 text-sm font-light"
+                    className="text-sm font-light text-foreground/70"
                   >
                     Username
                   </Label>
@@ -367,7 +279,7 @@ export default function Profile() {
                     className={
                       editMode
                         ? "border-border/30 bg-muted/20"
-                        : "bg-muted/5 focus:bg-muted/10 border-transparent transition-colors"
+                        : "border-transparent bg-muted/5 transition-colors focus:bg-muted/10"
                     }
                   />
                 </div>
@@ -375,7 +287,7 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="email"
-                    className="text-foreground/70 text-sm font-light"
+                    className="text-sm font-light text-foreground/70"
                   >
                     Email Address
                   </Label>
@@ -385,7 +297,7 @@ export default function Profile() {
                     value={user.email ?? ""}
                     required
                     disabled
-                    className="bg-muted/5 border-transparent transition-colors"
+                    className="border-transparent bg-muted/5 transition-colors"
                   />
                 </div>
 
@@ -393,7 +305,7 @@ export default function Profile() {
                   <div className="space-y-2 sm:col-span-2">
                     <Label
                       htmlFor="password"
-                      className="text-foreground/70 text-sm font-light"
+                      className="text-sm font-light text-foreground/70"
                     >
                       New Password
                     </Label>
@@ -406,42 +318,13 @@ export default function Profile() {
                       }
                       placeholder="********"
                       disabled={isSaving}
-                      className="border-primary/30 bg-primary/5 focus:bg-primary/10 transition-colors"
+                      className="border-primary/30 bg-primary/5 transition-colors focus:bg-primary/10"
                     />
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="subscription">
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="border-border/20 overflow-hidden">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center justify-between font-light">
-                  <span>Current Plan</span>
-                  <Badge variant="outline" className="font-light">
-                    Active
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <TierCardMini
-                  tier={currentTier}
-                  fontColor="white"
-                />
-                <div className="flex flex-col gap-2">
-                  <Button
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 w-full font-light transition-colors"
-                    onClick={() => setShowUpgrade(true)}
-                  >
-                    Upgrade Plan
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
       </Tabs>
 
@@ -453,17 +336,6 @@ export default function Profile() {
             setOriginalUser(user);
             setEditMode(true);
             setShowPasswordDialog(false);
-          }}
-        />
-      )}
-      {showUpgradePlanDialog && (
-        <UpgradePlanDialog
-          isOpen={showUpgradePlanDialog}
-          onClose={setShowUpgrade}
-          currentTier={currentTier}
-          newTier={targetTier}
-          onConfirm={() => {
-            router.push("/subscription");
           }}
         />
       )}
@@ -486,7 +358,7 @@ function ProfileSkeleton() {
         <Skeleton className="h-10 w-64" />
       </div>
 
-      <Card className="border-border/20 overflow-hidden">
+      <Card className="overflow-hidden border-border/20">
         <Skeleton className="h-32 w-full" />
         <div className="relative px-6">
           <div className="-mt-16 flex flex-col items-center gap-6 sm:flex-row sm:items-end">
@@ -499,7 +371,7 @@ function ProfileSkeleton() {
         </div>
 
         <CardContent className="p-6 pt-0">
-          <Separator className="bg-border/20 my-6" />
+          <Separator className="my-6 bg-border/20" />
 
           <Skeleton className="mb-6 h-4 w-48" />
 
