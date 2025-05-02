@@ -312,16 +312,6 @@ export function CourseDialogModal({
 
     try {
       if (!isCreate) {
-        if (!isFromSyllabusPage) {
-          // Prevent course code duplication
-          const isValid = await checkCourseCode(
-            formData.get("course_code") as string
-          );
-          if (!isValid) {
-            return;
-          }
-        }
-
         await courseService.put(`/${course?.course_id}`, formData, {
           headers: {
             Accept: "application/json",
