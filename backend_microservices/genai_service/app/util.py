@@ -167,7 +167,6 @@ def validate_skill_tree_format(data: Any) -> bool:
     # Top‐level must be a dict
     if not isinstance(data, dict):
         return False
-    print(data)
     # Must contain a non‐empty list of nodes
     nodes = data.get("nodes")
     if not isinstance(nodes, list) or not nodes:
@@ -185,7 +184,6 @@ def validate_skill_tree_format(data: Any) -> bool:
         nid = node.get("id")
         if not isinstance(nid, str) or not nid.strip():
             if not isinstance(nid, int):
-                print("id is not valid")
                 return False
 
         # Validate 'name'

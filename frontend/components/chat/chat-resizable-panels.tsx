@@ -16,8 +16,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function ChatResizablePanels({
   activeChat,
+  selectedModel
 }: {
   activeChat: Chat | null;
+  selectedModel: string | null;
 }) {
   // States for slides and presentation handling
   const [imgSrc, setImgSrc] = useState<string | undefined>(undefined); // Image source for the slide
@@ -435,6 +437,7 @@ export default function ChatResizablePanels({
 
     const formData = new FormData();
     formData.append("text", inputMessage);
+    formData.append("model", selectedModel);
 
     if (inputFile) formData.append("files", inputFile);
 
@@ -450,6 +453,7 @@ export default function ChatResizablePanels({
     setInputMessage("");
     setInputFile(null);
 
+    console.log("Sending message to model:", selectedModel);
     const url = activeChat?.slides_mode
       ? `/chat/${activeChat?.chat_id}/send_message?slide_id=${currentSlide.slide_id}&page_number=${currentSlidePage}`
       : `/chat/${activeChat?.chat_id}/send_message`;

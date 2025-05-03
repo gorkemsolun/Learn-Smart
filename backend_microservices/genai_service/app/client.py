@@ -74,6 +74,7 @@ class OpenAIChatClient(ChatClientBase):
             - model (str): The model to use.
             - system_prompt (str): The system prompt to use.
         """
+        print("OpenAI API Key:", OPENAI_API_KEY)
         super().__init__(model, system_prompt)
         self.client = openai.OpenAI(api_key=OPENAI_API_KEY)
 

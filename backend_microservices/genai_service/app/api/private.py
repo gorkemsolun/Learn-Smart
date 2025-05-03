@@ -148,6 +148,5 @@ async def create_skill_tree(payload: dict = Body(...)):
     data = response_dict["data"]
     if not validate_skill_tree_format(data):
         raise HTTPException(status_code=500, detail="Skill tree format could not be validated.") #If needed, make more sophisticated error messages
-    print(data)
     return {"success": True, "skill_tree": data}
   

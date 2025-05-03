@@ -163,8 +163,6 @@ async def update_chat(
                        slides mode is disabled, or file type is invalid.
     """
     # first, check authorization (raises 404 or 403 if bad)
-    print(f"Updating chat {chat_id} for user {current_user['user_id']}")
-    print(f"Chat title: {chat_title}")
     chat, crs = await get_authorized_chat_and_course(db, chat_id, current_user["user_id"])
 
     updated_fields = {}

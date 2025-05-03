@@ -248,6 +248,7 @@ export default function ChatPage() {
                     // Only allow changing if the selected model is available for their tier
                     const modelKey = Object.entries(models).find(([_, v]) => v === value)?.[0];
                     if (modelKey && (subscriptionTier !== "basic" || modelKey === "google")) {
+                      console.log("Selected model:", modelKey);
                       setModel(modelKey);
                     }
                   }}
@@ -289,7 +290,10 @@ export default function ChatPage() {
 
           {activeChat ? (
             <div className="flex-1 overflow-hidden">
-              <ChatResizablePanels activeChat={activeChat} />
+              <ChatResizablePanels 
+                activeChat={activeChat}
+                selectedModel={model}
+                />
             </div>
           ) : !chatsLoaded ? (
             <div className="absolute inset-0 flex size-full items-center justify-center">

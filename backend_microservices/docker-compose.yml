@@ -79,7 +79,7 @@ services:
           path: ./genai_service        # host folder to watch
           target: /genai_service 
     env_file:
-      - ./genai_service/app/.env.devel
+      - ./genai_service/app/.env
     networks:
       - microservices-network
 
