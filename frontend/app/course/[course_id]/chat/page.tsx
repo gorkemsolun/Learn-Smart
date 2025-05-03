@@ -23,6 +23,7 @@ import {
   chatService,
   courseService,
   userService,
+  subscriptionService
 } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
@@ -30,7 +31,7 @@ import { ArrowRight, Loader2, MessageSquareText } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-const genaiServices: {
+const models: {
   [key: string]: string;
 } = {
   google: "Gemini",
@@ -52,7 +53,8 @@ export default function ChatPage() {
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [chatsLoaded, setChatsLoaded] = useState(false);
-  const [genaiService, setGenaiService] = useState<string>("google");
+  const [model, setModel] = useState<string>("google");
+  const [subscriptionTier, setSubscriptionTier] = useState<string | null>("basic");
 
   const { toast } = useToast();
 
@@ -160,6 +162,46 @@ export default function ChatPage() {
     [token, toast, course_id]
   );
 
+  const fetchSubscriptionDetails = useCallback(async () => {
+    if (!token) return;
+    try {
+      const response = await subscriptionService.get("/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data) {
+        const subscription = response.data;
+        if (subscription) {
+          const tier = subscription.subscription_tier;
+          setSubscriptionTier(tier);
+        } else {
+          toast({
+            title: "No Subscription",
+            description: "You do not have an active subscription.",
+          });
+        }
+      } else {
+        setSubscriptionTier("basic")
+        toast({
+          title: "No Subscription Data",
+          description: "Failed to fetch subscription data.",
+        });
+      }
+    } catch (error: unknown) {
+      setSubscriptionTier("basic")
+      const errMsg = error instanceof Error ? error.message : "Unknown error";
+      toast({
+        title: "Error",
+        description: `Failed to fetch subscription details: ${errMsg}`,
+        variant: "destructive",
+        action: (
+          <ToastAction altText="Retry" onClick={fetchSubscriptionDetails}>
+            Retry
+          </ToastAction>
+        ),
+      });
+    }
+  }, [token, toast]);
+
   useEffect(() => {
     if (token && course_id) {
       fetchSidebarData(course_id);
@@ -169,6 +211,10 @@ export default function ChatPage() {
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
+
+  useEffect(() => {
+    fetchSubscriptionDetails();
+  }, [fetchSubscriptionDetails]);
 
   return (
     <div className="fixed inset-0 mt-16">
@@ -197,22 +243,39 @@ export default function ChatPage() {
             <div className="flex flex-row items-center justify-center">
               <div className="mx-2">
                 <Select
-                  value={genaiServices[`${genaiService}`]}
-                  onValueChange={setGenaiService}
+                  value={models[`${model}`]}
+                  onValueChange={(value) => {
+                    // Only allow changing if the selected model is available for their tier
+                    const modelKey = Object.entries(models).find(([_, v]) => v === value)?.[0];
+                    if (modelKey && (subscriptionTier !== "basic" || modelKey === "google")) {
+                      setModel(modelKey);
+                    }
+                  }}
                 >
                   <SelectTrigger className="h-8 w-36">
                     <SelectValue placeholder="Select AI Service" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.values(genaiServices).map((modelName) => (
-                      <SelectItem key={modelName} value={modelName}>
-                        {modelName}
+                    {Object.entries(models).map(([key, modelName]) => (
+                      <SelectItem 
+                        key={modelName} 
+                        value={modelName}
+                        disabled={subscriptionTier === "basic" && key !== "google"}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          {modelName}
+                          {subscriptionTier === "basic" && key !== "google" && (
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              (Premium)
+                            </span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-
               <Button
                 variant="outline"
                 size="sm"
