@@ -116,7 +116,7 @@ export default function SkillTree({
       if (!data.success) {
         data = await createTree();
       } else {
-        //data = await updateTree();
+        data = await updateTree();
       }
 
       data = await fetchTree();
