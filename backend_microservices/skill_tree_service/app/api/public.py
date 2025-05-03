@@ -27,7 +27,7 @@ async def create_skill_tree(course_id: int,
     all_histories = await fetch_and_merge_all_chat_histories(course_id) 
     all_histories.add_message(role="edux", content=SKILL_TREE_PROMPT)#role?
 
-    skill_tree = await genai.create_skill_tree(all_histories)
+    skill_tree = await genai.create_skill_tree(all_histories, is_update=False)
     #convert the object to an adjacency list, make 2 passes, 1: create the nodes and quiz, 2: create the edges 
     tree = SkillTreeDB.create(db, course_id=course_id)
     skill_tree_id = tree["id"]
@@ -169,7 +169,7 @@ async def update_skill_tree(course_id: int,
         content=json.dumps(skill_tree)
     )
     all_histories.add_message(role="edux", content=SKILL_TREE_UPDATE_PROMPT)#role?
-    skill_tree = await genai.create_skill_tree(all_histories)
+    skill_tree = await genai.create_skill_tree(all_histories, is_update=True)
     skill_tree_id = None
     #find the skill tree id
     for e in skill_tree["edges"]:

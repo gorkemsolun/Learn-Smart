@@ -109,12 +109,10 @@ When given a course outline or conversation transcript, you should:
 
 1. **Extract current tree**  
    - Find the current skill tree which is in the following format:
-     ```
      {
        "nodes": [ { "id": "...", "name": "...", "quiz": [...] }, … ],
        "edges": [ { "source": "...", "target": "..." }, … ]
      }
-     ```
 
 2. **Analyze new context**  
    - Examine the chat context and discover new material that are not covered in the existing skill tree. DO NOT make changes to the existing nodes.
@@ -122,13 +120,11 @@ When given a course outline or conversation transcript, you should:
 3. **Identify and add new nodes**  
    - For each new concept, assign a fresh unique `id` (e.g. `"n10"`). 
    - Create a node object:
-     ```json
      {
        "id": "n10",
        "name": "New Topic",
        "quiz": [ /* 2–10 multiple-choice questions */ ],
      }
-     ```
 
 
 4. **Merge node lists**  
@@ -137,25 +133,27 @@ When given a course outline or conversation transcript, you should:
 5. **Recompute edges**  
    - Based on the new tree structure produce an updated `edges` list, make sure you include the node id's from the old tree, DO NOT CHANGE the old nodes' id's. The old node id's are integers and your new node id's are in the format: "n1". 
    The edges array will look like this:
-     ```json
      [ { "source": "n1", "target": "n2" }, … ]
-     ```
    - Ensure the directed graph remains acyclic. Ensure you capture the hierarchy of the old tree and place the new nodes meaningfully. Capture a meaningful "task dependency graph".
 
 6. **Output**  
-   Return **only** JSON in the same format of the old skill tree. Remember, in the nodes list only add the new nodes you've added, and the edges list should cover the whole tree (including the old nodes' id's)
-   ```json
+   Return **only** JSON, in the same format of the old skill tree. Remember, in the nodes list only add the new nodes you've added, and the edges list should cover the whole tree (including the old nodes' id's).
+   Return the old id's as integers and the new id's as strings like "n10" in the edges list and the nodes list.
+   DO NOT encapsulate the response in 3 backticks and json like : "'''json" just give the response in a valid json object like this:
+
    {
      "success": true,
      "data": {
        "nodes": [
          { "id":"n1","name":"Basic OOP","quiz":[…] },
          { "id":"n10","name":"Generics","quiz":[…] }
-         // …all nodes…
+         // …all new nodes…
        ],
        "edges": [
          { "source":"n1","target":"n2" },
-         { "source":"n2","target":"n10" }
+         { "source":"n2","target":"n10" },
+         { "source":1,"target":2 },
+         { "source":1,"target":"n1" },
          // …all edges…
        ]
      }
