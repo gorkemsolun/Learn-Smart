@@ -134,13 +134,21 @@ async def create_skill_tree(payload: dict = Body(...)):
         current_user (dict): The current user.
     """
     history = json.loads(payload.get("history", "[]"))
-
-    client = ChatClient.create(model="google")
-    response = client.invoke(
-        history=history,
-        generation_config={"response_mime_type": "application/json"}
-    )
-
+    is_update = payload.get("update")
+    if history is None or is_update is None:
+        raise HTTPException(status_code=422, detail="History and update flag should be given")
+    if is_update:
+        client = ChatClient.create(model="openai")
+        response = client.invoke(
+            history=history
+        )
+    else:
+        client = ChatClient.create(model="google")
+        response = client.invoke(
+            history=history,
+            generation_config={"response_mime_type": "application/json"}
+        )
+    print(response)
     response_dict = json.loads(response)
     if not response_dict["success"]:
         raise HTTPException(status_code=500, detail="Failed to generate skill tree.")

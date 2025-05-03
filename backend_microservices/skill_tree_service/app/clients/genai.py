@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 
 from skill_tree_service.app.clients import GENAI_SERVICE_URL, GENAI_CLIENT_KEY
 
-async def create_skill_tree(history: ChatHistory) -> Dict[str, Any]:
+async def create_skill_tree(history: ChatHistory, is_update: bool) -> Dict[str, Any]:
     """
     Calls the Skill Tree service to generate a skill tree from chat history.
 
@@ -22,15 +22,26 @@ async def create_skill_tree(history: ChatHistory) -> Dict[str, Any]:
     try:
         timeout = httpx.Timeout(
             connect=10.0,
-            read=60.0,
-            write=60.0,
-            pool=60.0
+            read=120.0,
+            write=120.0,
+            pool=120.0
         )
+        if is_update:
+            body = {
+                "history": json.dumps(history.openai()),
+                "update": True
+            }
+        else:
+            body = {
+                "history": json.dumps(history.google()),
+                "update": False
+            }
+
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.post(
                 f"{GENAI_SERVICE_URL}/private/generate/skill-tree",
                 headers={"X-API-Key": GENAI_CLIENT_KEY},
-                json={"history": json.dumps(history.google())}  
+                json=body 
             )
             response.raise_for_status()
             payload = response.json()
