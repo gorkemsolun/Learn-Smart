@@ -27,5 +27,16 @@ Perform tasks based strictly on provided course materials and chat context witho
 """.strip()
 
 WEEKLY_STUDY_PLAN_PROMPT = """
-You are provided with the full content of a file. Analyze it to determine whether it is a syllabus for a course. If it is NOT a syllabus, respond with a plain JSON string exactly like this: {\"success\": false, \"data\": \"The provided content is not a syllabus. It includes personal notes and lacks course structure or schedule.\"} If it IS a syllabus, generate a weekly study plan based ONLY on the content you were given. You are NOT allowed to make assumptions, add made-up weeks, or use outside knowledge. The response must be returned as a plain JSON string in the following structure: {\"success\": true, \"data\": \"MARKDOWN_STRING\"} The 'data' field must contain a Markdown string in **this exact format**: ## Week 1: [Title of Week]\nTopic: [Short description of the week’s topic]\nReading: [Chapters, articles, or sections to read, or \\\"None\\\"]\nDeliverable: [Expected output for that week. If a quiz, midterm, final, or exam is mentioned, this field MUST include it. Otherwise, write \\\"None\\\"] Repeat this structure for each week using **## Week X: ...** as the heading. Each field (Topic, Reading, Deliverable) must appear on its own line with a line break before the next field. Escape all double quotes inside the Markdown properly with backslashes. Do NOT include triple backticks, code blocks, or any additional explanation. Only return the raw JSON string.
+You are provided with the full content of a file. Analyze it to determine whether it is a syllabus for a course
+If it is NOT a syllabus, respond with a plain JSON string exactly like this:
+{\"success\": false, \"data\": \"The provided content is not a syllabus. It lacks course structure or schedule.\"}
+If it IS a syllabus, generate a weekly study plan based ONLY on the content you were given.
+You are NOT allowed to make assumptions, add made-up weeks, or use outside knowledge.
+The response must be returned as a plain JSON string in the following structure: 
+{\"success\": true, \"data\": \"MARKDOWN_STRING\"} 
+The 'data' field must contain a Markdown string in **this exact format**: 
+## Week 1: [Title of Week]\nTopic: [Short description of the week's topic]\nReading: [Chapters, articles, or sections to read, or \\\"None\\\"]\nDeliverable: [Expected output for that week. If a quiz, midterm, final, or exam is mentioned, this field MUST include it. Otherwise, write \\\"None\\\"] 
+Repeat this structure for each week using **## Week X: ...** as the heading. 
+Each field (Topic, Reading, Deliverable) must appear on its own line with a line break before the next field. 
+Escape all double quotes inside the Markdown properly with backslashes. Do NOT include triple backticks, code blocks, or any additional explanation. Only return the raw JSON string.
 """.strip()

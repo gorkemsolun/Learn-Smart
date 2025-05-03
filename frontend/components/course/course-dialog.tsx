@@ -390,7 +390,7 @@ export function CourseDialogModal({
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: `Error ${isCreate ? "creating" : "updating"} course`,
+        description: `Error ${isCreate ? "creating" : "updating"} course: ${error.response.data.detail}`,
         variant: "destructive",
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
