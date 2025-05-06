@@ -29,7 +29,7 @@ async def create_skill_tree(course_id: int,
 
     skill_tree = await genai.create_skill_tree(all_histories, is_update=False)
     #convert the object to an adjacency list, make 2 passes, 1: create the nodes and quiz, 2: create the edges 
-    tree = SkillTreeDB.create(db, course_id=course_id)
+    tree = SkillTreeDB.create(db, course_id=course_id, passed_slide_count=1)
     skill_tree_id = tree["id"]
     
     all_ids    = { n["id"]       for n in skill_tree["nodes"] }
@@ -91,9 +91,10 @@ async def get_skill_tree(course_id: int,
           .first()
     )
     if not tree:
-        raise HTTPException(status_code=404, detail="Skill tree not found")
+        return {"success": False, "skill_tree": None}
 
     tree_id = tree.id
+    passed_slide_count = tree.passed_slide_count
 
     # Fetch all nodes in that tree
     nodes = (
@@ -147,7 +148,8 @@ async def get_skill_tree(course_id: int,
         "skill_tree": {
             "nodes": nodes_payload,
             "edges": edges_payload
-        }
+        },
+        "passed_slide_count": passed_slide_count,
     }
 
 @router.post("/update")
@@ -316,6 +318,32 @@ async def update_node(node_id: int,
                 db.refresh(child)
 
     return {"success": True}
+
+
+@router.post("/update-slide-count")
+async def update_slide_count(
+        course_id: int,
+        passed_slide_count: int,
+        current_user: dict = Depends(user.get_current_user),
+        db: Session = Depends(get_db)
+):
+    """
+    Update the passed_slide_count for a skill tree.
+    If the tree doesn't exist yet, return an appropriate status.
+    """
+    tree = db.query(SkillTree).filter(SkillTree.course_id == course_id).first()
+
+    if not tree:
+        return {"success": False, "detail": "No skill tree exists for this course yet"}
+
+    tree.passed_slide_count = passed_slide_count
+    db.commit()
+    db.refresh(tree)
+
+    return {
+        "success": True,
+        "passed_slide_count": tree.passed_slide_count
+    }
 
 @router.delete("/delete")
 async def delete_skill_tree(course_id: int,

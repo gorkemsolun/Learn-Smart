@@ -29,6 +29,7 @@ class SkillTree(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     course_id = Column(Integer, nullable=False, unique=True)
+    passed_slide_count = Column(Integer, nullable=False, default=1)
 
     # all nodes in this tree
     nodes = relationship(
@@ -42,6 +43,7 @@ class SkillTree(Base):
         return {
             "id": self.id,
             "course_id": self.course_id,
+            "passed_slide_count": self.passed_slide_count,
         }
 
 

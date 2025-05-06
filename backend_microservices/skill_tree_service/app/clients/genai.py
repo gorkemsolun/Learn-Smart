@@ -21,10 +21,10 @@ async def create_skill_tree(history: ChatHistory, is_update: bool) -> Dict[str, 
     """
     try:
         timeout = httpx.Timeout(
-            connect=10.0,
-            read=120.0,
-            write=120.0,
-            pool=120.0
+            connect=40.0,
+            read=240.0,
+            write=240.0,
+            pool=240.0
         )
         if is_update:
             body = {

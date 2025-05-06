@@ -180,25 +180,31 @@ export default function ChatPage() {
           });
         }
       } else {
-        setSubscriptionTier("basic")
+        setSubscriptionTier("none");
         toast({
           title: "No Subscription Data",
           description: "Failed to fetch subscription data.",
         });
       }
-    } catch (error: unknown) {
-      setSubscriptionTier("basic")
-      const errMsg = error instanceof Error ? error.message : "Unknown error";
-      toast({
-        title: "Error",
-        description: `Failed to fetch subscription details: ${errMsg}`,
-        variant: "destructive",
-        action: (
-          <ToastAction altText="Retry" onClick={fetchSubscriptionDetails}>
-            Retry
-          </ToastAction>
-        ),
-      });
+    } catch (error: any) {
+      setSubscriptionTier("none");
+      if (error.message == "Request failed with status code 404") {
+        // No subscription
+        return;
+      } else {
+        const errMsg = error instanceof Error ? error.message : "Unknown error";
+        toast({
+          title: "Error",
+          description: `Failed to fetch subscription details: ${errMsg}`,
+          variant: "destructive",
+          action: (
+            <ToastAction altText="Retry" onClick={fetchSubscriptionDetails}>
+              Retry
+            </ToastAction>
+          ),
+        });
+      }
+
     }
   }, [token, toast]);
 
@@ -261,14 +267,14 @@ export default function ChatPage() {
                       <SelectItem 
                         key={modelName} 
                         value={modelName}
-                        disabled={subscriptionTier === "basic" && key !== "google"}
+                        disabled={subscriptionTier === "none" && key !== "google"}
                         className="flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
                           {modelName}
                           {subscriptionTier === "basic" && key !== "google" && (
                             <span className="ml-1 text-xs text-muted-foreground">
-                              (Premium)
+                              (Elite)
                             </span>
                           )}
                         </div>
@@ -293,6 +299,7 @@ export default function ChatPage() {
               <ChatResizablePanels 
                 activeChat={activeChat}
                 selectedModel={model}
+                course_id={course_id}
                 />
             </div>
           ) : !chatsLoaded ? (

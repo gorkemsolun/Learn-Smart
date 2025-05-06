@@ -12,12 +12,12 @@ class SkillTreeDB:
     """
 
     @staticmethod
-    def create(db: Session, course_id: int):
+    def create(db: Session, course_id: int, passed_slide_count: int = 1):
         # Prevent duplicate skill trees for a course
         existing = db.query(SkillTree).filter(SkillTree.course_id == course_id).first()
         if existing:
             raise ValueError(f"SkillTree already exists for course_id={course_id}")
-        tree = SkillTree(course_id=course_id)
+        tree = SkillTree(course_id=course_id, passed_slide_count=passed_slide_count)
         db.add(tree)
         db.commit()
         db.refresh(tree)
@@ -40,8 +40,11 @@ class SkillTreeDB:
         tree = db.query(SkillTree).filter(SkillTree.id == tree_id).first()
         if not tree:
             raise ValueError(f"SkillTree with id {tree_id} not found")
-        if 'root_node_id' in kwargs:
-            tree.root_node_id = kwargs['root_node_id']
+
+        for field in ['root_node_id', 'passed_slide_count']:
+            if field in kwargs:
+                setattr(tree, field, kwargs[field])
+
         db.commit()
         db.refresh(tree)
         return tree.to_dict()

@@ -92,13 +92,13 @@ export default function NodeDetailsModal({
     switch (nodeStatus) {
       case "unlocked_completed":
         return (
-          <Badge className="border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-500 dark:text-emerald-400">
+          <Badge className="border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-500">
             <CheckCircle2 className="mr-1.5 size-4" strokeWidth={1.5} /> Completed
           </Badge>
         );
       case "unlocked_uncompleted":
         return (
-          <Badge className="border-amber-500/30 bg-amber-500/10 px-3 py-1 font-medium text-amber-500 dark:text-amber-400">
+          <Badge className="border-amber-500/30 bg-amber-500/10 px-3 py-1 font-medium text-amber-500">
             <Clock className="mr-1.5 size-4" strokeWidth={1.5} /> In Progress
           </Badge>
         );
@@ -162,7 +162,7 @@ export default function NodeDetailsModal({
     <>
       <Dialog open={open && !isQuizOpen} onOpenChange={onClose}>
         <DialogContent className="border-border bg-background text-foreground sm:max-w-md md:max-w-lg">
-          <div className="absolute -top-12 left-1/2 flex size-24 -translate-x-1/2 items-center justify-center rounded-full border-4 border-background bg-background shadow-xl">
+          <div className="absolute -top-12 left-1/2 flex size-24 -translate-x-1/2 items-center justify-center rounded-full border-4 border-accent bg-background shadow-xl">
             <div
               className={`flex size-16 items-center justify-center rounded-full ${
                 nodeStatus === "unlocked_completed"
@@ -180,7 +180,7 @@ export default function NodeDetailsModal({
             <DialogTitle className="text-2xl font-semibold tracking-tight">
               {node.name || `Node ${node.id}`}
             </DialogTitle>
-            <div className="mt-3 flex justify-center">{getStatusBadge()}</div>
+            <div className="pointer-events-none mt-3 flex justify-center">{getStatusBadge()}</div>
             <p className="mt-2 text-sm text-muted-foreground">{getStatusDescription()}</p>
           </DialogHeader>
 

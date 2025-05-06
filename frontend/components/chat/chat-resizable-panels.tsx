@@ -9,17 +9,19 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { chatService, filemanagerService } from "@/environment/backend_api";
+import { chatService, filemanagerService, skillTreeService } from "@/environment/backend_api";
 import { toast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function ChatResizablePanels({
   activeChat,
-  selectedModel
+  selectedModel,
+  course_id,
 }: {
   activeChat: Chat | null;
   selectedModel: string | null;
+  course_id: string;
 }) {
   // States for slides and presentation handling
   const [imgSrc, setImgSrc] = useState<string | undefined>(undefined); // Image source for the slide
@@ -323,6 +325,33 @@ export default function ChatResizablePanels({
     }
   }, [activeMessages]);
 
+  const updatePassedSlideCount = () => {
+    return skillTreeService.get(`/skill-tree?course_id=${course_id}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((response) => {
+      if(response.data.success) {
+        const currentCount = response.data.passed_slide_count || 0;
+        const newCount = currentCount + 1;
+
+        return skillTreeService.post(`/update-slide-count?course_id=${course_id}&passed_slide_count=${newCount}`,
+            {},
+            {headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+            }},
+        );
+      }
+    })
+    .catch((error) => {
+      console.error("Failed to update slide count:", error);
+      return Promise.resolve();
+    });
+  };
+
   const handlePreviousSlide = () => {
     if (!activeChat || !activeChat.last_opened_slide_id) {
       console.error("Invalid active chat or slide ID");
@@ -337,6 +366,7 @@ export default function ChatResizablePanels({
         setCurrentSlidePage(currentSlidePage - 1);
         const formattedHistory = await formatHistory(history);
         setActiveMessages(formattedHistory);
+        await updatePassedSlideCount();
       })
       .catch((error) => {
         toast({
@@ -364,6 +394,7 @@ export default function ChatResizablePanels({
         setCurrentSlidePage(currentSlidePage + 1);
         const formattedHistory = await formatHistory(history);
         setActiveMessages(formattedHistory);
+        await updatePassedSlideCount();
       })
       .catch((error) => {
         toast({
@@ -406,6 +437,7 @@ export default function ChatResizablePanels({
       setCurrentSlidePage(pageNumber);
       const formattedHistory = await formatHistory(history);
       setActiveMessages(formattedHistory);
+      await updatePassedSlideCount();
     } catch (error) {
       console.error("Error fetching slide:", error);
       toast({
