@@ -53,12 +53,12 @@ export default function SubscriptionTierCards() {
   const tierOrder = ["basic", "premium", "elite"];
   const currentTierIndex = currentTier ? tierOrder.indexOf(currentTier) : -1;
 
-  const calculateProratedPrice = (newTierPrice, currentTierPrice) => {
-    if (!startDate || !endDate) return newTierPrice;
+  const calculateProratedPrice = (newTierPrice, currentTierPrice, startDate, endDate) => {
+    if (!startDate || !endDate) return newTierPrice.toFixed(2);
 
     const now = Date.now();
     const totalDuration = endDate - startDate;
-    const remainingDuration = endDate - now;
+    const remainingDuration = Math.max(0, endDate - now);
     const remainingFraction = remainingDuration / totalDuration;
 
     const creditAmount = currentTierPrice * remainingFraction;
@@ -67,67 +67,127 @@ export default function SubscriptionTierCards() {
     return finalPrice > 0 ? finalPrice.toFixed(2) : "0.00";
   };
 
-  const subscriptionDuration = (endDate - startDate) / (1000 * 60 * 60 * 24);
-  const isYearly = subscriptionDuration >= 365;
+  const subscriptionDurationDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+  const isCurrentYearly = subscriptionDurationDays >= 365;
 
-  const currentMonthlyPrice = currentTier === "basic" ? 7.9 : currentTier === "premium" ? 19.9 : 0;
-  const currentYearlyPrice = currentTier === "basic" ? 64.9 : currentTier === "premium" ? 199.9 : 0;
+  const currentMonthlyPrice = currentTier === "basic"   ? 1.9
+                             : currentTier === "premium" ? 7.9
+                             : currentTier === "elite"   ? 19.9
+                             : 0;
+  const currentYearlyPrice  = currentTier === "basic"   ? 9.9
+                             : currentTier === "premium" ? 64.9
+                             : currentTier === "elite"   ? 199.9
+                             : 0;
 
-  const tiers =
-  [
+  const getCurrentPrice = () => isCurrentYearly ? currentYearlyPrice : currentMonthlyPrice;
+
+  const getDisplayedPrice = (newPrice) => {
+    if (currentTierIndex === -1) {
+      return newPrice.toFixed(2);
+    }
+
+    const proratedPrice = calculateProratedPrice(newPrice, getCurrentPrice(), startDate, endDate);
+    return proratedPrice;
+  };
+
+  const calculateRawProratedPrice = (newTierPrice, currentTierPrice, startDate, endDate) => {
+    if (!startDate || !endDate) return newTierPrice;
+
+    const now = Date.now();
+    const totalDuration = endDate - startDate;
+    const remainingDuration = Math.max(0, endDate - now);
+    const remainingFraction = remainingDuration / totalDuration;
+
+    const creditAmount = currentTierPrice * remainingFraction;
+    return Math.max(0, newTierPrice - creditAmount);
+  };
+
+  const getRawPrice = (planKey, requestedBillingPeriod) => {
+    const planPrices = {
+      "basic": { monthly: 1.9, yearly: 9.9 },
+      "premium": { monthly: 7.9, yearly: 64.9 },
+      "elite": { monthly: 19.9, yearly: 199.9 }
+    };
+
+    const newPrice = planPrices[planKey][requestedBillingPeriod];
+
+    if (currentTierIndex === -1) {
+      return newPrice;
+    }
+
+    return calculateRawProratedPrice(newPrice, getCurrentPrice(), startDate, endDate);
+  };
+
+  const shouldShowPlan = (planKey, requestedBillingPeriod) => {
+    const rawPrice = getRawPrice(planKey, requestedBillingPeriod);
+    if (rawPrice <= 0) {
+      return false;
+    }
+
+    if (currentTierIndex === -1 || tierOrder.indexOf(planKey) > currentTierIndex) {
+      return true;
+    }
+
+    if (tierOrder.indexOf(planKey) === currentTierIndex) {
+      return !((requestedBillingPeriod === "monthly" && !isCurrentYearly) ||
+          (requestedBillingPeriod === "yearly" && isCurrentYearly));
+    }
+
+    return false;
+  };
+
+  const tiers = [
     {
       name: "Edux Basic",
-      description: "RAG based content creation, and unlimited course creation in Edux.",
-      monthlyPrice: "7.9",
-      yearlyPrice: "64.9",
-      features: ["RAG based content creation.", "Unlimited course creation."],
+      description: "Unlimited course/chat creation in Edux, you may keep your courses now.",
+      monthlyPrice: getDisplayedPrice(1.9),
+      yearlyPrice: getDisplayedPrice(9.9),
+      features: ["Unlimited course/chat creation."],
       badge: currentTier === "basic" ? "Current Plan" : "",
       key: "basic",
-      buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
-      isHidden: currentTierIndex > tierOrder.indexOf("basic")
-          || ((currentTierIndex === tierOrder.indexOf("basic")) && billingPeriod === "monthly" && !isYearly)
-          || ((currentTierIndex === tierOrder.indexOf("basic")) && isYearly)
+      buttonText: currentTierIndex === -1
+        ? "Choose this plan"
+        : (currentTier === "basic" && ((billingPeriod === "monthly" && isCurrentYearly) ||
+                                      (billingPeriod === "yearly" && !isCurrentYearly)))
+          ? "Switch billing cycle"
+          : "Upgrade plan",
+      isHidden: !shouldShowPlan("basic", billingPeriod)
     },
     {
       name: "Edux+ Premium",
-      description: "Personal Guidance, RAG, and unlimited course creation in Edux.",
-      monthlyPrice: isYearly
-        ? "19.9"
-        : calculateProratedPrice(19.9, currentMonthlyPrice),
-      yearlyPrice: isYearly
-        ? calculateProratedPrice(199.9, currentYearlyPrice)
-        : calculateProratedPrice(199.9, currentMonthlyPrice),
-      features: ["Personalized guidance.", "RAG based content creation.", "Unlimited course creation."],
+      description: "RAG, unlimited course/chat creation in Edux, and quiz yourself with new material.",
+      monthlyPrice: getDisplayedPrice(7.9),
+      yearlyPrice: getDisplayedPrice(64.9),
+      features: ["RAG based content creation.", "Unlimited course/chat creation."],
       badge: currentTier === "premium" ? "Current Plan" : "Most Popular",
       key: "premium",
-      buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
-      isHidden: currentTierIndex > tierOrder.indexOf("premium") || (isYearly &&
-          ((currentTierIndex < tierOrder.indexOf("premium")) && billingPeriod === "monthly"))
-          || ((currentTierIndex === tierOrder.indexOf("premium")) && billingPeriod === "monthly" && !isYearly)
-          || ((currentTierIndex === tierOrder.indexOf("premium")) && isYearly),
+      buttonText: currentTierIndex === -1
+        ? "Choose this plan"
+        : (currentTier === "premium" && ((billingPeriod === "monthly" && isCurrentYearly) ||
+                                        (billingPeriod === "yearly" && !isCurrentYearly)))
+          ? "Switch billing cycle"
+          : "Upgrade plan",
+      isHidden: !shouldShowPlan("premium", billingPeriod)
     },
     {
       name: "Edux+ Elite",
-      description: "Personal Guidance, RAG, LLM selection, and unlimited course creation in Edux.",
-      monthlyPrice: isYearly
-        ? "59.9"
-        : calculateProratedPrice(59.9, currentMonthlyPrice),
-      yearlyPrice: isYearly
-        ? calculateProratedPrice(599.9, currentYearlyPrice)
-        : calculateProratedPrice(599.9, currentMonthlyPrice),
+      description: "RAG, LLM choice, and unlimited course/chat creation in Edux.",
+      monthlyPrice: getDisplayedPrice(19.9),
+      yearlyPrice: getDisplayedPrice(199.9),
       features: [
-        "Personalized guidance.",
         "RAG based content creation.",
         "LLM selection for your smart tutor.",
         "Unlimited course creation.",
       ],
       badge: currentTier === "elite" ? "Current Plan" : "",
       key: "elite",
-      buttonText: currentTierIndex === -1 ? "Choose this plan" : "Upgrade plan",
-      isHidden: (isYearly &&
-          ((currentTierIndex < tierOrder.indexOf("elite")) && billingPeriod === "monthly"))
-          || ((currentTierIndex === tierOrder.indexOf("elite")) && billingPeriod === "monthly" && !isYearly)
-          || ((currentTierIndex === tierOrder.indexOf("elite")) && isYearly),
+      buttonText: currentTierIndex === -1
+        ? "Choose this plan"
+        : (currentTier === "elite" && ((billingPeriod === "monthly" && isCurrentYearly) ||
+                                      (billingPeriod === "yearly" && !isCurrentYearly)))
+          ? "Switch billing cycle"
+          : "Upgrade plan",
+      isHidden: !shouldShowPlan("elite", billingPeriod)
     },
   ];
 

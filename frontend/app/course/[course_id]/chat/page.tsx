@@ -267,12 +267,12 @@ export default function ChatPage() {
                       <SelectItem 
                         key={modelName} 
                         value={modelName}
-                        disabled={subscriptionTier === "none" && key !== "google"}
+                        disabled={(subscriptionTier === "none" || subscriptionTier === "basic" || subscriptionTier === "premium" )&& key !== "google"}
                         className="flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
                           {modelName}
-                          {subscriptionTier === "basic" && key !== "google" && (
+                          {(subscriptionTier === "none" || subscriptionTier === "basic" || subscriptionTier === "premium" ) && key !== "google" && (
                             <span className="ml-1 text-xs text-muted-foreground">
                               (Elite)
                             </span>

@@ -93,8 +93,8 @@ export default function SignIn() {
       })
       .catch(() => {
         toast({
-          title: "Details you entered does not match",
-          description: "Details you entered does not match",
+          title: "Failed to Sign In",
+          description: "Details you entered does not match with a user in the system.",
           variant: "destructive",
           action: <ToastAction altText="Try again">Try again</ToastAction>,
         });
