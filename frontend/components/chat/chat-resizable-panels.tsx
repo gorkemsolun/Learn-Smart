@@ -450,13 +450,13 @@ export default function ChatResizablePanels({
     }
   };
 
-  const fetchSlidePage = (slideID: string, pageNumber: number) => {
+  const fetchSlidePage = (slideID: string, pageNumber: number, model: string = "google") => {
     if (!token || !slideID || pageNumber <= 0) {
       console.error("Invalid parameters");
       return Promise.reject(new Error("Invalid parameters"));
     }
 
-    return chatService.get(`/chat/slide/${slideID}/page/${pageNumber}`, {
+    return chatService.get(`/chat/slide/${slideID}/page/${pageNumber}?model=${model}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,

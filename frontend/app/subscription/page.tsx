@@ -38,7 +38,9 @@ export default function SubscriptionTierCards() {
       setStartDate(new Date(subscriptionResponse.data?.start_date));
       setEndDate(new Date(subscriptionResponse.data?.end_date));
     } catch (error) {
-      console.error("Error fetching subscription data:", error);
+      if (error.response && error.response.status !== 404) {
+        console.error("Error fetching subscription data:", error);
+      }
     } finally {
       setLoading(false);
     }
