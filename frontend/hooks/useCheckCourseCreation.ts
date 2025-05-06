@@ -27,7 +27,7 @@ export function useCheckCourseCreation() {
       console.log(subscription_tier)
       console.log(courseCount)
 
-      if (subscription_tier == 'basic' && courseCount >= 3) {
+      if (subscription_tier == 'free' && courseCount >= 3) {
         toast({
             title: "Error",
             description: "You have reached the course limit for this subscription tier",

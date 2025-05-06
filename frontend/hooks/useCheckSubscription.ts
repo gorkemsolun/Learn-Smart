@@ -19,7 +19,7 @@ export function useCheckSubscription() {
       return response.data["subscription_tier"];
 
     } catch (error) {
-      console.error("Error fetching subscription tier !!!111!1!:", error);
+      return "free";
     }
   };
 
