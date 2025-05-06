@@ -18,6 +18,7 @@ import { ToastAction } from "@/components/ui/toast";
 import { courseService, filemanagerService } from "@/environment/backend_api";
 import { useToast } from "@/hooks/use-toast";
 import { useCheckCourseCode } from "@/hooks/useCheckCourseCode";
+import { useCheckCourseCreation } from "@/hooks/useCheckCourseCreation";
 import {
   Eye,
   FileCheck,
@@ -74,6 +75,7 @@ export function CourseDialogModal({
 
   const { toast } = useToast();
   const { checkCourseCode } = useCheckCourseCode();
+  const { checkCourseCreation } = useCheckCourseCreation();
 
   const resetFields = () => {
     if (!isCreate && originalCourseData) {
@@ -349,6 +351,10 @@ export function CourseDialogModal({
           formData.get("course_code") as string
         );
         if (!isValid) return;
+
+        // Current tier does not allow for a new course creation
+        const tierCheck = await checkCourseCreation();
+        if (!tierCheck) return;
 
         // Send the form data to the backend
         await courseService.post(`/create`, formData, {
