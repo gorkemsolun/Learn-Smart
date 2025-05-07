@@ -7,6 +7,7 @@ import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useLoading } from "@/hooks/useLoading";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import QuizComponent from "@/components/quiz-component";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,13 @@ export default function CourseQuizList() {
   const [editingQuizId, setEditingQuizId] = useState<number | null>(null);
   const [newQuizTitle, setNewQuizTitle] = useState("");
   const [quizList, setQuizList] = useState<QuizJSON[]>([]);
+  const [answeredQuestions, setAnsweredQuestions] = useState<Record<number, Set<number>>>({});
+  const [quizResults, setQuizResults] = useState<Record<number, {correct: number, total: number}>>({});
   const params = useParams<{ course_id: string }>();
   const course_id = params.course_id;
 
-  const handleQuizClick = (question: string) => {
-    setSelectedQuiz(selectedQuiz === question ? null : question);
+  const handleQuizClick = (quizId: string) => {
+    setSelectedQuiz(selectedQuiz === quizId ? null : quizId);
   };
 
   interface Quiz {
@@ -41,6 +44,8 @@ export default function CourseQuizList() {
     num_questions: number;
     quiz_fid: number;
     quiz_title: string;
+    completed: boolean;
+    success_rate: number;
   }
 
   interface QuizJSON {
@@ -48,6 +53,9 @@ export default function CourseQuizList() {
     chat_title: string;
     quiz_title: string;
     questions: QuizQuestion[];
+    completed?: boolean;
+    success_rate?: number;
+    locked?: boolean; // Add locked property
   }
 
   interface QuizQuestion {
@@ -55,6 +63,94 @@ export default function CourseQuizList() {
     choices: { [key: string]: string };
     answer: string;
   }
+
+  // Track when a question is answered
+  const handleQuestionAnswered = (quizId: number, questionIndex: number, isCorrect: boolean) => {
+    setAnsweredQuestions(prev => {
+      const updatedQuiz = new Set(prev[quizId] || []);
+      updatedQuiz.add(questionIndex);
+      
+      return {
+        ...prev,
+        [quizId]: updatedQuiz
+      };
+    });
+
+    setQuizResults(prev => {
+      const quizResult = prev[quizId] || { correct: 0, total: 0 };
+      return {
+        ...prev,
+        [quizId]: {
+          correct: quizResult.correct + (isCorrect ? 1 : 0),
+          total: quizResult.total + 1
+        }
+      };
+    });
+  };
+
+  // Handle quiz completion (called when last question is answered)
+  const handleQuizCompleted = async (quizId: number) => {
+    const result = quizResults[quizId];
+    const quiz = quizList.find(q => q.quiz_id === quizId);
+    const totalQuestions = quiz?.questions?.length || 1;
+    // Calculate success rate based on correct answers divided by total questions, not total attempts
+    const success_rate = result ? (result.correct / totalQuestions) * 100 : 0;
+
+    try {
+      startLoading();
+      // Make API call to submit quiz results
+      const response = await chatService.put(
+        `/quiz/${quizId}/complete`,
+        { success_rate },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      // Update quiz with completed status and success rate from response
+      const updatedQuizData = response.data;
+      
+      setQuizList(prevList => 
+        prevList.map(quiz => 
+          quiz.quiz_id === quizId 
+            ? { 
+                ...quiz, 
+                completed: updatedQuizData.completed, 
+                success_rate: updatedQuizData.success_rate,
+                locked: true // Lock the quiz when completed
+              } 
+            : quiz
+        )
+      );
+      
+      // Reset progress tracking for this quiz
+      setAnsweredQuestions(prev => {
+        const newAnswered = { ...prev };
+        delete newAnswered[quizId];
+        return newAnswered;
+      });
+      
+      setQuizResults(prev => {
+        const newResults = { ...prev };
+        delete newResults[quizId];
+        return newResults;
+      });
+
+      console.log("Quiz completed and submitted successfully");
+    } catch (error) {
+      console.error("Error submitting quiz results:", error);
+    } finally {
+      stopLoading();
+    }
+  };
+
+  // Get number of answered questions for a quiz
+  const getAnsweredCount = (quizId: number): number => {
+    return answeredQuestions[quizId]?.size || 0;
+  };
 
   async function fetchQuizQuestions(quiz_id: number) {
     try {
@@ -81,6 +177,9 @@ export default function CourseQuizList() {
           chat_title: item.chat_title,
           quiz_title: quiz.quiz_title,
           questions: questions,
+          completed: quiz.completed,
+          success_rate: quiz.success_rate,
+          locked: quiz.completed // Lock the quiz if it's already completed
         });
       }
     }
@@ -114,6 +213,8 @@ export default function CourseQuizList() {
           num_questions: quiz.num_questions,
           quiz_fid: quiz.quiz_fid,
           quiz_title: quiz.quiz_title,
+          completed: quiz.completed,
+          success_rate: quiz.success_rate,
         })),
       }));
 
@@ -238,6 +339,58 @@ export default function CourseQuizList() {
                       <span className="text-sm text-gray-500">
                         ({quiz.chat_title})
                       </span>
+                      
+                      {quiz.completed ? (
+                        <div className="ml-4 flex items-center gap-2">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            quiz.success_rate >= 70 ? 'bg-green-100 text-green-800' : 
+                            quiz.success_rate >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {`${Math.round(quiz.success_rate ?? 0)}% success`}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs ml-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Reset the quiz tracking state completely 
+                              setAnsweredQuestions(prev => ({ 
+                                ...prev, 
+                                [quiz.quiz_id]: new Set() 
+                              }));
+                              setQuizResults(prev => ({ 
+                                ...prev, 
+                                [quiz.quiz_id]: { correct: 0, total: 0 } 
+                              }));
+                              // Unlock the quiz for retaking
+                              setQuizList(prevList => 
+                                prevList.map(q => 
+                                  q.quiz_id === quiz.quiz_id
+                                    ? { ...q, locked: false }
+                                    : q
+                                )
+                              );
+                              setSelectedQuiz(quiz.quiz_id.toString());
+                            }}
+                          >
+                            Retake
+                          </Button>
+                        </div>
+                      ) : (
+                        quiz.questions && quiz.questions.length > 0 && (
+                          <div className="ml-4 flex items-center gap-2">
+                            <Progress 
+                              value={(getAnsweredCount(quiz.quiz_id) / quiz.questions.length) * 100} 
+                              className="h-2 w-24"
+                            />
+                            <span className="text-xs text-gray-500">
+                              {getAnsweredCount(quiz.quiz_id)}/{quiz.questions.length}
+                            </span>
+                          </div>
+                        )
+                      )}
                     </div>
                   )}
                 </div>
@@ -285,6 +438,16 @@ export default function CourseQuizList() {
                           question={question.question}
                           options={question.choices}
                           answer={question.answer}
+                          totalQuestions={quiz.questions.length}
+                          currentQuestionIndex={qIndex}
+                          isLastQuestion={qIndex === quiz.questions.length - 1}
+                          isLocked={quiz.locked === true}
+                          onAnswered={(isCorrect) => handleQuestionAnswered(quiz.quiz_id, qIndex, isCorrect)}
+                          onQuizCompleted={
+                            qIndex === quiz.questions.length - 1 
+                              ? () => handleQuizCompleted(quiz.quiz_id) 
+                              : undefined
+                          }
                         />
                       ))}
                     </div>

@@ -627,6 +627,8 @@ class QuizDB:
         - ValueError: If the quiz with the specified ID is not found in the database.
         """
         quiz_title = kwargs.get("quiz_title", None)
+        completed = kwargs.get("completed", None)
+        success_rate = kwargs.get("success_rate", None)
 
         quiz = db.query(Quiz).filter(Quiz.quiz_id == quiz_id).first()
         if not quiz:
@@ -634,6 +636,10 @@ class QuizDB:
 
         if quiz_title:
             quiz.quiz_title = quiz_title
+        if completed is not None:
+            quiz.completed = completed
+        if success_rate is not None:
+            quiz.success_rate = success_rate
 
         db.commit()
         db.refresh(quiz)

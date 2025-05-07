@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import io, json
 import pymupdf
+from pydantic import BaseModel
 
 from chat_service.app.clients import user, course, filemanager, genai
 from chat_service.app.database.dbmanager import (
@@ -629,6 +630,37 @@ async def get_slide_info(slide_id: int,
     return slide
 
 # Quiz
+class QuizCompleteRequest(BaseModel):
+    success_rate: float
+
+@router.put("/quiz/{quiz_id}/complete")
+async def complete_quiz(quiz_id: int,
+                        data: QuizCompleteRequest,
+                        current_user: dict = Depends(user.get_current_user),
+                        db: Session = Depends(get_db)):
+    """
+    Mark a quiz as completed.
+
+    Args:
+        quiz_id (int): The ID of the quiz to mark as completed.
+        current_user (dict): The current authenticated user (used for authentication).
+
+    Returns:
+        dict: A message indicating the quiz was successfully marked as completed.
+
+    Raises:
+        HTTPException: If the quiz is not found or the user is not authorized to complete the quiz.
+    """
+    success_rate = data.success_rate
+    quiz = QuizDB.fetch(db, quiz_id=quiz_id)
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found.")
+    
+    await get_authorized_chat_and_course(db, quiz["chat_id"], current_user["user_id"])
+
+    updated_quiz = QuizDB.update(db, quiz_id=quiz_id, completed=True, success_rate=success_rate)
+    return updated_quiz
+
 @router.get("/quiz/{quiz_id}")
 async def get_quiz(quiz_id: int,
                    current_user: dict = Depends(user.get_current_user),

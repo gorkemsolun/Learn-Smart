@@ -123,6 +123,8 @@ class Quiz(Base):
     quiz_fid = Column(Integer, nullable=False)  # quiz file ID
     num_questions = Column(Integer, nullable=False)  # the number of questions in the quiz
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed = Column(Boolean, default=False)  # whether the quiz has been completed
+    success_rate = Column(Integer, nullable=True)  # success rate of the quiz (0-100)
 
     def to_dict(self):
         """
@@ -139,7 +141,9 @@ class Quiz(Base):
             "quiz_title": self.quiz_title,
             "quiz_fid": self.quiz_fid,
             "num_questions": self.num_questions,
-            "created_at": self.created_at
+            "created_at": self.created_at,
+            "completed": self.completed,
+            "success_rate": self.success_rate
         }
     
 
