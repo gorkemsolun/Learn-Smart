@@ -17,7 +17,8 @@ def create_diagram():
         filename="edux_architecture",
         show=False,
         direction="TB",  # Top-to-Bottom layout
-        node_attr={"fontsize": "10"},
+        node_attr={"fontsize": "16"},
+        graph_attr={"dpi": "800"},
     ):
 
         # end user
@@ -36,7 +37,6 @@ def create_diagram():
             chat_svc = Docker("Chat Service")
             filemgr_svc = Docker("FileManager Service")
             genai_svc = Docker("GenAI Service")
-            notify_svc = Docker("Notification Service")
 
         # databases cluster
         with Cluster("Databases"):
@@ -48,7 +48,6 @@ def create_diagram():
             chat_db = Mysql("Chat DB")
             filemgr_db = Mysql("FileManager DB")
             genai_db = Mysql("GenAI DB")
-            notify_db = Mysql("Notification DB")
 
         # shared cache
         cache = Redis("Redis Cache")
@@ -76,7 +75,6 @@ def create_diagram():
                 chat_svc,
                 filemgr_svc,
                 genai_svc,
-                notify_svc,
             ]
         )
 
@@ -89,7 +87,6 @@ def create_diagram():
         chat_svc >> chat_db
         filemgr_svc >> filemgr_db
         genai_svc >> genai_db
-        notify_svc >> notify_db
 
         # services optionally use the shared cache
         for svc in [
@@ -101,7 +98,6 @@ def create_diagram():
             chat_svc,
             filemgr_svc,
             genai_svc,
-            notify_svc,
         ]:
             svc >> cache
 

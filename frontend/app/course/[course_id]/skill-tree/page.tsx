@@ -577,7 +577,7 @@ export default function SkillTree({
     }
   }, []);
 
-  if (!hasChats && !skillTree) {
+  if (!hasChats) {
     return (
     <div className="-mt-[8vh] flex h-screen items-center justify-center bg-muted">
       <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-xl border border-border bg-gradient-to-br from-background to-background/80 p-8 text-center text-foreground shadow-lg">

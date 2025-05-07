@@ -2,6 +2,7 @@ import "dotenv/config";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  devIndicators: false,
   env: {
     BACKEND_API_URL: process.env.BACKEND_API_URL,
   },

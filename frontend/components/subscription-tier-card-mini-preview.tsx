@@ -5,15 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckIcon } from "lucide-react";
 import Image from "next/image";
 
-type FontColor = "black" | "white";
 
 interface FeatureListProps {
   features: string[];
-  fontColor?: FontColor;
 }
 
-function FeatureList({ features, fontColor = "black" }: FeatureListProps) {
-  const base = fontColor === "white" ? "text-white" : "text-black";
+function FeatureList({ features }: FeatureListProps) {
   const displayCount = 3;
   const displayFeatures = features.slice(0, displayCount);
   const hasMore = features.length > displayCount;
@@ -23,11 +20,11 @@ function FeatureList({ features, fontColor = "black" }: FeatureListProps) {
   ];
 
   return (
-    <ul className={`${base}/80 space-y-2 text-xs`}>
+    <ul className={`space-y-2 text-xs text-background/80`}>
       {paddedFeatures.map((feature, idx) => (
         <li key={idx} className="flex items-center gap-2">
           {feature ? (
-            <CheckIcon className={`${base}/70 size-3`} />
+            <CheckIcon className={`size-3 text-background/70`} />
           ) : (
             <div className="m-1 size-3" />
           )}
@@ -35,7 +32,7 @@ function FeatureList({ features, fontColor = "black" }: FeatureListProps) {
         </li>
       ))}
       <li className="flex items-center gap-2">
-        {hasMore && <CheckIcon className={`${base}/70 size-3`} />}
+        {hasMore && <CheckIcon className={`size-3 text-background/70`} />}
         {hasMore ? (
           `+${features.length - displayCount} more features`
         ) : (
@@ -48,19 +45,14 @@ function FeatureList({ features, fontColor = "black" }: FeatureListProps) {
 
 interface TierCardMiniProps {
   tier: Tier;
-  fontColor?: FontColor;
 }
 
 export default function TierCardMini({
   tier,
-  fontColor = "black",
 }: TierCardMiniProps) {
-  const titleClass = fontColor === "white" ? "text-white" : "text-black";
-  const subtitleClass =
-    fontColor === "white" ? "text-white/70" : "text-black/70";
 
   return (
-    <Card className="bg-primary-foreground/10 relative overflow-hidden rounded-xl border-none backdrop-blur-sm">
+    <Card className="relative overflow-hidden rounded-xl border-none bg-primary-foreground/10 backdrop-blur-sm">
       {tier_logo && (
         <Image
           src={tier_logo}
@@ -71,29 +63,29 @@ export default function TierCardMini({
         />
       )}
       {tier?.badge && (
-        <Badge className="bg-primary-foreground text-primary pointer-events-none absolute right-2 top-2 line-clamp-1 cursor-default select-none rounded-full px-2 py-0.5 text-[10px] font-medium">
+        <Badge className="pointer-events-none absolute right-2 top-2 line-clamp-1 cursor-default select-none rounded-full bg-primary-foreground px-2 py-0.5 text-[10px] font-medium text-primary">
           {tier.badge}
         </Badge>
       )}
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className={`${titleClass} text-lg font-medium`}>{tier.name}</h3>
+            <h3 className={`text-lg font-medium text-background`}>{tier.name}</h3>
             <div className="text-right">
-              <div className={`${titleClass} text-lg font-semibold`}>
+              <div className={`text-lg font-semibold text-background`}>
                 ${tier.price}
               </div>
-              <div className={`${subtitleClass} text-xs`}>
+              <div className={`text-xs text-background`}>
                 {tier.billingPeriod === "monthly" ? "/month" : "/year"}
               </div>
             </div>
           </div>
           {tier.llm && (
-            <p className={`${subtitleClass} text-xs`}>
+            <p className={`text-xs text-background`}>
               <span className="font-medium">Model:</span> {tier.llm}
             </p>
           )}
-          <FeatureList features={tier.features} fontColor={fontColor} />
+          <FeatureList features={tier.features} />
         </div>
       </CardContent>
     </Card>

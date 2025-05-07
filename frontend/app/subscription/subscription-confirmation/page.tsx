@@ -256,8 +256,8 @@ export default function SubscriptionConfirmation() {
 
         <div className="space-y-6">
           <Card className="w-full bg-primary p-6 text-primary-foreground shadow-lg">
-            <h3 className="mb-4 text-xl">Order Summary</h3>
-            <TierCardMini tier={tier}/>
+            <h3 className="mb-4 text-xl text-background">Order Summary</h3>
+            <TierCardMini tier={tier} />
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subscription Price</span>

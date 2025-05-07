@@ -8,7 +8,7 @@ import { useLoading } from "@/hooks/useLoading";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import QuizComponent from "@/components/quiz-component";
+import QuizComponent from "@/components/course/quiz-component";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,7 @@ export default function CourseQuizList() {
     questions: QuizQuestion[];
     completed?: boolean;
     success_rate?: number;
-    locked?: boolean; // Add locked property
+    locked?: boolean;
   }
 
   interface QuizQuestion {
@@ -69,7 +69,7 @@ export default function CourseQuizList() {
     setAnsweredQuestions(prev => {
       const updatedQuiz = new Set(prev[quizId] || []);
       updatedQuiz.add(questionIndex);
-      
+
       return {
         ...prev,
         [quizId]: updatedQuiz
@@ -88,12 +88,20 @@ export default function CourseQuizList() {
     });
   };
 
-  // Handle quiz completion (called when last question is answered)
+  // Handle quiz completion (called when the submit quiz button is clicked)
   const handleQuizCompleted = async (quizId: number) => {
-    const result = quizResults[quizId];
+    // Check if all questions have been answered
     const quiz = quizList.find(q => q.quiz_id === quizId);
-    const totalQuestions = quiz?.questions?.length || 1;
-    // Calculate success rate based on correct answers divided by total questions, not total attempts
+    const totalQuestions = quiz?.questions?.length || 0;
+    const answered = getAnsweredCount(quizId);
+
+    if (answered < totalQuestions) {
+      alert(`Please answer all ${totalQuestions} questions before submitting.`);
+      return;
+    }
+
+    const result = quizResults[quizId];
+    // Calculate success rate based on correct answers divided by total questions
     const success_rate = result ? (result.correct / totalQuestions) * 100 : 0;
 
     try {
@@ -109,30 +117,30 @@ export default function CourseQuizList() {
           },
         }
       );
-      
+
       // Update quiz with completed status and success rate from response
       const updatedQuizData = response.data;
-      
-      setQuizList(prevList => 
-        prevList.map(quiz => 
-          quiz.quiz_id === quizId 
-            ? { 
-                ...quiz, 
-                completed: updatedQuizData.completed, 
+
+      setQuizList(prevList =>
+        prevList.map(quiz =>
+          quiz.quiz_id === quizId
+            ? {
+                ...quiz,
+                completed: updatedQuizData.completed,
                 success_rate: updatedQuizData.success_rate,
                 locked: true // Lock the quiz when completed
-              } 
+              }
             : quiz
         )
       );
-      
+
       // Reset progress tracking for this quiz
       setAnsweredQuestions(prev => {
         const newAnswered = { ...prev };
         delete newAnswered[quizId];
         return newAnswered;
       });
-      
+
       setQuizResults(prev => {
         const newResults = { ...prev };
         delete newResults[quizId];
@@ -240,7 +248,7 @@ export default function CourseQuizList() {
         }
       );
 
-      setQuizList(quizList.map(quiz => 
+      setQuizList(quizList.map(quiz =>
         quiz.quiz_id === quizId ? { ...quiz, quiz_title: newQuizTitle } : quiz
       ));
       setEditingQuizId(null);
@@ -254,7 +262,7 @@ export default function CourseQuizList() {
 
   const handleDeleteQuiz = async (quizId: number) => {
     if (!confirm("Are you sure you want to delete this quiz?")) return;
-    
+
     try {
       startLoading();
       await chatService.delete(`/quiz/${quizId}`, {
@@ -313,8 +321,8 @@ export default function CourseQuizList() {
                         onChange={(e) => setNewQuizTitle(e.target.value)}
                         className="flex-1"
                       />
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRenameQuiz(quiz.quiz_id);
@@ -322,9 +330,9 @@ export default function CourseQuizList() {
                       >
                         Save
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingQuizId(null);
@@ -339,34 +347,34 @@ export default function CourseQuizList() {
                       <span className="text-sm text-gray-500">
                         ({quiz.chat_title})
                       </span>
-                      
+
                       {quiz.completed ? (
                         <div className="ml-4 flex items-center gap-2">
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                             quiz.success_rate >= 70 ? 'bg-green-100 text-green-800' : 
                             quiz.success_rate >= 50 ? 'bg-yellow-100 text-yellow-800' :
                             'bg-red-100 text-red-800'
                           }`}>
-                            {`${Math.round(quiz.success_rate ?? 0)}% success`}
+                            {`${Math.round(quiz.success_rate ?? 0)}% correct`}
                           </span>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-xs ml-2"
+                            className="ml-2 text-xs"
                             onClick={(e) => {
                               e.stopPropagation();
-                              // Reset the quiz tracking state completely 
-                              setAnsweredQuestions(prev => ({ 
-                                ...prev, 
-                                [quiz.quiz_id]: new Set() 
+                              // Reset the quiz tracking state completely
+                              setAnsweredQuestions(prev => ({
+                                ...prev,
+                                [quiz.quiz_id]: new Set()
                               }));
-                              setQuizResults(prev => ({ 
-                                ...prev, 
-                                [quiz.quiz_id]: { correct: 0, total: 0 } 
+                              setQuizResults(prev => ({
+                                ...prev,
+                                [quiz.quiz_id]: { correct: 0, total: 0 }
                               }));
                               // Unlock the quiz for retaking
-                              setQuizList(prevList => 
-                                prevList.map(q => 
+                              setQuizList(prevList =>
+                                prevList.map(q =>
                                   q.quiz_id === quiz.quiz_id
                                     ? { ...q, locked: false }
                                     : q
@@ -381,8 +389,8 @@ export default function CourseQuizList() {
                       ) : (
                         quiz.questions && quiz.questions.length > 0 && (
                           <div className="ml-4 flex items-center gap-2">
-                            <Progress 
-                              value={(getAnsweredCount(quiz.quiz_id) / quiz.questions.length) * 100} 
+                            <Progress
+                              value={(getAnsweredCount(quiz.quiz_id) / quiz.questions.length) * 100}
                               className="h-2 w-24"
                             />
                             <span className="text-xs text-gray-500">
@@ -432,6 +440,22 @@ export default function CourseQuizList() {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="border-t p-6">
+                      {/* Add quiz-level progress bar here */}
+                      {quiz.questions.length > 0 && !quiz.completed && (
+                        <div className="mb-6">
+                          <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+                            <span>Quiz Progress</span>
+                            <span>
+                              {getAnsweredCount(quiz.quiz_id)}/{quiz.questions.length} questions answered
+                            </span>
+                          </div>
+                          <Progress
+                            value={(getAnsweredCount(quiz.quiz_id) / quiz.questions.length) * 100}
+                            className="h-2"
+                          />
+                        </div>
+                      )}
+
                       {quiz.questions.map((question, qIndex) => (
                         <QuizComponent
                           key={qIndex}
@@ -440,16 +464,50 @@ export default function CourseQuizList() {
                           answer={question.answer}
                           totalQuestions={quiz.questions.length}
                           currentQuestionIndex={qIndex}
-                          isLastQuestion={qIndex === quiz.questions.length - 1}
+                          isLastQuestion={false} // Set to false for all questions to prevent auto-completion
                           isLocked={quiz.locked === true}
                           onAnswered={(isCorrect) => handleQuestionAnswered(quiz.quiz_id, qIndex, isCorrect)}
-                          onQuizCompleted={
-                            qIndex === quiz.questions.length - 1 
-                              ? () => handleQuizCompleted(quiz.quiz_id) 
-                              : undefined
-                          }
+                          onQuizCompleted={undefined} // Remove auto completion
                         />
                       ))}
+
+                      {!quiz.locked && quiz.questions.length > 0 && (
+                        <div className="mt-12 flex flex-col items-center space-y-4 border-t pt-8">
+                          <Button
+                            size="lg"
+                            className="px-8 py-6 text-lg font-medium transition-all duration-200 hover:scale-105"
+                            disabled={getAnsweredCount(quiz.quiz_id) < quiz.questions.length}
+                            onClick={() => handleQuizCompleted(quiz.quiz_id)}
+                          >
+                            {getAnsweredCount(quiz.quiz_id) < quiz.questions.length ? "Submit Quiz" : "Submit Your Answers"}
+                          </Button>
+
+                          <div
+                            className={`max-w-md text-center ${
+                              getAnsweredCount(quiz.quiz_id) < quiz.questions.length
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-emerald-600 dark:text-emerald-400"
+                            }`}
+                          >
+                            {getAnsweredCount(quiz.quiz_id) < quiz.questions.length ? (
+                              <div className="flex flex-col items-center space-y-1">
+                                <p className="text-sm font-medium">
+                                  Please answer all {quiz.questions.length} questions before submitting
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {getAnsweredCount(quiz.quiz_id)}/{quiz.questions.length} questions answered
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <p className="text-sm font-medium">
+                                  You&#39;ve answered all questions! Save your result.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
