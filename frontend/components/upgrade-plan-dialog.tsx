@@ -44,7 +44,7 @@ export function UpgradePlanDialog({
 
         <div className="flex flex-col gap-6 py-4 md:flex-row md:gap-4">
           <div className="flex-1">
-            <h4 className="text-muted-foreground mb-2 text-sm font-medium">
+            <h4 className="mb-2 text-sm font-medium text-muted-foreground">
               Current Plan
             </h4>
             <TierCardMini tier={currentTier} fontColor="white" />
@@ -55,7 +55,7 @@ export function UpgradePlanDialog({
           </div>
 
           <div className="flex-1">
-            <h4 className="text-muted-foreground mb-2 text-sm font-medium">
+            <h4 className="mb-2 text-sm font-medium text-muted-foreground">
               Recommended Plan
             </h4>
             <TierCardMini tier={newTier} fontColor="white" />

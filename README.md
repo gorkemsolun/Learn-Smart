@@ -12,7 +12,7 @@ In summary, Edux provides essential tools and resources through a web applicatio
 
 ## [Design Document](https://docs.google.com/document/d/1yBGZlqTAZuNbOirmpqzgfHXvrq4RJoF7VfEGX3V5clY/edit#heading=h.yr1n1w74g294)
 
-## [Demo Video](https://drive.google.com/file/d/19HlsxClf0-VlwYFk9slciC6GaGLtUUIj/view)
+## [Demo Video](https://drive.google.com/file/d/17llCf0k3G6Qdc5uSbcOM5Bp2fRbj8nf1/view?usp=drive_link)
 
 ## Build
 

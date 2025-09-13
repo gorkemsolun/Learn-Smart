@@ -187,9 +187,11 @@ export function NavbarHeader({ onSearchButtonClick }: NavbarHeaderParameters) {
           <NavigationMenuItem>
             <ModeToggle />
           </NavigationMenuItem>
+          {/*
           <NavigationMenuItem>
             <Notifications notifications={mock} />
           </NavigationMenuItem>
+          */}
           <NavigationMenuItem>
             <Button
               variant="ghost"
