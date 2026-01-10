@@ -10,10 +10,6 @@ Additionally, Edux offers customized study schedules tailored to each student’
 
 In summary, Edux provides essential tools and resources through a web application to support students' academic endeavors. By integrating lecture presentations, syllabi, and other study materials with advanced LLM capabilities and offering interactive learning tools, Edux aims to enhance the efficiency and effectiveness of student learning.
 
-## [Design Document](https://docs.google.com/document/d/1yBGZlqTAZuNbOirmpqzgfHXvrq4RJoF7VfEGX3V5clY/edit#heading=h.yr1n1w74g294)
-
-## [Demo Video](https://drive.google.com/file/d/17llCf0k3G6Qdc5uSbcOM5Bp2fRbj8nf1/view?usp=drive_link)
-
 ## Build
 
 1. Use latest node
